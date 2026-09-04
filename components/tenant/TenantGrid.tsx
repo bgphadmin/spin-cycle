@@ -41,9 +41,9 @@ const columns = [
         id: "phone",
         header: "Phone",
     }),
-    columnHelper.accessor("email", {
-        id: "email",
-        header: "Email",
+    columnHelper.accessor("address", {
+        id: "address",
+        header: "Address",
     }),
     columnHelper.accessor("subscriptionStatus", {
         id: "subscriptionStatus",

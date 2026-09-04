@@ -42,7 +42,7 @@ const Header = () => {
                 </SignedOut>
             </div>
             {/* Engraved divider line */}
-            <div className="mx-auto w-9/11 lg:w-7/10 h-0.5 bg-gray-300 shadow-inner rounded-full" />
+            <div className="mx-auto lg:w-10/13 h-0.5 bg-gray-300 shadow-inner rounded-full" />
         </header>
     )
 }

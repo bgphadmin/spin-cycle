@@ -28,7 +28,7 @@ export function ConfirmDeleteDialog({
 }: ConfirmDeleteDialogProps) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
         {trigger ?? (
           <LoadingDeleteButton
             loading={deleting}

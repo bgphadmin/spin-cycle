@@ -198,7 +198,7 @@ export function EditTenantItem({
                                     <LoadingDeleteButton
                                         loading={deleting}
                                         type="button"
-                                        className="rounded bg-red-600 px-4 py-3 text-sm text-white hover:bg-red-700 cursor-pointer"
+                                        className="rounded bg-red-600 px-4 py-3 text-sm text-white hover:bg-red-700 cursor-pointer w-auto"
                                     >
                                         Delete
                                     </LoadingDeleteButton>
