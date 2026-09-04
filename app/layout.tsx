@@ -5,6 +5,7 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
+import { ClerkProvider, SignedIn } from '@clerk/nextjs';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,15 +28,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      suppressHydrationWarning  
+      suppressHydrationWarning
       className={`${poppins.variable} ${lato.variable} h-full antialiased`}
     >
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
-        {/* Header with logo and divider */}
-        <Header />
-        <main className="flex-1">{children}</main>
-        <BottomNav />
-        <Toaster position="top-right" />
+        <ClerkProvider>
+          {/* Header with logo and divider */}
+          <Header />
+          <main className="flex-1">{children}</main>
+          <SignedIn>
+            <BottomNav />
+          </SignedIn>
+          <Toaster position="top-right" />
+        </ClerkProvider>
       </body>
     </html>
   );

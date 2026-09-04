@@ -37,9 +37,8 @@ export default function BottomNav() {
           <li key={href}>
             <Link
               href={href}
-              className={`flex flex-col items-center text-xs font-medium hover:text-teal-700 ${
-                pathname === href ? "text-teal-700" : "text-teal-500"
-              }`}
+              className={`flex flex-col items-center text-xs font-medium hover:text-teal-700 ${pathname === href ? "text-teal-700" : "text-teal-500"
+                }`}
             >
               <Icon className="h-6 w-6 mb-1" />
               {label}
@@ -54,14 +53,12 @@ export default function BottomNav() {
               <div className="flex items-center gap-1">
                 <Cog6ToothIcon className="h-6 w-6 mb-1" />
                 <ChevronDownIcon
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    open ? "rotate-180" : "rotate-0"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"
+                    }`}
                 />
               </div>
               Settings
             </DropdownMenuTrigger>
-
             <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
               <DropdownMenuItem className="hover:text-teal-700">
                 <Link href={`/dashboard/tenants/${tenantId}/machines`} className="w-full">

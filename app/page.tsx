@@ -4,7 +4,6 @@ import Link from "next/link";
 import logo from "@/public/spin-cycle-logo.png";
 
 export default function LandingPage() {
-
   return (
     <section className="flex flex-col items-center justify-center min-h-[70vh] text-center">
       {/* Bigger Logo */}

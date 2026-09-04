@@ -2,14 +2,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import logo from '@/public/spin-cycle-logo.png'
 import React from 'react'
-import LinksDropdown from './LinksDropdown'
-import SettingsMenu from './SettingsMenu'
-import SettingsDropdown from './SettingsDropdown'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { Button } from './ui/button'
 
 const Header = () => {
     return (
         <header className="bg-#EDEDED">
-            {/* <div className="container mx-auto px-6 sm:px-12 lg:px-8"> */}
             <div className="container mx-auto flex flex-wrap items-center justify-between px-6 lg:px-28 -pb-1 -mb-3">
                 <Link href="/" className="flex items-center">
                     <Image
@@ -22,15 +20,30 @@ const Header = () => {
                         loading="eager" // ensures eager load
                     />
                 </Link>
-                <div className="space-x-4">
-                    <LinksDropdown />
-                </div>
+                <SignedIn>
+                    <UserButton />
+                </SignedIn>
+                <SignedOut>
+                    <div className="md:flex text-teal-700 font-semibold">
+                        <Button asChild className='cursor-pointer font-semibold text-lg'>
+                            <SignInButton
+                                mode="modal">
+                                Login
+                            </SignInButton>
+                        </Button>
+                        <Button asChild className='cursor-pointer font-semibold text-lg'>
+                            <SignUpButton
+                                signInForceRedirectUrl="/"
+                                mode="modal">
+                                Register
+                            </SignUpButton>
+                        </Button>
+                    </div>
+                </SignedOut>
             </div>
             {/* Engraved divider line */}
-            {/* <div className="mx-auto w-9/11 lg:w-6/7 h-0.5 bg-gray-300 shadow-inner rounded-full" /> */}
-
+            <div className="mx-auto w-9/11 lg:w-7/10 h-0.5 bg-gray-300 shadow-inner rounded-full" />
         </header>
     )
 }
-
 export default Header

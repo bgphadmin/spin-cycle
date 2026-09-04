@@ -136,8 +136,8 @@ export default function TenantGrid({
                                     key={row.id}
                                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                                     className={cn(
-                                        rowIndex % 2 === 0 ? "bg-bgGreen" : undefined,
-                                        onRowClick ? "cursor-pointer hover:bg-teal-100 hover:text-teal-700" : undefined
+                                        rowIndex % 2 === 0 ? undefined : "bg-teal-100 ",
+                                        onRowClick ? "cursor-pointer hover:bg-teal-400 hover:text-white" : undefined
                                     )}
                                 >
                                     {row.getAllCells().map((cell) => (
@@ -152,7 +152,7 @@ export default function TenantGrid({
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow>
+                            <TableRow                            >
                                 <TableCell colSpan={columns.length} className="p-6 text-center text-sm text-slate-500">
                                     No distribution records match your filter.
                                 </TableCell>
@@ -176,7 +176,7 @@ export default function TenantGrid({
                 <button
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    className="px-3 py-1 bg-teal-500 text-black hover:bg-teal-300 rounded disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    className="px-3 py-1 bg-teal-500 text-black hover:bg-teal-300 rounded disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed shadow-2xl"
                 >
                     Next
                 </button>
