@@ -1,6 +1,6 @@
 "use server"
 
-import { Prisma } from "@prisma/client"
+import { Prisma, SubscriptionStatus } from "@prisma/client"
 import { SortingState } from "@tanstack/react-table"
 import db from "@/utils/db"
 import { tenantSchema } from "@/utils/validation/tenantSchema"
@@ -54,11 +54,17 @@ export async function getTenantsPerPage({
 
   const search = q?.trim()
   if (search) {
+    const matchingStatuses = Object.values(SubscriptionStatus).filter((status) =>
+      status.toLowerCase().includes(search.toLowerCase())
+    )
+
     where.OR = [
       { shopName: { contains: search, mode: "insensitive" } },
       { contactPerson: { contains: search, mode: "insensitive" } },
       { phone: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
+      { address: { contains: search, mode: "insensitive" } },
+      ...matchingStatuses.map((status) => ({ subscriptionStatus: { equals: status } })),
     ]
   }
 
