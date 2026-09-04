@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SubscriptionStatus {
+  REGULAR
+  PREMIUM
+  INACTIVE
+}
+
+enum Role {
+  STAFF
+  ADMIN
+  SUPERUSER
+}
+
+model Tenant {
+  id                 String                 @id @default(uuid())
+  shopName           String                 @unique
+  contactPerson      String
+  contactPosition    String?
+  phone              String
+  address            String
+  email              String?
+  subscriptionStatus SubscriptionStatus     @default(REGULAR)
+  createdAt          DateTime               @default(now())
+  users              User[]
+  machines           Machine[]
+  products           Product[]
+  sales              Sale[]
+  expenses           Expense[]
+  inventoryTxns      InventoryTransaction[]
+}
+
+model User {
+  id       String    @id @default(uuid())
+  tenantId String
+  name     String
+  role     String // admin, staff
+  contact  String?
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  sales    Sale[]
+  expenses Expense[]
+}
+
+model Machine {
+  id          String         @id @default(uuid())
+  tenantId    String
+  machineType String // washer, dryer
+  brand       String
+  status      String         @default("available")
+  location    String?
+  usageCount  Int            @default(0)
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  usages      MachineUsage[]
+}
+
+model Product {
+  id            String                 @id @default(uuid())
+  tenantId      String
+  name          String
+  unitPrice     Decimal
+  stockQuantity Int                    @default(0)
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id])
+  saleItems     SaleItem[]
+  inventoryTxns InventoryTransaction[]
+}
+
+model Sale {
+  id            String         @id @default(uuid())
+  tenantId      String
+  userId        String
+  saleType      String // "product_sale", "machine_usage", "other"
+  amount        Decimal
+  paymentMethod String
+  description   String? // used for "other"
+  dateTime      DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id])
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  items         SaleItem[]
+  machineUsages MachineUsage[]
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Decimal
+  subtotal  Decimal
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model MachineUsage {
+  id        String  @id @default(uuid())
+  saleId    String
+  machineId String
+  cycleType String // wash, dry
+  duration  Int
+  fee       Decimal
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  machine   Machine @relation(fields: [machineId], references: [id])
+}
+
+model Expense {
+  id       String   @id @default(uuid())
+  tenantId String
+  userId   String
+  category String // utilities, maintenance, supplies
+  amount   Decimal
+  dateTime DateTime @default(now())
+  notes    String?
+  user     User     @relation(fields: [userId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model InventoryTransaction {
+  id        String   @id @default(uuid())
+  tenantId  String
+  productId String
+  type      String // "restock" or "sale"
+  quantity  Int
+  unitPrice Decimal?
+  dateTime  DateTime @default(now())
+  notes     String?
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}

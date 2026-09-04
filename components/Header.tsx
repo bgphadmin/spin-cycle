@@ -1,0 +1,36 @@
+import Image from 'next/image'
+import Link from 'next/link'
+import logo from '@/public/spin-cycle-logo.png'
+import React from 'react'
+import LinksDropdown from './LinksDropdown'
+import SettingsMenu from './SettingsMenu'
+import SettingsDropdown from './SettingsDropdown'
+
+const Header = () => {
+    return (
+        <header className="bg-#EDEDED">
+            {/* <div className="container mx-auto px-6 sm:px-12 lg:px-8"> */}
+            <div className="container mx-auto flex flex-wrap items-center justify-between px-6 lg:px-28 -pb-1 -mb-3">
+                <Link href="/" className="flex items-center">
+                    <Image
+                        src={logo}
+                        alt="Spin Cycle Logo"
+                        width={80}
+                        height={80} // increased size
+                        className="cursor-pointer"
+                        priority   // ensures preload
+                        loading="eager" // ensures eager load
+                    />
+                </Link>
+                <div className="space-x-4">
+                    <LinksDropdown />
+                </div>
+            </div>
+            {/* Engraved divider line */}
+            {/* <div className="mx-auto w-9/11 lg:w-6/7 h-0.5 bg-gray-300 shadow-inner rounded-full" /> */}
+
+        </header>
+    )
+}
+
+export default Header
