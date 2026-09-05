@@ -9,6 +9,8 @@ import {
   ArchiveBoxIcon,
   Cog6ToothIcon,
   ChevronDownIcon,
+  UserIcon,
+  BuildingOfficeIcon,
 } from "@heroicons/react/24/solid"; // filled style
 import {
   DropdownMenu,
@@ -17,6 +19,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import DropdownNavItem from "./DropDownNavItem";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
@@ -60,31 +63,36 @@ export default function BottomNav() {
               Settings
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
-              <DropdownMenuItem className="hover:text-teal-700">
-                <Link href={`/dashboard/tenants/${tenantId}/machines`} className="w-full">
-                  Machines
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:text-teal-700">
-                <Link href={`/dashboard/tenants/${tenantId}/products`} className="w-full">
-                  Products
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:text-teal-700">
-                <Link href={`/dashboard/tenants/${tenantId}/users`} className="w-full">
-                  Users
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:text-teal-700">
-                <Link href={`/dashboard/tenants/${tenantId}/customers`} className="w-full">
-                  Customers
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:text-teal-700">
-                <Link href={`/dashboard/tenants/`} className="w-full">
-                  Tenants
-                </Link>
-              </DropdownMenuItem>
+              <DropdownNavItem
+                href={`/dashboard/tenants/${tenantId}/machines`}
+                label="Machines"
+                onSelect={() => setOpen(false)}
+                icon={ArchiveBoxIcon}
+              />
+              <DropdownNavItem
+                href={`/dashboard/tenants/${tenantId}/products`}
+                label="Products"
+                icon={Cog6ToothIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href={`/dashboard/tenants/${tenantId}/users`}
+                label="Users"
+                icon={UserIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href={`/dashboard/tenants/${tenantId}/customers`}
+                label="Customers"
+                icon={UserIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href={`/dashboard/tenants`}
+                label="Tenants"
+                icon={BuildingOfficeIcon}
+                onSelect={() => setOpen(false)}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </li>
