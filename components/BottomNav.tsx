@@ -62,7 +62,7 @@ export default function BottomNav() {
               </div>
               Settings
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+            <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
               <DropdownNavItem
                 href={`/dashboard/tenants/${tenantId}/machines`}
                 label="Machines"
