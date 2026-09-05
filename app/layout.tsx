@@ -20,8 +20,9 @@ const lato = Lato({
 })
 
 export const metadata: Metadata = {
-  title: "Spin Cycle Laundromat",
+  title: "Spin Cycle Laundro-App",
   description: "Spin Cycle is a modern, cloud‑based point‑of‑sale and management platform built specifically for laundromats. Designed with simplicity and scalability in mind, it helps owners and staff streamline daily operations while keeping everything accessible from any device.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

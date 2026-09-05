@@ -1,12 +1,20 @@
+// import { clerkMiddleware } from "@clerk/nextjs/server";
+
+// export default clerkMiddleware();
+
+// export const config = {
+//  matcher: [
+//    // Skip Next.js internals and all static files, unless found in search params
+//    "/((?!_next|\\.well-known|[^?]*\\.(?:html?|css|js|json|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+//     // Always run for API routes
+//     '/(api|trpc)(.*)',
+//   ],
+// };
+
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher(['/', 'about']);
-const isStaffRoute = createRouteMatcher(['/staff']);
-const isAdminRoute = createRouteMatcher(['/inventory', '/distributions']);
-// const isSuperUserRoute = createRouteMatcher(['/dashboard/tenants'])
-
-  
-
+// const isAdminRoute = createRouteMatcher(['/inventory', '/distributions']);
 
 export default clerkMiddleware(async (auth, req) => {
 

@@ -1,7 +1,7 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import logo from "@/public/spin-cycle-logo.png";
+import logo from "@/public/spin-cycle-logo-a.png";
 
 export default function LandingPage() {
   return (
