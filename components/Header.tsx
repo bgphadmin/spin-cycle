@@ -33,7 +33,7 @@ const Header = () => {
                         </Button>
                         <Button asChild className='cursor-pointer font-semibold text-lg'>
                             <SignUpButton
-                                signInForceRedirectUrl="/"
+                                forceRedirectUrl="/registerShop"
                                 mode="modal">
                                 Register
                             </SignUpButton>
