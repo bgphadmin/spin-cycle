@@ -23,15 +23,20 @@ import DropdownNavItem from "./DropDownNavItem";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
-  { href: "/dashboard/sales", label: "Sales", icon: ShoppingCartIcon },
-  { href: "/dashboard/expenses", label: "Expenses", icon: CurrencyDollarIcon },
-  { href: "/dashboard/inventory", label: "Inventory", icon: ArchiveBoxIcon },
+  { href: "/dashboard/tenants/{tenantId}/sales", label: "Sales", icon: ShoppingCartIcon },
+  { href: "/dashboard/tenants/{tenantId}/expenses", label: "Expenses", icon: CurrencyDollarIcon },
+  { href: "/dashboard/tenants/{tenantId}/inventory", label: "Inventory", icon: ArchiveBoxIcon },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { tenantId } = useParams();
   const [open, setOpen] = useState(false);
+
+  const hideBottomNav = pathname === "/registerShop" || pathname === "/"; // 👈 condition
+  if (hideBottomNav) {
+    return null; // 👈 don't render anything
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-teal-100 shadow-2xl">

@@ -46,6 +46,7 @@ model Tenant {
 
 model User {
   id       String    @id @default(uuid())
+  clerkId  String    @unique
   tenantId String
   name     String
   role     String // admin, staff

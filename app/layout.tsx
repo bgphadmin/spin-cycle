@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ClerkProvider>
           {/* Header with logo and divider */}
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 bg-teal-50">{children}</main>
           <SignedIn>
             <BottomNav />
           </SignedIn>

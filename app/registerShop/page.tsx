@@ -1,11 +1,9 @@
-import React from 'react'
+import RegisterShopForm from "@/components/register-shop/RegisterShopForm";
 
-const RegisterShopPage = () => {
+export default function RegisterShopPage() {
   return (
-    <div>   
-        Register Shop
-    </div>
-  )
+    <main className="mx-auto w-full max-w-3xl px-6 m-12">
+      <RegisterShopForm />
+    </main>
+  );
 }
-
-export default RegisterShopPage

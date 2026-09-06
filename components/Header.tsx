@@ -7,7 +7,7 @@ import { Button } from './ui/button'
 
 const Header = () => {
     return (
-        <header className="bg-#EDEDED">
+        <header className="bg-teal-50">
             <div className="container mx-auto flex flex-wrap items-center justify-between px-6 lg:px-28 -pb-1 -mb-3">
                 <Link href="/" className="flex items-center">
                     <Image

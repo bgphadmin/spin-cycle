@@ -1,11 +1,9 @@
-import React from 'react'
+import { SignUp } from "@clerk/nextjs";
 
-const SignupPage = () => {
+export default function SignupPage() {
   return (
-    <div>
-      SignUp
+    <div className="flex justify-center">
+      <SignUp forceRedirectUrl="/registerShop" />
     </div>
-  )
+  );
 }
-
-export default SignupPage

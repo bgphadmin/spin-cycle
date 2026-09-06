@@ -1,38 +1,45 @@
-// import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// export default clerkMiddleware();
+interface PublicMetadata {
+  tenantId?: string;
+}
 
-// export const config = {
-//  matcher: [
-//    // Skip Next.js internals and all static files, unless found in search params
-//    "/((?!_next|\\.well-known|[^?]*\\.(?:html?|css|js|json|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-//     // Always run for API routes
-//     '/(api|trpc)(.*)',
-//   ],
-// };
+const isPublicRoute = createRouteMatcher(['/']);
 
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  // Always await the auth helper
+  const authObj = await auth();
 
-const isPublicRoute = createRouteMatcher(['/', 'about']);
-// const isAdminRoute = createRouteMatcher(['/inventory', '/distributions']);
-
-export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req)) {
+    authObj.protect();
+  }
 
 
-    // const isAdminUser = auth().userId === process.env.ADMIN_USER_ID;
 
-    // if (isAdminRoute(req) && !isAdminUser) {
-    //   return NextResponse.redirect(new URL('/', req.url));
-    // }
+  const { userId, sessionClaims } = auth();
 
-    if (!isPublicRoute(req)) auth().protect();
- });
+  if (!userId) {
+    return NextResponse.next();
+  }
+
+  const metadata = sessionClaims?.publicMetadata as PublicMetadata;
+  const tenantId = metadata?.tenantId;
+
+  if (!tenantId && req.nextUrl.pathname !== "/registerShop") {
+    return NextResponse.redirect(new URL("/registerShop", req.url));
+  }
+
+  return NextResponse.next();
+
+});
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
+    // Added explicit lookups to skip both .json and manifest extensions safely
+    '/((?!_next|manifest\\.json|webmanifest|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
+    '/__clerk/(.*)',
   ],
 };

@@ -2,7 +2,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/public/spin-cycle-logo-a.png";
-import { SignUpButton } from "@clerk/nextjs";
+import { SignUpButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function LandingPage() {
   return (
@@ -28,16 +28,24 @@ export default function LandingPage() {
         </p>
       </div>
       <div className="space-x-4">
-        {/* <Button asChild size="lg" className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white" })}>
-          <Link href="/dashboard">Register and Sign Up your Shop</Link>
-        </Button> */}
-        <Button asChild className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white cursor-pointer" })}>
-          <SignUpButton
-            forceRedirectUrl="/registerShop"
-            mode="modal">
-            Register and Signup your Shop
-          </SignUpButton>
-        </Button>
+        <SignedIn>
+          <Link href="/dashboard">
+            <Button
+              variant="standard"
+            >
+              Go to Dashboard
+            </Button>
+          </Link>
+        </SignedIn>
+        <SignedOut>
+          <Button asChild className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white cursor-pointer" })}>
+            <SignUpButton
+              forceRedirectUrl="/registerShop"
+              mode="modal">
+              Register and sign up your shop
+            </SignUpButton>
+          </Button>
+        </SignedOut>
       </div>
     </section>
   );
