@@ -18,6 +18,11 @@ export async function registerShopAction(
     }
 
     const fields = registerShopSchema.parse(Object.fromEntries(formData));
+    const email = fields.email;
+
+    if (!email) {
+      throw new Error("Email is required to register a shop.");
+    }
 
     const tenant = await db.$transaction(async (tx) => {
       const existingUser = await tx.user.findUnique({
@@ -32,6 +37,7 @@ export async function registerShopAction(
       const newTenant = await tx.tenant.create({
         data: {
           ...fields,
+          email: fields.email || "",
           subscriptionStatus: "PREMIUM",
         },
       });
@@ -48,6 +54,7 @@ export async function registerShopAction(
             tenantId: newTenant.id,
             name: fields.contactPerson,
             role: "ADMIN",
+            email,
           },
         });
       }

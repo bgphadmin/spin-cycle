@@ -1,10 +1,11 @@
 import React from 'react'
+import InviteStaffForm from './invites/InviteStaffForm'
 
 const dashboardPage = () => {
   return (
-    <div>
-      Dashboard Page
-    </div>
+    <main className="mx-auto w-full max-w-3xl px-6 m-12">
+      <h1>Dashboard</h1>
+    </main>
   )
 }
 

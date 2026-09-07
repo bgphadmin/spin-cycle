@@ -36,6 +36,13 @@ export default function LandingPage() {
               Go to Dashboard
             </Button>
           </Link>
+          <Link href="/dashboard/invites">
+            <Button
+              variant="standard"
+            >
+              Invite Staff Members
+            </Button>
+          </Link>
         </SignedIn>
         <SignedOut>
           <Button asChild className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white cursor-pointer" })}>

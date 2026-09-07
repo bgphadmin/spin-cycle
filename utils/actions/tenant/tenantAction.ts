@@ -174,16 +174,15 @@ export async function addTenantAction(
     const rawData = Object.fromEntries(formData);
     const validatedFields = tenantSchema.parse(rawData);
 
-    // 🔑 Transaction: create distribution + update rice stock
     const result = await db.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           shopName: validatedFields.shopName,
           address: validatedFields.address,
           contactPerson: validatedFields.contactPerson,
-          contactPosition: validatedFields.contactPosition,
+          contactPosition: validatedFields.contactPosition || "",
           phone: validatedFields.phone,
-          email: validatedFields.email,
+          email: validatedFields.email || "",
           subscriptionStatus: validatedFields.subscriptionStatus,
         },
       });
