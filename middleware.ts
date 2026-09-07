@@ -9,16 +9,12 @@ interface PublicMetadata {
 const isPublicRoute = createRouteMatcher(['/']);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  // Always await the auth helper
-  const authObj = await auth();
+
+  const { userId, sessionClaims, protect } = auth();
 
   if (!isPublicRoute(req)) {
-    authObj.protect();
+    protect();
   }
-
-
-
-  const { userId, sessionClaims } = auth();
 
   if (!userId) {
     return NextResponse.next();

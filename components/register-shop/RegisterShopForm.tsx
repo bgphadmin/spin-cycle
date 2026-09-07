@@ -1,12 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import FormContainer from "@/components/utils/FormContainer";
 import { registerShopAction } from "@/utils/actions/registerShopAction";
+import { StandardInput } from "../utils/StandardInput";
+import { StandardFormTitle } from "../utils/StandardTitle";
 
 export default function RegisterShopForm() {
   const router = useRouter();
@@ -21,12 +20,10 @@ export default function RegisterShopForm() {
         {({ loading }) => (
           <div className="space-y-6">
             <div className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="mt-0">
-                <h1 className="text-3xl font-bold text-teal-700">Register your shop</h1>
-                <p className="mt-2 text-muted-foreground">
-                  Add your shop details to finish setting up your account.
-                </p>
-              </div>
+              <StandardFormTitle
+                title="Register your shop"
+                description="Add your shop details to finish setting up your account."
+              />
               <Button
                 type="submit"
                 disabled={loading}
@@ -37,41 +34,18 @@ export default function RegisterShopForm() {
             </div>
             <div className="mx-auto h-0.5 bg-gray-300 shadow-inner rounded-full" />
             <div className="grid gap-5 sm:grid-cols-2 ">
-              <Input id="shopName" name="shopName" className="rounded h-12 bg-gray-100" placeholder="Shop Name" required />
-              <Input id="contactPerson" name="contactPerson" className="rounded h-12 bg-gray-50" placeholder="Contact Person" required />
-              <Input id="contactPosition" name="contactPosition" className="rounded h-12 bg-gray-100" placeholder="Contact Position" />
-              <Input id="phone" name="phone" className="rounded h-12 bg-gray-100" placeholder="Phone" type="tel" required />
-              <Input id="email" name="email" className="rounded h-12 bg-gray-100" placeholder="Email" type="email" />
-              <Field label="" name="address" required className="sm:col-span-2">
-                <Textarea id="address" name="address" className="rounded h-12 bg-gray-100" placeholder="Address" required />
-              </Field>
+              <StandardInput name="shopName" placeholder="Shop Name" required />
+              <StandardInput name="contactPerson" placeholder="Contact Person" required />
+              <StandardInput name="contactPosition" placeholder="Contact Position" />
+              <StandardInput name="phone" placeholder="Phone" type="tel" required />
+              <StandardInput name="email" placeholder="Email" type="email" />
+              <div className="sm:col-span-2">
+                <StandardInput name="address" placeholder="Address" as="textarea" required />
+              </div>
             </div>
           </div>
         )}
       </FormContainer>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  name,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  name: string;
-  required?: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`space-y-2 ${className ?? ""}`}>
-      <label htmlFor={name} className="text-sm font-medium">
-        {label}
-      </label>
-      {children}
     </div>
   );
 }
