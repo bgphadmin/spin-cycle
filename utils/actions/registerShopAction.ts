@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import db from "@/utils/db";
 import { renderError } from "@/utils/error";
 import { registerShopSchema } from "@/utils/validation/tenantSchema";
@@ -10,7 +10,8 @@ export async function registerShopAction(
   formData: FormData
 ): Promise<{ message: string }> {
   try {
-    const { userId } = auth();
+    // 1. Properly await the async auth utility
+    const { userId } = await auth();
 
     if (!userId) {
       throw new Error("You must be signed in to register a shop.");
@@ -18,7 +19,7 @@ export async function registerShopAction(
 
     const fields = registerShopSchema.parse(Object.fromEntries(formData));
 
-    const result = await db.$transaction(async (tx) => {
+    const tenant = await db.$transaction(async (tx) => {
       const existingUser = await tx.user.findUnique({
         where: { clerkId: userId },
         select: { id: true, tenantId: true },
@@ -28,41 +29,48 @@ export async function registerShopAction(
         throw new Error("Your shop is already set up.");
       }
 
-      const tenant = await tx.tenant.create({
+      const newTenant = await tx.tenant.create({
         data: {
           ...fields,
-          subscriptionStatus: "REGULAR",
+          subscriptionStatus: "PREMIUM",
         },
       });
 
       if (existingUser) {
         await tx.user.update({
           where: { id: existingUser.id },
-          data: { tenantId: tenant.id },
+          data: { tenantId: newTenant.id },
         });
       } else {
         await tx.user.create({
           data: {
             clerkId: userId,
-            tenantId: tenant.id,
+            tenantId: newTenant.id,
             name: fields.contactPerson,
             role: "ADMIN",
           },
         });
       }
 
-    //  TODO: Add the following code to update the user's public metadata with the tenantId after creating the tenant. This will ensure that the user has access to their shop after registration.   
-    // await clerkClient.users.updateUserMetadata(userId, {
-    // publicMetadata: { tenantId: tenant.id },
-    //   });
-
-      return tenant;
+      return newTenant;
+    
+    });    
+    
+    // 3. Make external Clerk API calls AFTER database transaction succeeds safely
+    const clerk = await clerkClient();
+    
+    // Clerk's update API natively performs deep-merging on metadata fields,
+    // so you don't need to manually read and re-spread existing data.
+    await clerk.users.updateUserMetadata(userId, {
+      publicMetadata: {
+        tenantId: tenant.id,
+      },
     });
 
     return {
       message: JSON.stringify([
         { message: "Shop registered successfully.", result: "success" },
-        { tenantId: result.id },
+        { tenantId: tenant.id },
       ]),
     };
   } catch (error: unknown) {

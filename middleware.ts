@@ -10,7 +10,7 @@ const isPublicRoute = createRouteMatcher(['/']);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
 
-  const { userId, sessionClaims, protect } = auth();
+  const { userId, sessionClaims, protect } = await auth();
 
   if (!isPublicRoute(req)) {
     protect();
@@ -20,8 +20,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
-  const metadata = sessionClaims?.publicMetadata as PublicMetadata;
-  const tenantId = metadata?.tenantId;
+  const tenantId = sessionClaims?.tenantId as string | undefined;
 
   if (!tenantId && req.nextUrl.pathname !== "/registerShop") {
     return NextResponse.redirect(new URL("/registerShop", req.url));

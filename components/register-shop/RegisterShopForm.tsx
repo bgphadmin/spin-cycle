@@ -6,16 +6,27 @@ import FormContainer from "@/components/utils/FormContainer";
 import { registerShopAction } from "@/utils/actions/registerShopAction";
 import { StandardInput } from "../utils/StandardInput";
 import { StandardFormTitle } from "../utils/StandardTitle";
+import { useSession } from "@clerk/nextjs";
 
 export default function RegisterShopForm() {
   const router = useRouter();
+  const { session } = useSession(); // 2. Grab the session object
+
+  const handleSuccess = async () => {
+    // 3. Force Clerk client to fetch a fresh JWT token with the new metadata
+    if (session) {
+      await session.reload();
+    }
+    // 4. Redirect after the session is successfully synchronized
+    router.push("/dashboard");
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white
      px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg mt-8 pb-12 mb-4">
       <FormContainer
         action={registerShopAction}
-        onSuccess={() => router.push("/dashboard")}
+        onSuccess={handleSuccess}
       >
         {({ loading }) => (
           <div className="space-y-6">
