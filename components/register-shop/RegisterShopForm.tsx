@@ -7,6 +7,7 @@ import { registerShopAction } from "@/utils/actions/registerShopAction";
 import { StandardInput } from "../utils/StandardInput";
 import { StandardFormTitle } from "../utils/StandardTitle";
 import { useSession } from "@clerk/nextjs";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterShopForm() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function RegisterShopForm() {
                 disabled={loading}
                 variant="standard"
               >
-                {loading ? "Registering..." : "Submit"}
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Submit"}
               </Button>
             </div>
             <div className="mx-auto h-0.5 bg-gray-300 shadow-inner rounded-full" />
