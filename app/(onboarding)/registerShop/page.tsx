@@ -1,7 +1,4 @@
 import RegisterShopForm from "@/features/registerShop/components/RegisterShopForm";
-import db from '@/utils/db'
-import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { redirect } from "next/navigation";
 
 export default async function RegisterShopPage() {
   return (

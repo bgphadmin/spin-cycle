@@ -30,11 +30,11 @@ export default async function LandingPage() {
       <div className="space-x-4">
         <SignedInLandingPage />
         <SignedOut>
-          <Button asChild className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white cursor-pointer" })}>
+          <Button asChild className={buttonVariants({ size: "lg", className: "bg-teal-600 hover:bg-teal-700 px-8 py-6 text-white cursor-pointer text-xl" })}>
             <SignUpButton
               forceRedirectUrl="/registerShop"
               mode="modal">
-              Register and sign up your shop
+              Sign Up
             </SignUpButton>
           </Button>
           {/* // TODO Add marketing materials to this section... */}
