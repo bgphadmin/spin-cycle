@@ -4,6 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import db from "@/utils/db";
 import { renderError } from "@/utils/error";
 import { registerShopSchema } from "@/utils/validation/tenantSchema";
+import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 
 export async function registerShopAction(
   _prevState: unknown,
@@ -11,7 +12,8 @@ export async function registerShopAction(
 ): Promise<{ message: string }> {
   try {
     // 1. Properly await the async auth utility
-    const { userId, orgId, orgSlug } = await auth();
+    const { userId } = await auth();
+    const { orgId, orgSlug } = await getServerAuthClaims()
 
     if (!userId) {
       throw new Error("You must be signed in to register a shop.");
@@ -37,10 +39,10 @@ export async function registerShopAction(
       const newTenant = await tx.tenant.create({
         data: {
           ...fields,
+          clerkOrgId: orgId as string,
+          clerkOrgSlug: orgSlug as string,
           email: fields.email || "",
           subscriptionStatus: "PREMIUM",
-          clerkOrgId: orgId ?? userId,
-          clerkOrgSlug: orgSlug ?? "",
         },
       });
 
@@ -61,10 +63,20 @@ export async function registerShopAction(
         });
       }
 
+      // Update Clerk public metadata
+      await clerkClient.users.updateUserMetadata(userId, {
+        publicMetadata: {
+          tenantId: newTenant.id, // attach tenantId
+        },
+      });
+
       return newTenant;
+
     });
+
     // 3. Make external Clerk API calls AFTER database transaction succeeds safely
     const clerk = await clerkClient();
+
     // Clerk's update API natively performs deep-merging on metadata fields,
     // so you don't need to manually read and re-spread existing data.
     await clerk.users.updateUserMetadata(userId, {

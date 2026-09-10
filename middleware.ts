@@ -1,40 +1,41 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-interface PublicMetadata {
-  tenantId?: string;
-}
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+]);
 
-const isPublicRoute = createRouteMatcher(['/']);
-
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-
-  const { userId, sessionClaims, protect } = await auth();
-
+export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
-    protect();
+    auth().protect()
   }
 
-  if (!userId) {
-    return NextResponse.next();
+  const { sessionClaims } = auth();
+  const { orgRole, orgSlug } = (sessionClaims ?? {}) as {
+    orgRole?: string;
+    orgSlug?: string;
+  };
+
+  let pathname = req.nextUrl.pathname;
+  if (orgRole === "org:admin" && orgSlug) {
+    const tenantId = sessionClaims?.tenantId as string | undefined;
+
+    if (pathname !== "/registerShop" && !tenantId) {
+      return NextResponse.redirect(new URL("/registerShop", req.url));
+    } else if (pathname === "/registerShop" && tenantId) {
+      return NextResponse.redirect(new URL("/", req.url))
+    }
+  } else if (pathname === "/registerShop" && orgRole === "org:member") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
-
-  const tenantId = sessionClaims?.tenantId as string | undefined;
-
-  if (!tenantId && req.nextUrl.pathname !== "/registerShop") {
-    return NextResponse.redirect(new URL("/registerShop", req.url));
-  }
-
   return NextResponse.next();
-
 });
 
 export const config = {
   matcher: [
-    // Added explicit lookups to skip both .json and manifest extensions safely
-    '/((?!_next|manifest\\.json|webmanifest|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)',
-    '/__clerk/(.*)',
+    "/((?!_next|.*\\..*).*)",
+    "/(api|trpc)(.*)",
   ],
 };

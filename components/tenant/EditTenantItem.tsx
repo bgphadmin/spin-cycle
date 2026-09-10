@@ -30,6 +30,8 @@ export function EditTenantItem({
 }: {
     item: {
         id: string;
+        orgId: string;
+        orgSlug: string;
         shopName: string;
         address: string;
         contactPerson: string;
@@ -57,6 +59,8 @@ export function EditTenantItem({
             toast.success(parsedMessage[0].message);
             const updatedRow: TenantRow = {
                 ...item,
+                clerkOrgId: item.orgId,
+                clerkOrgSlug: item.orgSlug,
                 shopName: formData.get("shopName") as string,
                 address: formData.get("address") as string,
                 contactPerson: formData.get("contactPerson") as string,

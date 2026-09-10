@@ -96,11 +96,11 @@ export async function getTenantsPerPage({
 }
 
 export async function editTenantAction(id: string, formData: FormData): Promise<{ message: string }> {
-//   const { userId } = auth();
+  //   const { userId } = auth();
   try {
     const rawData = Object.fromEntries(formData);
     const validatedFields = tenantSchema.parse(rawData);
-        const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // Get the existing distribution
       const existing = await tx.tenant.findUnique({
         where: { id },
@@ -160,7 +160,7 @@ export async function deleteTenantItemAction(id: string): Promise<{ message: str
       ])
     };
   } catch (err: unknown) {
-      return renderError(err);
+    return renderError(err);
   }
 }
 
@@ -168,7 +168,7 @@ export async function addTenantAction(
   prevState: unknown,
   formData: FormData
 ): Promise<{ message: string }> {
-//   const { userId } = auth();
+  //   const { userId } = auth();
 
   try {
     const rawData = Object.fromEntries(formData);
@@ -184,6 +184,8 @@ export async function addTenantAction(
           phone: validatedFields.phone,
           email: validatedFields.email || "",
           subscriptionStatus: validatedFields.subscriptionStatus,
+          clerkOrgId: "",
+          clerkOrgSlug: "",
         },
       });
       return tenant;

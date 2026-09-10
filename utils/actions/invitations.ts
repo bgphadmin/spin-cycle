@@ -50,8 +50,6 @@ try {
   
   const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/sign-up?inviteToken=${invite.token}`;
   
-  console.log("Invite Link: ", inviteLink)
-
   // return { invite, inviteLink };
 
       return {
@@ -111,7 +109,6 @@ export async function expireInvitationsAction() {
     },
   });
 
-  console.log("Expired invitations updated");
 }
 
 // Run every hour (or daily depending on your needs)

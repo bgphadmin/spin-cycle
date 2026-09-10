@@ -28,7 +28,9 @@ enum Role {
 
 model Tenant {
   id                 String                 @id @default(uuid())
-  shopName           String                 @unique
+  clerkOrgId         String                 @unique
+  clerkOrgSlug       String                 @unique
+  shopName           String
   contactPerson      String
   contactPosition    String?
   phone              String

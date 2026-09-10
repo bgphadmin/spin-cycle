@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { SortingState } from "@tanstack/react-table"
 import Spinner from "@/components/utils/Spinner"
 import { useEffectRunCounter } from "@/utils/hooks/customHooks"
-import { Tenant } from "@prisma/client"
+import { SubscriptionStatus, Tenant } from "@prisma/client"
 import { addTenantAction, getTenantsPerPage } from "@/utils/actions/tenant/tenantAction"
 import TenantButton from "./TenantButton"
 import TenantGrid, { type TenantRow } from "./TenantGrid"
@@ -38,10 +38,29 @@ const defaultFormState = {
     subscriptionStatus: "REGULAR",
 }
 
+const mapTenantToRow = (tenant: Partial<Tenant> & {
+    orgId?: string | null
+    orgSlug?: string | null
+    clerkOrgId?: string | null
+    clerkOrgSlug?: string | null
+}): TenantRow => ({
+    id: tenant.id ?? "",
+    clerkOrgId: tenant.orgId ?? tenant.clerkOrgId ?? "",
+    clerkOrgSlug: tenant.orgSlug ?? tenant.clerkOrgSlug ?? "",
+    shopName: tenant.shopName ?? "",
+    address: tenant.address ?? "",
+    contactPerson: tenant.contactPerson ?? "",
+    contactPosition: tenant.contactPosition ?? null,
+    phone: tenant.phone ?? "",
+    email: tenant.email?.toString() ?? "",
+    subscriptionStatus: tenant.subscriptionStatus ?? SubscriptionStatus.REGULAR,
+    createdAt: tenant.createdAt ? new Date(tenant.createdAt) : new Date(),
+})
+
 export default function TenantManager({ initialRows, total }: TenantManagerProps) {
-    const [rows, setRows] = React.useState<Tenant[]>(initialRows)
+    const [rows, setRows] = React.useState<TenantRow[]>(initialRows.map(mapTenantToRow))
     const [formValues, setFormValues] = React.useState(defaultFormState)
-    const [selectedRow, setSelectedRow] = React.useState<Tenant | null>(null);
+    const [selectedRow, setSelectedRow] = React.useState<TenantRow | null>(null);
 
     const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
     const [sorting, setSorting] = React.useState<SortingState>([])
@@ -68,6 +87,8 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
                     })
                     setRows(safeRows.map(r => ({
                         id: r.id,
+                        clerkOrgId: r.clerkOrgId,
+                        clerkOrgSlug: r.clerkOrgSlug,
                         shopName: r.shopName,
                         address: r.address,
                         contactPerson: r.contactPerson,
@@ -264,7 +285,11 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
 
             {selectedRow && (
                 <EditTenantItem
-                    item={selectedRow}
+                    item={{
+                        ...selectedRow,
+                        orgId: selectedRow.clerkOrgId,
+                        orgSlug: selectedRow.clerkOrgSlug,
+                    }}
                     open={true}
                     onOpenChange={(open) => !open && setSelectedRow(null)}
                     onEditSuccess={handleEditSuccess}
