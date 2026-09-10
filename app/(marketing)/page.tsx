@@ -2,7 +2,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import Image from "next/image";
 import logo from "@/public/spin-cycle-logo-a.png";
 import { SignUpButton, SignedOut } from "@clerk/nextjs";
-import SignedInLandingPage from "./SignedInLandingPage";
+import SignedInLandingPage from "../../features/marketing/components/SignedInLandingPage";
 
 export default async function LandingPage() {
   return (

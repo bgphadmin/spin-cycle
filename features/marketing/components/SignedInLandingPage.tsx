@@ -4,6 +4,8 @@ import { SignedIn } from '@clerk/nextjs'
 import db from '@/utils/db'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
+import { syncStaffToTenant } from '../action'
 
 
 const SignedInLandingPage = async () => {
@@ -36,6 +38,12 @@ const SignedInLandingPage = async () => {
       </SignedIn>
     )
   } else if (orgRole === "org:member" && orgSlug) {
+    const { userId } = auth()
+    const clerkId = await db.user.findUnique({
+      where: { clerkId: userId || "" }
+    })
+    if (!clerkId) await syncStaffToTenant()
+
     return (
       <SignedIn>
         <Link href={`/tenants/${orgSlug}/adminStaff/pos`}>
