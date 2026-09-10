@@ -23,7 +23,7 @@ export default function RegisterShopForm() {
   };
 
   return (
-    <div className="max-h-[80vh] flex items-start justify-center bg-white
+    <div className="max-h-[94vh] flex items-start justify-center bg-white
      px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg pt-12 mt-8 pb-34 mb-4">
       <FormContainer
         action={registerShopAction}

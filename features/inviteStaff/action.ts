@@ -74,6 +74,7 @@ export async function inviteStaffAction(_prevState: unknown,
         inviterUserId: userId || "",
         emailAddress: email,
         role: "org:member",
+        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/`, 
     });
 
     revalidatePath(`{/tenants/${orgSlug}/admin/pos}`);
