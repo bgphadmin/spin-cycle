@@ -16,7 +16,7 @@ type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
 
 type StandardizedInputProps = InputProps | TextareaProps;
 
-export function StandardInput({
+export function   StandardInput({
   name,
   label,
   as = "input",

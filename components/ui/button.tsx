@@ -21,6 +21,10 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         standard:
           "cursor-pointer w-full sm:w-auto px-4 py-3 text-sm sm:px-8 sm:py-6 sm:text-lg bg-teal-300 shadow-md hover:bg-teal-400 text-teal-800 font-semibold rounded-md transition-colors duration-200",
+        standard_sm:
+          "cursor-pointer w-full sm:w-auto px-2 py-1 text-sm sm:px-4 sm:py-2 sm:text-sm bg-teal-300 shadow-md hover:bg-teal-400 text-teal-800 font-semibold rounded-md transition-colors duration-200",
+        standard_sm_orange:
+          "cursor-pointer w-full sm:w-auto px-8 py-1 text-sm sm:px-4 sm:py-2 sm:text-sm bg-orange-200 shadow-md text-gray-500 font-semibold rounded-md transition-colors duration-200 hover:bg-orange-400 hover:text-amber-50 ",
       },
       size: {
         default:
