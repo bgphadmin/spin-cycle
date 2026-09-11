@@ -89,7 +89,7 @@ export default function MachinesList() {
                             {machines.map((machine) => (
                                 <Link
                                     key={machine.id}
-                                    href={`/machines/${machine.id}/edit`} // navigate to edit/delete page
+                                    href={`./machines/${machine.id}/edit`} // navigate to edit/delete page
                                     className="contents"
                                 >
                                     <TableRow className="hover:bg-muted/30 transition-colors border-b border-gray-900 cursor-pointer">

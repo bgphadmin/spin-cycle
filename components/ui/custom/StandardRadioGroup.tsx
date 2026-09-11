@@ -7,9 +7,10 @@ interface StandardRadioGroupProps {
     label: string;
     options: { value: string; label: string }[];
     required?: boolean;
+    defaultValue?: string;
 }
 
-export function StandardRadioGroup({ name, label, options, required }: StandardRadioGroupProps) {
+export function StandardRadioGroup({ name, label, options, required, defaultValue, }: StandardRadioGroupProps) {
     return (
         <div className="relative w-full">
             {/* Floating label */}
@@ -35,7 +36,8 @@ export function StandardRadioGroup({ name, label, options, required }: StandardR
                             name={name}
                             value={opt.value}
                             required={required}
-                            className="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500"
+                            defaultChecked={defaultValue === opt.value}
+                            className="h-4 w-4 accent-teal-300 text-teal-600 border-gray-300 focus:ring-teal-500"
                         />
                         <span>{opt.label}</span>
                     </label>
