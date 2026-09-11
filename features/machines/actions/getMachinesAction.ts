@@ -3,7 +3,6 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { renderError } from "@/utils/error";
 
 export async function getMachinesAction(): Promise<{ machines: any[] }> {
   try {

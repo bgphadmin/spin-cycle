@@ -13,7 +13,11 @@ export async function addMachineAction(
   try {
     // 1. Clerk authentication
     const { userId } = await auth();
-    const { orgId } = await getServerAuthClaims();
+    const { orgId, orgRole } = await getServerAuthClaims();
+
+    if (orgRole !== "org:admin") {
+      throw new Error("This transaction is not allowed at your level.")
+    }
 
     if (!userId) {
       throw new Error("You must be signed in to add a machine.");
