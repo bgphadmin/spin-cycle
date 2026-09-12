@@ -30,6 +30,12 @@ export default clerkMiddleware(async (auth, req) => {
   } else if (pathname === "/registerShop" && orgRole === "org:member") {
     return NextResponse.redirect(new URL("/", req.url))
   }
+
+  const path = req.nextUrl.pathname;
+  if (path.includes("/machines/") && path.endsWith("/edit") && (orgRole !== "org:admin")) {
+    return NextResponse.redirect(new URL("/not-allowed", req.url));
+  }
+
   return NextResponse.next();
 });
 

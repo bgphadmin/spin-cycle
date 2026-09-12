@@ -140,11 +140,16 @@ model InventoryTransaction {
   tenant        Tenant        @relation(fields: [tenantId], references: [id])
 }
 
+enum MachineType {
+  washer
+  dryer
+}
+
 model Machine {
   id         String   @id @default(uuid())
   tenantId   String
   name       String // Washer 1, Dryer 2
-  type       String // washer | dryer
+  type       MachineType // washer | dryer
   status     String   @default("available") // available, in_use, maintenance
   usageCount Int      @default(0)
   location   String?

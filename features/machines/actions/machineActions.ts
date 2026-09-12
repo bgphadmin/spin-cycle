@@ -1,14 +1,24 @@
 "use server";
 
+import { getAuthContext } from "@/lib/auth";
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
+import { MachineType } from "@prisma/client";
 
 export async function getMachineByIdAction(id: string) {
-    const { sessionClaims } = auth();
-    const tenantId = sessionClaims?.tenantId as string | undefined
-    return db.machine.findUnique({
-        where: { id, tenantId },
-    });
+    try {
+        const { orgRole } = await getAuthContext()
+        if (orgRole !== "org:admin") {
+            throw new Error("Forbidden");
+        }
+        const machineData = await db.machine.findUnique({
+            where: { id },
+        });
+        return machineData
+    } catch (error) {
+        console.log ("Something went wrong");
+        return null
+    }
 }
 
 export async function updateMachineAction(
@@ -19,11 +29,11 @@ export async function updateMachineAction(
     const tenantId = sessionClaims?.tenantId as string | undefined
     const id = formData.get("id") as string;
     try {
-        await db.machine.update({
+        const machine = await db.machine.update({
             where: { id, tenantId },
             data: {
                 name: formData.get("name") as string,
-                type: formData.get("type") as string,
+                type: formData.get("type") as MachineType,
                 status: formData.get("status") as string,
                 usageCount: Number(formData.get("usageCount")),
                 location: formData.get("location") as string,
@@ -35,6 +45,7 @@ export async function updateMachineAction(
             message: JSON.stringify([
                 { message: "Rice item updated successfully" },
                 { result: "success" },
+                { machine }
             ]),
         };
     } catch (error) {

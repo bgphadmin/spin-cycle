@@ -1,35 +1,35 @@
 import React from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button'; // Adjust paths based on your project
 import { StandardFormTitle } from '../ui/custom/StandardTitle';
-import { Loader2 } from 'lucide-react';
-
+import { Url } from 'node:url';
 
 interface FormHeaderProps {
+  href?: string;
   withButton: boolean;
-  buttonName: string;
-  title: string;
-  description: string;
-  loading: boolean;
+  buttonName?: string;
+  title: string | "";
+  description?: string;
 }
 
-export const StandardHeader: React.FC<FormHeaderProps> = ({ withButton = false, buttonName, title, description, loading }) => {
+export const StandardHeaderHref: React.FC<FormHeaderProps> = ({ href, withButton = false, buttonName, title, description }) => {
   return (
     <div className="flex flex-col gap-4 border-b border-gray-300 pb-5 mb-6">
       <div className="flex flex-row items-center justify-between mb-2">
         <StandardFormTitle
           title={title}
           description={description}
-       />
-        {withButton ?
-          (
-            <Button variant="standard" type='submit'>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : buttonName}
+        />
+        {withButton && href ?
+          (<Link href={href} passHref>
+            <Button variant="standard" type="submit">
+              {buttonName}
             </Button>
-          ) : null
+          </Link>) : null
         }
       </div>
     </div>
   );
 };
 
-export default StandardHeader;
+export default StandardHeaderHref;

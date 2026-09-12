@@ -39,6 +39,14 @@ export async function syncStaffToTenant() {
           role: "STAFF",
         },
       });
+
+      // If you added tenantId to session tokens via Clerk Dashboard
+      const client = await clerkClient();
+      await client.users.updateUserMetadata(userId, {
+        publicMetadata: {
+          tenantId: tenant.id,
+        },
+      });
     }
   }
 }

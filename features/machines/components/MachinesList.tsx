@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-    Plus,
-    LayoutGrid,
-    Table2,
     MapPin,
-    MessageSquare,
     Wrench,
 } from "lucide-react";
 
@@ -17,8 +13,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
-    TableHeader,
     TableRow,
 } from "@/components/ui/table";
 import {
@@ -30,18 +24,22 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
-import StandardHeader from "@/components/utils/StandardHeader";
 import ViewToggle from "@/components/utils/ToggleView";
 import SkeletonTable from "@/components/utils/SkeletonTable";
 import StatusBadge from "@/components/utils/StatusBadge";
 import { EmptyState } from "@/components/utils/EmptyState";
 import { StandardTableHeader } from "@/components/utils/StandardTableHeader";
 import { Machine } from "../types/machineTypes";
+import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { useRouter } from "next/navigation";
+import StandardHeaderHref from "@/components/utils/StandardHeaderHref";
 
 export default function MachinesList() {
     const [machines, setMachines] = useState<Machine[]>([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<"table" | "cards">("table");
+    const [isAdmin, setIsAdmin] = useState(false)
+    const router = useRouter();
 
     useEffect(() => {
         const loadMachines = async () => {
@@ -52,11 +50,25 @@ export default function MachinesList() {
             setLoading(false);
         };
         loadMachines();
+
+        const setRole = async () => {
+            const { orgRole } = await getServerAuthClaims()
+            if (orgRole === "org:admin") {
+                setIsAdmin(true)
+            }
+        }
+        setRole();
     }, []);
 
     return (
         <div className="mt-8 space-y-6">
-            <StandardHeader href="./machines/machineSetup" />
+            <StandardHeaderHref
+                withButton={isAdmin}
+                buttonName="Add Machines"
+                href={`./machines/machineSetup`}
+                title="Machines"
+                description="View and manage all registered washers and dryers."
+            />
             <ViewToggle view={view} onViewChange={setView} />
             {/* Loading State */}
             {loading ? (
@@ -86,21 +98,23 @@ export default function MachinesList() {
                             ]}
                         />
                         <TableBody>
-                            {machines.map((machine) => (
-                                <Link
-                                    key={machine.id}
-                                    href={`./machines/${machine.id}/edit`} // navigate to edit/delete page
-                                    className="contents"
-                                >
-                                    <TableRow className="hover:bg-muted/30 transition-colors border-b border-gray-900 cursor-pointer">
+                            {machines.map((machine) => {
+                                return (
+                                    <TableRow
+                                        className={`border-b border-gray-900 ${isAdmin ? "hover:bg-muted/30 cursor-pointer" : "hover:cursor-not-allowed"
+                                            }`}
+                                        onClick={() => {
+                                            if (isAdmin) {
+                                                router.push(`./machines/${machine.id}/edit`);
+                                            }
+                                        }}
+                                        key={machine.id}
+                                    >
                                         <TableCell className="font-medium text-foreground border-b border-gray-300">
                                             {machine.name}
                                         </TableCell>
                                         <TableCell className="font-medium text-foreground border-b border-gray-300">
-                                            <Badge
-                                                variant="destructive"
-                                                className="capitalize text-sm font-normal"
-                                            >
+                                            <Badge variant="destructive" className="capitalize text-sm font-normal">
                                                 {machine.type}
                                             </Badge>
                                         </TableCell>
@@ -111,14 +125,11 @@ export default function MachinesList() {
                                             {machine.usageCount}
                                         </TableCell>
                                     </TableRow>
-                                </Link>
-                            ))}
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </div>
-
-
-
             ) : (
                 /* Card View */
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
