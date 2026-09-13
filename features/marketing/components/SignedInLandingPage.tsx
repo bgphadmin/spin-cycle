@@ -21,7 +21,7 @@ const SignedInLandingPage = async () => {
   if (orgRole === "org:admin" && orgSlug) {
     return (
       <SignedIn>
-        <Link href={`/tenants/${orgSlug}/adminStaff`}>
+        <Link href={`/tenants/${orgSlug}/tenantDashboard`}>
           <Button
             variant="standard"
           >

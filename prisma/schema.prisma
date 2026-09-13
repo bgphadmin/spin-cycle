@@ -45,6 +45,7 @@ model Tenant {
   inventoryTxns  InventoryTransaction[]
   orders         LaundryOrder[]
   expenses       Expense[]
+  MachineUsage   MachineUsage[]
 }
 
 model User {
@@ -72,14 +73,21 @@ model Customer {
   orders LaundryOrder[]
 }
 
+enum LaundryOrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  PAID
+}
+
 model LaundryOrder {
-  id            String   @id @default(uuid())
+  id            String             @id @default(uuid())
   tenantId      String
   customerId    String?
-  status        String   @default("pending") // pending, in_progress, completed, paid
+  status        LaundryOrderStatus @default(PENDING) // pending, in_progress, completed, paid
   total         Float
   paymentMethod String? // cash, card, gcash
-  createdAt     DateTime @default(now())
+  createdAt     DateTime           @default(now())
 
   customer      Customer?      @relation(fields: [customerId], references: [id])
   items         OrderItem[]
@@ -146,25 +154,26 @@ enum MachineType {
 }
 
 model Machine {
-  id         String   @id @default(uuid())
+  id         String      @id @default(uuid())
   tenantId   String
   name       String // Washer 1, Dryer 2
   type       MachineType // washer | dryer
-  status     String   @default("available") // available, in_use, maintenance
-  usageCount Int      @default(0)
+  status     String      @default("available") // available, in_use, maintenance
+  usageCount Int         @default(0)
   location   String?
   comment    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   usages MachineUsage[]
   tenant Tenant         @relation(fields: [tenantId], references: [id])
 }
 
 model MachineUsage {
-  id        Int       @id @default(autoincrement())
+  id        String    @id @default(uuid())
   machineId String
   orderId   String
+  tenantId  String
   cycleType String // wash | dry
   duration  Int // minutes
   fee       Float
@@ -173,6 +182,7 @@ model MachineUsage {
 
   machine Machine      @relation(fields: [machineId], references: [id])
   order   LaundryOrder @relation(fields: [orderId], references: [id])
+  tenant  Tenant       @relation(fields: [tenantId], references: [id])
 }
 
 model Expense {
