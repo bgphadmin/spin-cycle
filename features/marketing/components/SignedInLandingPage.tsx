@@ -46,11 +46,11 @@ const SignedInLandingPage = async () => {
 
     return (
       <SignedIn>
-        <Link href={`/tenants/${orgSlug}/adminStaff/pos`}>
+        <Link href={`/tenants/${orgSlug}/tenantDashboard`}>
           <Button
             variant="standard"
           >
-            Go to POS
+            Go to Dashboard
           </Button>
         </Link>
       </SignedIn>
