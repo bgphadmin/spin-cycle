@@ -169,17 +169,23 @@ enum MachineType {
   dryer
 }
 
+enum MachineStatus {
+  AVAILABLE // machine is idle and ready for use
+  IN_USE // machine is currently running a cycle
+  UNAVAILABLE // machine is under maintenance or offline
+}
+
 model Machine {
-  id         String      @id @default(uuid())
+  id         String        @id @default(uuid())
   tenantId   String
   name       String // Washer 1, Dryer 2
   type       MachineType // washer | dryer
-  status     String      @default("available") // available, in_use, maintenance
-  usageCount Int         @default(0)
+  status     MachineStatus @default(AVAILABLE) // available, in_use, maintenance
+  usageCount Int           @default(0)
   location   String?
   comment    String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   usages MachineUsage[]
   tenant Tenant         @relation(fields: [tenantId], references: [id])

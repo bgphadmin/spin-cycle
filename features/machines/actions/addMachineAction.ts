@@ -48,7 +48,7 @@ export async function addMachineAction(
           type,
           location: location || null,
           comment,
-          status: "available",
+          status: "AVAILABLE",
           usageCount: 0,
         },
       });

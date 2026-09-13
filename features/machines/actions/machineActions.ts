@@ -3,7 +3,7 @@
 import { getAuthContext } from "@/lib/auth";
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
-import { MachineType } from "@prisma/client";
+import { MachineStatus, MachineType } from "@prisma/client";
 
 export async function getMachineByIdAction(id: string) {
     try {
@@ -34,7 +34,7 @@ export async function updateMachineAction(
             data: {
                 name: formData.get("name") as string,
                 type: formData.get("type") as MachineType,
-                status: formData.get("status") as string,
+                status: formData.get("status") as MachineStatus,
                 usageCount: Number(formData.get("usageCount")),
                 location: formData.get("location") as string,
                 comment: formData.get("comment") as string,

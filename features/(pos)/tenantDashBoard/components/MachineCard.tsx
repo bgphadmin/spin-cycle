@@ -1,51 +1,58 @@
 'use client'
+
+import Image from "next/image";
 import { useState } from "react";
 import OrderModal from "./OrderModal";
 
-export type MachineProps = {
+type MachineCardProps = {
   id: string;
+  name: string;
   type: "washer" | "dryer";
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "PAID";
+  status: "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
+  usageCount: number;
 };
 
-export function MachineCard({ id, type, status }: MachineProps) {
+export default function MachineCard({ id, name, type, status, usageCount }: MachineCardProps) {
   const [open, setOpen] = useState(false);
-  const statusColors: Record<MachineProps["status"], string> = {
-    PENDING: "bg-gray-400",
-    IN_PROGRESS: "bg-blue-500",
-    COMPLETED: "bg-green-500",
-    PAID: "bg-teal-500",
-  };
 
-  const isActive = status === "IN_PROGRESS";
+  let imageSrc = "/washer.png"
+  if (type === "washer" && status !== "UNAVAILABLE") {
+    imageSrc = "/washer.png"
+  } else if (type === "dryer" && status !== "UNAVAILABLE") {
+     imageSrc = "/dryer.png"
+  } else {
+    imageSrc = "/washer_ua.png"
+  }
+  
+  const isInUse = status === "IN_USE";
 
   return (
-    <>
-      <div
-        onClick={() => setOpen(true)} // 👈 toggle modal
-        className={`flex flex-col items-center p-4 rounded-lg shadow-sm ${isActive ? "animate-shake" : ""
-          }`}
-      >
-        {/* Show image always, but animate when active */}
-        <img
-          src={type === "washer" ? "/washer.png" : "/dryer.png"}
-          alt={type}
-          className={`w-24 sm:w-32 md:w-40 h-auto ${isActive
-            ? type === "washer"
-              ? "animate-shake" // washer drum spins
-              : "animate-pulse" // dryer glows/pulses
-            : ""
-            }`}
-        />
+    <div
+      className="rounded bg-card shadow-sm p-4 cursor-pointer hover:shadow-lg transition flex flex-col items-center"
+      onClick={() => setOpen(true)}
+    >
+      {/* Machine image with shake animation */}
+      <Image
+        src={imageSrc}
+        alt={name}
+        width={120}
+        height={120}
+        className={`mb-3 ${isInUse ? "animate-shake" : ""}`}
+      />
 
-        {/* Status badge */}
-        <span
-          className={`mt-2 px-3 py-1 text-sm font-semibold text-white rounded-full ${statusColors[status]}`}
-        >
-          {status}
-        </span>
-      </div>
-      {open && <OrderModal type={type} machineId={id} onClose={() => setOpen(false)} />}
-    </>
+      {/* Machine info */}
+      <h3 className="font-semibold">{name}</h3>
+      <p className="text-sm text-muted-foreground capitalize">{type}</p>
+      <p className="text-sm">Status: {status}</p>
+      <p className="text-sm">Usage Count: {usageCount}</p>
+
+      {open && (
+        <OrderModal
+          machineId={id}
+          type={type}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
   );
 }

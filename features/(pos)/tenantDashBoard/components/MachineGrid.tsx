@@ -1,20 +1,40 @@
-import { MachineCard } from "./MachineCard";
+"use client";
 
-type Machine = {
-  id: string;
-  type: "washer" | "dryer";
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "PAID";
-};
+import { useEffect, useState } from "react";
+import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
+import  MachineCard  from "./MachineCard"; // your card component
+import { LaundryOrderStatus, Machine } from "@prisma/client";
 
-type Props = {
-  machines: Machine[];
-};
+type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 
-export function MachineGrid({ machines }: Props) {
+export default function MachinesGrid() {
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadMachines = async () => {
+      const result = await getMachinesAction();
+      if ("machines" in result) {
+        setMachines(result.machines as Machine[]);
+      }
+      setLoading(false);
+    };
+    loadMachines();
+  }, []);
+
+  if (loading) return <p>Loading machines...</p>;
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-4 lg:ml-30">
-      {machines.map((m) => (
-        <MachineCard key={m.id} {...m} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {machines.map((machine) => (
+        <MachineCard
+          key={machine.id}
+          id={machine.id}
+          name={machine.name}
+          type={machine.type}
+          status={machine.status as MachineStatus}
+          usageCount={machine.usageCount}
+        />
       ))}
     </div>
   );

@@ -1,5 +1,5 @@
 import { getMachines } from '@/features/(pos)/tenantDashBoard/actions/getMachines';
-import { MachineGrid } from '@/features/(pos)/tenantDashBoard/components/MachineGrid';
+import MachinesGrid from '@/features/(pos)/tenantDashBoard/components/MachineGrid';
 import accessTenantIdServer from '@/lib/accessTenantIdServer';
 import React from 'react'
 import { string } from 'zod';
@@ -21,7 +21,7 @@ const TenantDashboardPage = async () => {
   return (
     <main className="mx-auto w-full max-w-1xl px-6 mt-10 mb-25" >
       <div className="flex justify-start">
-        <MachineGrid machines={machineProps} />
+        <MachinesGrid />
       </div>
     </main>
   )
