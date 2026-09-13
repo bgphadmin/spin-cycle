@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import FormContainer from "@/components/utils/FormContainer";
 import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { StandardRadioGroup } from "@/components/ui/custom/StandardRadioGroup";
@@ -39,20 +38,6 @@ export default function MachineSetupForm() {
               description="Add washers and dryers for your shop."
               loading={loading}
             />
-            {/* <div className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <StandardFormTitle
-                title="Add Machines"
-                description="Add washers and dryers for your shop."
-              />
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="standard"
-              >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save"}
-              </Button>
-            </div> */}
-            {/* <div className="mx-auto h-0.5 bg-gray-300 shadow-inner rounded-full" /> */}
             <div className="grid gap-5 sm:grid-cols-2 ">
               <StandardInput name="name" placeholder="Machine Name (e.g. Washer 1)" required />
               <StandardRadioGroup

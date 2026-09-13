@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button'; // Adjust paths based on your project
 import { StandardFormTitle } from '../ui/custom/StandardTitle';
-import { Url } from 'node:url';
 
 interface FormHeaderProps {
   href?: string;
@@ -15,7 +14,7 @@ interface FormHeaderProps {
 export const StandardHeaderHref: React.FC<FormHeaderProps> = ({ href, withButton = false, buttonName, title, description }) => {
   return (
     <div className="flex flex-col gap-4 border-b border-gray-300 pb-5 mb-6">
-      <div className="flex flex-row items-center justify-between mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <StandardFormTitle
           title={title}
           description={description}

@@ -1,9 +1,9 @@
 
 const PosPage = async () => {
   return (
-    <div>
-      <h1>POS Page</h1>
-    </div>
+    <main className="mx-auto w-full max-w-3xl px-6 mt-10 mb-25" style={{ paddingBottom: 0 }}>
+
+    </main>
   )
 }
 

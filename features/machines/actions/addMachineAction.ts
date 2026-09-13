@@ -64,7 +64,7 @@ export async function addMachineAction(
       ]),
     };
   } catch (error: unknown) {
-    console.error("Error adding machine:", error);
+    console.error("Error adding order: ", error);
     return renderError(error);
   }
 }

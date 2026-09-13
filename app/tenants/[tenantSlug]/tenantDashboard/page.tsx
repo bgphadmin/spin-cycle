@@ -1,5 +1,5 @@
-import { getMachines } from '@/features/tenantDashBoard/actions/getMachines';
-import { MachineGrid } from '@/features/tenantDashBoard/components/MachineGrid';
+import { getMachines } from '@/features/(pos)/tenantDashBoard/actions/getMachines';
+import { MachineGrid } from '@/features/(pos)/tenantDashBoard/components/MachineGrid';
 import accessTenantIdServer from '@/lib/accessTenantIdServer';
 import React from 'react'
 import { string } from 'zod';
