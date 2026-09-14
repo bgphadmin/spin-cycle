@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import FormContainer from "@/components/utils/FormContainer";
-import StandardHeader from "@/components/utils/StandardHeader";
 import { createOrderAction } from "../actions/createOrderAction";
+import { cancelOrderAction, completeOrderAction, getActiveOrderAction, updateOrderAction } from "../actions/orderActions";
 import { getInventoryAction, getServicesAction } from "@/features/orders/actions/getData";
 import { StandardInput } from "@/components/utils/StandardInput";
+import StandardHeader3Buttons from "@/components/utils/StandardHeader3";
+import StandardHeader2 from "@/components/utils/StandardHeader2";
 
 type OrderModalProps = {
   machineId: string;
   type: "washer" | "dryer";
   onClose: () => void;
+  status: "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 };
 
 type Service = {
@@ -28,7 +31,9 @@ type InventoryItem = {
   stock: number;
 };
 
-export default function OrderModal({ machineId, type, onClose }: OrderModalProps) {
+export default function OrderModal({ machineId, type, status, onClose }: OrderModalProps) {
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
@@ -40,37 +45,68 @@ export default function OrderModal({ machineId, type, onClose }: OrderModalProps
       setInventoryItems(resInventory);
     }
     fetchData();
-  }, []);
+    if (status === "IN_USE") void getActiveOrderAction(machineId).then(setActiveOrder);
+  }, [machineId, status]);
 
   const baseServiceType = type === "washer" ? "WASH" : "DRY";
   const baseServices = services.filter((service) => service.type === baseServiceType);
   const extraServices = services.filter((service) => service.type === "OTHERS");
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+      onClick={(event) => event.stopPropagation()}
+    >
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
-        <FormContainer action={createOrderAction} onSuccess={onClose}>
+        <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
           {({ loading }) => (
             <div className="space-y-1">
-              <StandardHeader
-                title="New Order"
-                description="Create order sales for this machine."
-                withButton
-                buttonName="Save Order"
-                loading={loading}
-              />
-
+              <div className="min-w-0 flex-1 mb-4">
+                {status === "AVAILABLE" ?
+                  <StandardHeader2
+                    buttonName="Submit"
+                    description="Enter your order here"
+                    withButton
+                    title="New Order"
+                    loading={loading}
+                    onCancel={onClose}
+                  /> : (
+                    <StandardHeader3Buttons
+                      title={status === "IN_USE" ? "Order" : "New Order"}
+                      description={status === "IN_USE" ? "Manage your order." : "Create order sales for this machine."}
+                      withButton={true}
+                      buttonName={status === "IN_USE" ? "Update" : "Save Order"}
+                      loading={loading}
+                      disabled={actionLoading}
+                      showCompleteCancel={status === "IN_USE" && !!activeOrder}
+                      onComplete={async () => {
+                        setActionLoading(true);
+                        await completeOrderAction(activeOrder.id);
+                        onClose();
+                      }}
+                      onCancel={async () => {
+                        setActionLoading(true);
+                        await cancelOrderAction(activeOrder.id);
+                        onClose();
+                      }}
+                    />)
+                }
+              </div>
               <input type="hidden" name="machineId" value={machineId} />
+              {activeOrder && <input type="hidden" name="orderId" value={activeOrder.id} />}
 
               <StandardInput
                 name="customerName"
                 type="text"
                 placeholder="Customer Name"
                 required
+                defaultValue={activeOrder?.customer?.name ?? ""}
               />
 
-              <div>
-                <label className="font-medium">Base Service</label>
+              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-8">
+                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                  Base Service
+                </legend>
                 <div className="mt-2 flex flex-col gap-2">
                   {baseServices.length === 0 && (
                     <p className="text-sm text-red-600">
@@ -79,32 +115,44 @@ export default function OrderModal({ machineId, type, onClose }: OrderModalProps
                   )}
                   {baseServices.map((service) => (
                     <label key={service.id} className="flex items-center gap-2">
-                      <input type="radio" name="baseServiceId" value={service.id} defaultChecked required />
+                      <input
+                        type="radio"
+                        name="baseServiceId"
+                        value={service.id}
+                        defaultChecked={true}
+                        // defaultChecked={activeOrder?.items?.some((item: any) => item.serviceId === service.id)} 
+                        required
+                      />
                       {service.name} (₱{service.price.toFixed(2)})
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div>
-                <label className="font-medium">Additional Services</label>
-                <div className="flex flex-col gap-2 mt-2">
+              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
+                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                  Additional Services
+                </legend>
+                <div className="mt-2 grid grid-cols-2 gap-2">
                   {extraServices.map((service) => (
                     <label key={service.id} className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         name="extraServices"
                         value={service.id}
+                        defaultChecked={activeOrder?.items?.some((item: any) => item.serviceId === service.id)}
                         className="h-4 w-4"
                       />
                       {service.name} (₱{service.price})
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div>
-                <label className="font-medium">Inventory Items</label>
+              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
+                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                  Inventory Items
+                </legend>
                 <div className="flex flex-col gap-2 mt-2">
                   {inventoryItems.map((item) => (
                     <div
@@ -123,30 +171,31 @@ export default function OrderModal({ machineId, type, onClose }: OrderModalProps
                         min={0}
                         max={item.stock}
                         step={1}
-                        defaultValue={0}
+                        defaultValue={activeOrder?.items?.find((orderItem: any) => orderItem.inventoryItemId === item.id)?.quantity ?? 0}
                         aria-label={`Quantity of ${item.name}`}
                         className="w-20 rounded-md border border-gray-300 p-1 text-center"
                       />
                     </div>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              {/* Payment method */}
-              <div>
-                <label className="font-medium">Payment Method</label>
+              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
+                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                  Payment Method
+                </legend>
                 <div className="flex gap-4 mt-2">
                   <label>
-                    <input type="radio" name="paymentMethod" value="cash" required /> Cash
+                    <input type="radio" name="paymentMethod" value="cash" required defaultChecked={activeOrder?.paymentMethod === "cash"} /> Cash
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="card" /> Card
+                    <input type="radio" name="paymentMethod" value="card" defaultChecked={activeOrder?.paymentMethod === "card"} /> Card
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="gcash" /> GCash
+                    <input type="radio" name="paymentMethod" value="gcash" defaultChecked={activeOrder?.paymentMethod === "gcash"} /> GCash
                   </label>
                 </div>
-              </div>
+              </fieldset>
             </div>
           )}
         </FormContainer>

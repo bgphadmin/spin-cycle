@@ -51,6 +51,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
         <OrderModal
           machineId={id}
           type={type}
+          status={status}
           onClose={() => {
             setOpen(false);
             void onOrderCreated();

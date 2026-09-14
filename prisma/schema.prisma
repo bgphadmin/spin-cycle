@@ -79,6 +79,7 @@ enum LaundryOrderStatus {
   IN_PROGRESS
   COMPLETED
   PAID
+  CANCELLED
 }
 
 model LaundryOrder {
