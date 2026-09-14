@@ -33,7 +33,7 @@ type InventoryItem = {
 
 export default function OrderModal({ machineId, type, status, onClose }: OrderModalProps) {
   const [activeOrder, setActiveOrder] = useState<any>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<"complete" | "cancel" | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
@@ -60,7 +60,7 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
         <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
           {({ loading }) => (
-            <div className="space-y-1">
+            <div key={activeOrder?.id ?? "new-order"} className="space-y-1">
               <div className="min-w-0 flex-1 mb-4">
                 {status === "AVAILABLE" ?
                   <StandardHeader2
@@ -77,15 +77,16 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                       withButton={true}
                       buttonName={status === "IN_USE" ? "Update" : "Save Order"}
                       loading={loading}
-                      disabled={actionLoading}
+                      disabled={actionLoading !== null}
+                      actionLoading={actionLoading}
                       showCompleteCancel={status === "IN_USE" && !!activeOrder}
                       onComplete={async () => {
-                        setActionLoading(true);
+                        setActionLoading("complete");
                         await completeOrderAction(activeOrder.id);
                         onClose();
                       }}
                       onCancel={async () => {
-                        setActionLoading(true);
+                        setActionLoading("cancel");
                         await cancelOrderAction(activeOrder.id);
                         onClose();
                       }}
@@ -119,8 +120,9 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                         type="radio"
                         name="baseServiceId"
                         value={service.id}
-                        defaultChecked={true}
-                        // defaultChecked={activeOrder?.items?.some((item: any) => item.serviceId === service.id)} 
+                        defaultChecked={activeOrder
+                          ? activeOrder.items?.some((item: any) => item.serviceId === service.id)
+                          : service.id === baseServices[0]?.id}
                         required
                       />
                       {service.name} (₱{service.price.toFixed(2)})
