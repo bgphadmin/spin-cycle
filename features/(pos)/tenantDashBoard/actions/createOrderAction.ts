@@ -168,6 +168,11 @@ export async function createOrderAction(
       }
 
       return createdOrder;
+    }, {
+      // Production databases can take longer than Prisma's 5-second default
+      // during cold starts or when creating all order-related records.
+      maxWait: 10000,
+      timeout: 15000,
     });
 
     revalidatePath(`/tenants/${orgSlug}/tenantDashboard`);
