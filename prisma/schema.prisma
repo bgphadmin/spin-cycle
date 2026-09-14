@@ -102,7 +102,7 @@ model OrderItem {
   id              Int     @id @default(autoincrement())
   orderId         String
   serviceId       String?
-  inventoryItemId String
+  inventoryItemId String?
   supplyId        Int? // detergent, conditioner
   price           Float
   quantity        Int
@@ -112,9 +112,16 @@ model OrderItem {
   inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
 }
 
+enum ServiceType {
+  WASH
+  DRY
+  OTHERS
+}
+
 model Service {
   id        String   @id @default(uuid())
   tenantId  String
+  type      ServiceType
   name      String // e.g. "Wash", "Dry", "Fold"
   price     Float
   duration  Int? // optional: minutes per cycle

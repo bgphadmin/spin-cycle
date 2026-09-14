@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const addServiceSchema = z.object({
+  type: z.enum(["WASH", "DRY", "OTHERS"], {
+    message: "Type must be WASH, DRY, or OTHERS",
+  }),
   name: z
     .string()
     .min(2, { message: "Service name must be at least 2 characters long" })

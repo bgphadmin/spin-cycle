@@ -4,6 +4,7 @@ import { useRef } from "react";
 import FormContainer from "@/components/utils/FormContainer";
 import StandardHeader from "@/components/utils/StandardHeader";
 import { StandardInput } from "@/components/ui/custom/StandardInput";
+import { StandardRadioGroup } from "@/components/ui/custom/StandardRadioGroup";
 import { addServiceAction } from "../actions/addServiceAction";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 
@@ -28,6 +29,16 @@ export default function ServiceSetupForm() {
               loading={loading}
             />
             <div className="grid gap-5 sm:grid-cols-2">
+              <StandardRadioGroup
+                name="type"
+                label="Type"
+                required
+                options={[
+                  { value: "WASH", label: "WASH" },
+                  { value: "DRY", label: "DRY" },
+                  { value: "OTHERS", label: "OTHERS" },
+                ]}
+              />
               <StandardInput
                 name="name"
                 placeholder="Service Name (e.g. Wash and Fold)"

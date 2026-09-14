@@ -6,6 +6,7 @@ import FormContainer from "@/components/utils/FormContainer";
 import { useDeleteAction } from "@/utils/hooks/useDeleteAction";
 import { StandardFormTitle } from "@/components/ui/custom/StandardTitle";
 import { StandardInput } from "@/components/ui/custom/StandardInput";
+import { StandardRadioGroup } from "@/components/ui/custom/StandardRadioGroup";
 import { Loader2 } from "lucide-react";
 import { DeleteButton } from "@/components/ui/custom/DeleteButton";
 import { DeleteConfirmationDialog } from "@/components/ui/custom/DeleteConfirmationDialog";
@@ -42,6 +43,17 @@ export default function EditServiceForm({ userRole, service }: { userRole: strin
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <input type="hidden" name="id" value={service.id} />
+              <StandardRadioGroup
+                name="type"
+                label="Type"
+                required
+                defaultValue={service.type}
+                options={[
+                  { value: "WASH", label: "WASH" },
+                  { value: "DRY", label: "DRY" },
+                  { value: "OTHERS", label: "OTHERS" },
+                ]}
+              />
               <StandardInput name="name" placeholder="Service Name" defaultValue={service.name} required />
               <StandardInput name="price" type="number" min="0" step="0.01" placeholder="Price" defaultValue={service.price} required />
               <StandardInput name="duration" type="number" min="1" step="1" placeholder="Duration in minutes (optional)" defaultValue={service.duration ?? ""} />

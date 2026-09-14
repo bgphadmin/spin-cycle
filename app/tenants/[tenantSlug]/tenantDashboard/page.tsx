@@ -19,10 +19,8 @@ const TenantDashboardPage = async () => {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-1xl px-6 mt-10 mb-25" >
-      <div className="flex justify-start">
+    <main className="mx-auto w-full max-w-1xl px-12 mt-10 mb-25" >
         <MachinesGrid />
-      </div>
     </main>
   )
 }

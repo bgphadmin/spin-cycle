@@ -29,7 +29,7 @@ export function StandardRadioGroup({ name, label, options, required, defaultValu
                 {options.map((opt) => (
                     <label
                         key={opt.value}
-                        className="flex items-center space-x-2 text-sm text-gray-700"
+                        className="flex items-center space-x-1 pt-1 text-sm text-gray-700"
                     >
                         <input
                             type="radio"

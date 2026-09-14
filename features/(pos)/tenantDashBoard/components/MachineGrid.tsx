@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
 import  MachineCard  from "./MachineCard"; // your card component
-import { LaundryOrderStatus, Machine } from "@prisma/client";
+import { Machine } from "@prisma/client";
 
 type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 
@@ -11,16 +11,17 @@ export default function MachinesGrid() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadMachines = async () => {
-      const result = await getMachinesAction();
-      if ("machines" in result) {
-        setMachines(result.machines as Machine[]);
-      }
-      setLoading(false);
-    };
-    loadMachines();
+  const loadMachines = useCallback(async () => {
+    const result = await getMachinesAction();
+    if ("machines" in result) {
+      setMachines(result.machines as Machine[]);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadMachines();
+  }, [loadMachines]);
 
   if (loading) return <p>Loading machines...</p>;
 
@@ -34,6 +35,7 @@ export default function MachinesGrid() {
           type={machine.type}
           status={machine.status as MachineStatus}
           usageCount={machine.usageCount}
+          onOrderCreated={loadMachines}
         />
       ))}
     </div>

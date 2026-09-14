@@ -41,6 +41,7 @@ export async function addServiceAction(
       return tx.service.create({
         data: {
           tenantId: tenant.id,
+          type: fields.type,
           name: fields.name,
           price: fields.price,
           duration: fields.duration === "" ? null : fields.duration,

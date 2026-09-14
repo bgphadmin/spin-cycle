@@ -52,7 +52,7 @@ export default function ServicesList() {
       ) : view === "table" ? (
         <div className="overflow-hidden rounded border border-gray-200 bg-card shadow-2xl">
           <Table>
-            <StandardTableHeader columns={[{ label: "Name" }, { label: "Price" }, { label: "Duration" }]} />
+            <StandardTableHeader columns={[{ label: "Type" }, { label: "Name" }, { label: "Price" }, { label: "Duration" }]} />
             <TableBody>
               {services.map((service) => (
                 <TableRow
@@ -60,6 +60,7 @@ export default function ServicesList() {
                   className={isAdmin ? "cursor-pointer border-b border-gray-900 hover:bg-muted/30" : "border-b border-gray-900"}
                   onClick={() => isAdmin && router.push(`./services/${service.id}/edit`)}
                 >
+                  <TableCell className="border-b border-gray-300">{service.type}</TableCell>
                   <TableCell className="border-b border-gray-300 font-medium">{service.name}</TableCell>
                   <TableCell className="border-b border-gray-300">₱{service.price.toFixed(2)}</TableCell>
                   <TableCell className="border-b border-gray-300">{service.duration ? `${service.duration} min` : "—"}</TableCell>
@@ -74,7 +75,7 @@ export default function ServicesList() {
             <Card key={service.id} className="border border-gray-200 shadow-md">
               <CardHeader>
                 <CardTitle>{service.name}</CardTitle>
-                <CardDescription>{service.duration ? `${service.duration} minutes` : "Duration not set"}</CardDescription>
+                <CardDescription>{service.type} · {service.duration ? `${service.duration} minutes` : "Duration not set"}</CardDescription>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">Price: ₱{service.price.toFixed(2)}</CardContent>
               <CardFooter>

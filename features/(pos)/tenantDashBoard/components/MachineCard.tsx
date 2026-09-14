@@ -10,20 +10,21 @@ type MachineCardProps = {
   type: "washer" | "dryer";
   status: "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
   usageCount: number;
+  onOrderCreated: () => Promise<void>;
 };
 
-export default function MachineCard({ id, name, type, status, usageCount }: MachineCardProps) {
+export default function MachineCard({ id, name, type, status, usageCount, onOrderCreated }: MachineCardProps) {
   const [open, setOpen] = useState(false);
 
   let imageSrc = "/washer.png"
   if (type === "washer" && status !== "UNAVAILABLE") {
     imageSrc = "/washer.png"
   } else if (type === "dryer" && status !== "UNAVAILABLE") {
-     imageSrc = "/dryer.png"
+    imageSrc = "/dryer.png"
   } else {
     imageSrc = "/washer_ua.png"
   }
-  
+
   const isInUse = status === "IN_USE";
 
   return (
@@ -50,7 +51,10 @@ export default function MachineCard({ id, name, type, status, usageCount }: Mach
         <OrderModal
           machineId={id}
           type={type}
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            setOpen(false);
+            void onOrderCreated();
+          }}
         />
       )}
     </div>
