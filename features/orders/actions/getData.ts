@@ -16,6 +16,8 @@ export type InventoryItem = {
   name: string;
   price: number;
   type: string;
+  unit: string;
+  stock: number;
 };
 
 export async function getServicesAction() {
@@ -30,7 +32,7 @@ export async function getInventoryAction() {
   const tenantId = await getTenantId();
   return db.inventoryItem.findMany({
     where: { tenantId },
-    select: { id: true, name: true, price: true },
+    select: { id: true, name: true, price: true, unit: true, stock: true },
   });
 }
 

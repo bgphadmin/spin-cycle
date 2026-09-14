@@ -24,6 +24,8 @@ type InventoryItem = {
   id: string;
   name: string;
   price: number;
+  unit: string;
+  stock: number;
 };
 
 export default function OrderModal({ machineId, type, onClose }: OrderModalProps) {
@@ -49,7 +51,7 @@ export default function OrderModal({ machineId, type, onClose }: OrderModalProps
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
         <FormContainer action={createOrderAction} onSuccess={onClose}>
           {({ loading }) => (
-            <div className="space-y-6">
+            <div className="space-y-1">
               <StandardHeader
                 title="New Order"
                 description="Create order sales for this machine."
@@ -105,15 +107,25 @@ export default function OrderModal({ machineId, type, onClose }: OrderModalProps
                 <label className="font-medium">Inventory Items</label>
                 <div className="flex flex-col gap-2 mt-2">
                   {inventoryItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span>{item.name} (₱{item.price})</span>
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-2"
+                    >
+                      <span className="text-sm">
+                        {item.name} ({item.unit}) — ₱{item.price.toFixed(2)}
+                        <span className="ml-1 text-xs text-gray-500">
+                          ({item.stock} available)
+                        </span>
+                      </span>
                       <input
                         type="number"
                         name={`inventory_${item.id}`}
-                        // value={item.id}
                         min={0}
+                        max={item.stock}
+                        step={1}
                         defaultValue={0}
-                        className="w-20 border rounded-md p-1"
+                        aria-label={`Quantity of ${item.name}`}
+                        className="w-20 rounded-md border border-gray-300 p-1 text-center"
                       />
                     </div>
                   ))}
