@@ -20,12 +20,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import DropdownNavItem from "./DropDownNavItem";
+import { useOrganization } from "@clerk/nextjs";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
+  { href: "/tenants/dashboard/tenantDashboard", label: "Dashboard", icon: HomeIcon },
   { href: "/dashboard/tenants/{tenantId}/sales", label: "Sales", icon: ShoppingCartIcon },
   { href: "/dashboard/tenants/{tenantId}/expenses", label: "Expenses", icon: CurrencyDollarIcon },
-  { href: "/dashboard/tenants/{tenantId}/inventory", label: "Inventory", icon: ArchiveBoxIcon },
+  { href: "/tenants/inventory/tenantDashboard/inventory", label: "Inventory", icon: ArchiveBoxIcon },
 ];
 
 export default function BottomNav() {
@@ -33,10 +34,16 @@ export default function BottomNav() {
   const { tenantId } = useParams();
   const [open, setOpen] = useState(false);
 
+  const { organization } = useOrganization()
+  const orgSlug = organization?.slug
+
   const hideBottomNav = pathname === "/registerShop" || pathname === "/"; // 👈 condition
+
   if (hideBottomNav) {
     return null; // 👈 don't render anything
   }
+
+
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-teal-100 shadow-2xl">
@@ -69,15 +76,21 @@ export default function BottomNav() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
               <DropdownNavItem
-                href={`/dashboard/tenants/${tenantId}/machines`}
+                href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
                 label="Machines"
                 onSelect={() => setOpen(false)}
                 icon={ArchiveBoxIcon}
               />
               <DropdownNavItem
-                href={`/dashboard/tenants/${tenantId}/products`}
-                label="Products"
+                href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
+                label="Inventory Items"
                 icon={Cog6ToothIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href={`/tenants/${orgSlug}/tenantDashboard/services/`}
+                label="Services"
+                icon={UserIcon}
                 onSelect={() => setOpen(false)}
               />
               <DropdownNavItem
