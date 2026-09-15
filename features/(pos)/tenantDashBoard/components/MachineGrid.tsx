@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
 import  MachineCard  from "./MachineCard"; // your card component
 import { Machine } from "@prisma/client";
+import  CardSkeleton  from "@/components/utils/cardSkeleton";
 
 type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 
@@ -23,7 +24,7 @@ export default function MachinesGrid() {
     loadMachines();
   }, [loadMachines]);
 
-  if (loading) return <p>Loading machines...</p>;
+  if (loading) return <CardSkeleton />;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

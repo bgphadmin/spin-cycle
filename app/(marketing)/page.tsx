@@ -21,7 +21,7 @@ export default async function LandingPage() {
       </div>
       <div className="-mt-24 mb-6 mx-8">
         <h2 className="text-4xl font-bold text-teal-700 mb-4">
-          Laundro-App
+          Laundromat App
         </h2>
         <p className="text-lg text-gray-600 mb-2 max-w-xl">
           Manage your sales, expenses, and inventory with ease.
