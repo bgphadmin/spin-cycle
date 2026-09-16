@@ -6,10 +6,10 @@ import { createOrderAction } from "../../(pos)/tenantDashBoard/actions/createOrd
 import { cancelOrderAction, completeOrderAction, getActiveOrderAction, updateOrderAction } from "../../(pos)/tenantDashBoard/actions/orderActions";
 import { getCustomersAction, getInventoryAction, getServicesAction } from "@/features/orders/actions/getData";
 import type { Customer } from "@/features/orders/actions/getData";
-import { StandardInput } from "@/components/utils/StandardInput";
 import StandardHeader3Buttons from "@/components/utils/StandardHeader3";
 import StandardHeader2 from "@/components/utils/StandardHeader2";
 import CustomerInput from "@/components/utils/CustomerInput";
+import OrderModalSkeleton from "@/components/utils/OrderModalSkeleton";
 
 type OrderModalProps = {
   machineId: string;
@@ -33,6 +33,8 @@ type InventoryItem = {
   stock: number;
 };
 
+
+
 export default function OrderModal({ machineId, type, status, onClose }: OrderModalProps) {
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState<"complete" | "cancel" | null>(null);
@@ -41,29 +43,39 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState("WALK_IN");
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    setDataLoading(true);
+    setActiveOrder(null);
+    setSelectedPaymentMethod("");
+    setSelectedOrderType("WALK_IN");
+
     async function fetchData() {
-      const [resServices, resInventory, resCustomers] = await Promise.all([
-        getServicesAction(),
-        getInventoryAction(),
-        getCustomersAction(),
-      ]);
-      setServices(resServices);
-      setInventoryItems(resInventory);
-      setCustomers(resCustomers);
+      try {
+        const [resServices, resInventory, resCustomers, resActiveOrder] = await Promise.all([
+          getServicesAction(),
+          getInventoryAction(),
+          getCustomersAction(),
+          status === "IN_USE" ? getActiveOrderAction(machineId) : Promise.resolve(null),
+        ]);
+        if (cancelled) return;
+        setServices(resServices);
+        setInventoryItems(resInventory);
+        setCustomers(resCustomers);
+        setActiveOrder(resActiveOrder);
+      } catch (error) {
+        console.error("Error loading order modal data:", error);
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
     }
-    fetchData();
-    if (status === "IN_USE") {
-      setActiveOrder(null);
-      setSelectedPaymentMethod("");
-      setSelectedOrderType("WALK_IN");
-      void getActiveOrderAction(machineId).then(setActiveOrder);
-    } else {
-      setActiveOrder(null);
-      setSelectedPaymentMethod("");
-      setSelectedOrderType("WALK_IN");
-    }
+
+    void fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [machineId, status]);
 
   const baseServiceType = type === "washer" ? "WASH" : "DRY";
@@ -88,7 +100,10 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
       onClick={(event) => event.stopPropagation()}
     >
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
-        <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
+        {dataLoading ? (
+          <OrderModalSkeleton />
+        ) : (
+          <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
           {({ loading }) => (
             <div key={activeOrder?.id ?? "new-order"} className="space-y-1">
               <div className="min-w-0 flex-1 mb-4">
@@ -274,7 +289,8 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
               </fieldset>
             </div>
           )}
-        </FormContainer>
+          </FormContainer>
+        )}
       </div>
     </div>
   );
