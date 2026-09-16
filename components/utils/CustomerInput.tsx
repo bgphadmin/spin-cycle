@@ -42,7 +42,7 @@ export default function CustomerInput({ name, defaultValue, customers, required 
                 aria-expanded={isOpen && suggestions.length > 0}
                 aria-controls={`${name}-suggestions`}
                 aria-autocomplete="list"
-                className="h-12 rounded bg-gray-100 px-3 py-2 text-sm shadow-lg ring-1 focus:ring-2 focus:ring-teal-500"
+                className="h-12 rounded bg-gray-100 px-3 py-2 text-sm shadow-lg ring-1 focus:ring-2 focus:ring-teal-500 mb-6"
                 onChange={(event) => {
                     setValue(event.target.value);
                     setHighlightedIndex(0);

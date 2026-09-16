@@ -22,8 +22,8 @@ export const StandardHeader2: React.FC<FormHeaderProps> = ({ withButton = false,
         />
         {withButton ?
           (
-            <div className='gap-4'>
-              <Button className='mr-2 mb-1 bg-orange-200 hover:bg-orange-300' variant="standard" type="button" onClick={onCancel} disabled={loading}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button className='bg-orange-200 hover:bg-orange-300' variant="standard" type="button" onClick={onCancel} disabled={loading}>
                 Cancel
               </Button>
               <Button variant="standard" type='submit' >

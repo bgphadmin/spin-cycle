@@ -96,10 +96,10 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black bg-opacity-50 p-2 sm:items-center sm:p-4"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
+      <div className="my-2 max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)] sm:p-6">
         {dataLoading ? (
           <OrderModalSkeleton />
         ) : (
@@ -118,13 +118,14 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                   /> : (
                     <StandardHeader3Buttons
                       title={status === "IN_USE" ? "Order" : "New Order"}
-                      description={status === "IN_USE" ? "Manage your order." : "Create order sales for this machine."}
+                      description={status === "IN_USE" ? "" : "Create order sales for this machine."}
                       withButton={true}
                       buttonName={status === "IN_USE" ? "Update" : "Save Order"}
                       loading={loading}
                       disabled={actionLoading !== null}
                       actionLoading={actionLoading}
                       showCompleteCancel={status === "IN_USE" && !!activeOrder}
+                      onBack={onClose}
                       onComplete={async () => {
                         setActionLoading("complete");
                         await completeOrderAction(activeOrder.id);
@@ -148,58 +149,60 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                 customers={customers}
               />
 
-              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
-                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
-                  Order Type
-                </legend>
-                <div className="flex gap-4 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name="orderType"
-                      value="WALK_IN"
-                      checked={selectedOrderType === "WALK_IN"}
-                      onChange={(event) => setSelectedOrderType(event.target.value)}
-                    /> Walk-in
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="orderType"
-                      value="DELIVERY"
-                      checked={selectedOrderType === "DELIVERY"}
-                      onChange={(event) => setSelectedOrderType(event.target.value)}
-                    /> Delivery
-                  </label>
-                </div>
-              </fieldset>
-
-              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-8">
-                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
-                  Base Service
-                </legend>
-                <div className="mt-2 flex flex-col gap-2">
-                  {baseServices.length === 0 && (
-                    <p className="text-sm text-red-600">
-                      No {baseServiceType} service is configured for this shop.
-                    </p>
-                  )}
-                  {baseServices.map((service) => (
-                    <label key={service.id} className="flex items-center gap-2">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <fieldset className="relative rounded-md border border-gray-200 mt- p-2">
+                  <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                    Order Type
+                  </legend>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                    <label>
                       <input
                         type="radio"
-                        name="baseServiceId"
-                        value={service.id}
-                        defaultChecked={activeOrder
-                          ? activeOrder.items?.some((item: any) => item.serviceId === service.id)
-                          : service.id === baseServices[0]?.id}
-                        required
-                      />
-                      {service.name} (₱{service.price.toFixed(2)})
+                        name="orderType"
+                        value="WALK_IN"
+                        checked={selectedOrderType === "WALK_IN"}
+                        onChange={(event) => setSelectedOrderType(event.target.value)}
+                      /> Walk-in
                     </label>
-                  ))}
-                </div>
-              </fieldset>
+                    <label>
+                      <input
+                        type="radio"
+                        name="orderType"
+                        value="DELIVERY"
+                        checked={selectedOrderType === "DELIVERY"}
+                        onChange={(event) => setSelectedOrderType(event.target.value)}
+                      /> Delivery
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset className="relative rounded-md border border-gray-200 p-2">
+                  <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                    Base Service
+                  </legend>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {baseServices.length === 0 && (
+                      <p className="text-sm text-red-600">
+                        No {baseServiceType} service is configured for this shop.
+                      </p>
+                    )}
+                    {baseServices.map((service) => (
+                      <label key={service.id} className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="baseServiceId"
+                          value={service.id}
+                          defaultChecked={activeOrder
+                            ? activeOrder.items?.some((item: any) => item.serviceId === service.id)
+                            : service.id === baseServices[0]?.id}
+                          required
+                        />
+                        {service.name} (₱{service.price.toFixed(2)})
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
 
               <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
                 <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
