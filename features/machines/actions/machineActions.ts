@@ -4,9 +4,11 @@ import { getAuthContext } from "@/lib/auth";
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { MachineStatus, MachineType } from "@prisma/client";
+import { unstable_noStore as noStore } from "next/cache";
 
 export async function getMachineByIdAction(id: string) {
     try {
+        noStore();
         const { orgRole } = await getAuthContext()
         if (orgRole !== "org:admin") {
             throw new Error("Forbidden");
@@ -71,4 +73,3 @@ export async function deleteMachineAction(
         return { message: "Failed to delete machine" };
     }
 }
-

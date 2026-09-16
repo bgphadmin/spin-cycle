@@ -41,6 +41,11 @@ export default function MachinesList() {
     const [isAdmin, setIsAdmin] = useState(false)
     const router = useRouter();
 
+    const openMachineEditor = (machineId: string) => {
+        router.push(`./machines/${machineId}/edit`);
+        router.refresh();
+    };
+
     useEffect(() => {
         const loadMachines = async () => {
             const result = await getMachinesAction();
@@ -105,7 +110,7 @@ export default function MachinesList() {
                                             }`}
                                         onClick={() => {
                                             if (isAdmin) {
-                                                router.push(`./machines/${machine.id}/edit`);
+                                                openMachineEditor(machine.id);
                                             }
                                         }}
                                         key={machine.id}
@@ -155,7 +160,13 @@ export default function MachinesList() {
                                 <p>Comment: {machine.comment || <span className="text-muted-foreground/40">—</span>}</p>
                             </CardContent>
                             <CardFooter>
-                                <Button variant="outline" size="sm">Manage</Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => isAdmin && openMachineEditor(machine.id)}
+                                >
+                                    Manage
+                                </Button>
                             </CardFooter>
                         </Card>
                     ))}

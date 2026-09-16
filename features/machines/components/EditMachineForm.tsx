@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import FormContainer from "@/components/utils/FormContainer";
 import { useDeleteAction } from "@/utils/hooks/useDeleteAction";
@@ -22,6 +23,13 @@ type Props = {
 export default function EditMachineForm({ userRole, machine }: Props) {
 
   const router = useRouter();
+  const normalizedStatus = machine?.status.toUpperCase();
+  const isInUse = normalizedStatus === "IN_USE";
+  const [isAvailable, setIsAvailable] = useState(normalizedStatus === "AVAILABLE");
+
+  useEffect(() => {
+    setIsAvailable(normalizedStatus === "AVAILABLE");
+  }, [normalizedStatus]);
   const {
     onDelete,
     confirmDelete,
@@ -87,7 +95,24 @@ export default function EditMachineForm({ userRole, machine }: Props) {
                 ]}
                 defaultValue={machine.type}
               />
-              <StandardInput name="status" placeholder="Status" defaultValue={machine.status} required />
+              <div className="flex items-center gap-3 rounded-md border border-gray-300 px-3 h-12 shadow-sm">
+                <input
+                  type="hidden"
+                  name="status"
+                  value={isInUse ? "IN_USE" : isAvailable ? "AVAILABLE" : "UNAVAILABLE"}
+                />
+                <input
+                  id="machine-available"
+                  type="checkbox"
+                  checked={isInUse || isAvailable}
+                  disabled={isInUse}
+                  onChange={(event) => setIsAvailable(event.target.checked)}
+                  className="h-4 w-4 accent-teal-600"
+                />
+                <label htmlFor="machine-available" className="text-sm font-medium text-gray-700">
+                  Available
+                </label>
+              </div>
               <StandardInput name="usageCount" type="number" placeholder="Usage Count" defaultValue={machine.usageCount} />
               <div className="sm:col-span-2">
                 <StandardInput name="location" placeholder="Location" defaultValue={machine.location ?? ""} />
