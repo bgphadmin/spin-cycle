@@ -39,6 +39,7 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -52,12 +53,27 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
       setCustomers(resCustomers);
     }
     fetchData();
-    if (status === "IN_USE") void getActiveOrderAction(machineId).then(setActiveOrder);
+    if (status === "IN_USE") {
+      setActiveOrder(null);
+      setSelectedPaymentMethod("");
+      void getActiveOrderAction(machineId).then(setActiveOrder);
+    } else {
+      setActiveOrder(null);
+      setSelectedPaymentMethod("");
+    }
   }, [machineId, status]);
 
   const baseServiceType = type === "washer" ? "WASH" : "DRY";
   const baseServices = services.filter((service) => service.type === baseServiceType);
   const extraServices = services.filter((service) => service.type === "OTHERS");
+
+  useEffect(() => {
+    setSelectedPaymentMethod(
+      String(activeOrder?.paymentMethod ?? "")
+        .trim()
+        .toUpperCase()
+    );
+  }, [activeOrder]);
 
   return (
     <div
@@ -194,13 +210,32 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                 </legend>
                 <div className="flex gap-4 mt-2">
                   <label>
-                    <input type="radio" name="paymentMethod" value="CASH" required defaultChecked={activeOrder?.paymentMethod === "cash"} /> Cash
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CASH"
+                      required
+                      checked={selectedPaymentMethod === "CASH"}
+                      onChange={(event) => setSelectedPaymentMethod(event.target.value)}
+                    /> Cash
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="CARD" defaultChecked={activeOrder?.paymentMethod === "card"} /> Card
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CARD"
+                      checked={selectedPaymentMethod === "CARD"}
+                      onChange={(event) => setSelectedPaymentMethod(event.target.value)}
+                    /> Card
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="EWALLET" defaultChecked={activeOrder?.paymentMethod === "gcash"} /> GCash
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="EWALLET"
+                      checked={selectedPaymentMethod === "EWALLET"}
+                      onChange={(event) => setSelectedPaymentMethod(event.target.value)}
+                    /> E-Wallet
                   </label>
                 </div>
               </fieldset>

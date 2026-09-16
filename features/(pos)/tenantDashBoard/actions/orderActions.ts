@@ -18,10 +18,21 @@ async function tenantId() {
 export async function getActiveOrderAction(machineId: string) {
   try {
     const id = await tenantId();
-    return await db.laundryOrder.findFirst({
+    const order = await db.laundryOrder.findFirst({
       where: { tenantId: id, status: "IN_PROGRESS", machineUsages: { some: { machineId, endedAt: null } } },
-      include: { customer: true, items: { include: { service: true, inventoryItem: true } } },
+      include: {
+        customer: true,
+        payments: true,
+        items: { include: { service: true, inventoryItem: true } },
+      },
     });
+    if (!order) return null;
+
+    const paymentMethod = String(order.paymentMethod ?? order.payments[0]?.method ?? "")
+      .trim()
+      .toUpperCase();
+
+    return { ...order, paymentMethod };
   } catch (error) {
     console.error("Error fetching active order:", error);
     return null;
