@@ -11,14 +11,16 @@ type CustomerInputProps = {
   required?: boolean;
 };
 
+const MIN_QUERY_LENGTH = 2;
 
 export default function CustomerInput({ name, defaultValue, customers, required }: CustomerInputProps) {
     const [value, setValue] = useState(defaultValue);
     const [isOpen, setIsOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(0);
 
+    const query = value.trim().toLowerCase();
     const suggestions = customers
-        .filter((customer) => customer.name.toLowerCase().includes(value.trim().toLowerCase()))
+        .filter((customer) => query.length >= MIN_QUERY_LENGTH && customer.name.toLowerCase().includes(query))
         .slice(0, 8);
 
     const selectCustomer = (customer: Customer) => {
@@ -44,9 +46,9 @@ export default function CustomerInput({ name, defaultValue, customers, required 
                 onChange={(event) => {
                     setValue(event.target.value);
                     setHighlightedIndex(0);
-                    setIsOpen(true);
+                    setIsOpen(event.target.value.trim().length >= MIN_QUERY_LENGTH);
                 }}
-                onFocus={() => setIsOpen(true)}
+                onFocus={() => setIsOpen(query.length >= MIN_QUERY_LENGTH)}
                 onKeyDown={(event) => {
                     if (!isOpen || suggestions.length === 0) return;
                     if (event.key === "ArrowDown") {
