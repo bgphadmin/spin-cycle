@@ -7,7 +7,7 @@ import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 
-const paymentMethods = ["cash", "card", "gcash"] as const;
+const paymentMethods = ["CASH", "CARD", "EWALLET"] as const;
 type PaymentMethod = (typeof paymentMethods)[number];
 
 export async function createOrderAction(

@@ -20,6 +20,11 @@ export type InventoryItem = {
   stock: number;
 };
 
+export type Customer = {
+  id: string;
+  name: string;
+};
+
 export async function getServicesAction() {
   const tenantId = await getTenantId();
   return db.service.findMany({
@@ -33,6 +38,15 @@ export async function getInventoryAction() {
   return db.inventoryItem.findMany({
     where: { tenantId },
     select: { id: true, name: true, price: true, unit: true, stock: true },
+  });
+}
+
+export async function getCustomersAction() {
+  const tenantId = await getTenantId();
+  return db.customer.findMany({
+    where: { tenantId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
   });
 }
 

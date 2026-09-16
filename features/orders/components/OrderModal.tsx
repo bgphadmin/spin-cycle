@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import FormContainer from "@/components/utils/FormContainer";
-import { createOrderAction } from "../actions/createOrderAction";
-import { cancelOrderAction, completeOrderAction, getActiveOrderAction, updateOrderAction } from "../actions/orderActions";
-import { getInventoryAction, getServicesAction } from "@/features/orders/actions/getData";
+import { createOrderAction } from "../../(pos)/tenantDashBoard/actions/createOrderAction";
+import { cancelOrderAction, completeOrderAction, getActiveOrderAction, updateOrderAction } from "../../(pos)/tenantDashBoard/actions/orderActions";
+import { getCustomersAction, getInventoryAction, getServicesAction } from "@/features/orders/actions/getData";
+import type { Customer } from "@/features/orders/actions/getData";
 import { StandardInput } from "@/components/utils/StandardInput";
 import StandardHeader3Buttons from "@/components/utils/StandardHeader3";
 import StandardHeader2 from "@/components/utils/StandardHeader2";
+import CustomerInput from "@/components/utils/CustomerInput";
 
 type OrderModalProps = {
   machineId: string;
@@ -36,13 +38,18 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
   const [actionLoading, setActionLoading] = useState<"complete" | "cancel" | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
     async function fetchData() {
-      const resServices = await getServicesAction();
-      const resInventory = await getInventoryAction();
+      const [resServices, resInventory, resCustomers] = await Promise.all([
+        getServicesAction(),
+        getInventoryAction(),
+        getCustomersAction(),
+      ]);
       setServices(resServices);
       setInventoryItems(resInventory);
+      setCustomers(resCustomers);
     }
     fetchData();
     if (status === "IN_USE") void getActiveOrderAction(machineId).then(setActiveOrder);
@@ -96,12 +103,11 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
               <input type="hidden" name="machineId" value={machineId} />
               {activeOrder && <input type="hidden" name="orderId" value={activeOrder.id} />}
 
-              <StandardInput
+              <CustomerInput
                 name="customerName"
-                type="text"
-                placeholder="Customer Name"
                 required
                 defaultValue={activeOrder?.customer?.name ?? ""}
+                customers={customers}
               />
 
               <fieldset className="relative rounded-md border border-gray-200 p-2 mt-8">
@@ -188,13 +194,13 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                 </legend>
                 <div className="flex gap-4 mt-2">
                   <label>
-                    <input type="radio" name="paymentMethod" value="cash" required defaultChecked={activeOrder?.paymentMethod === "cash"} /> Cash
+                    <input type="radio" name="paymentMethod" value="CASH" required defaultChecked={activeOrder?.paymentMethod === "cash"} /> Cash
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="card" defaultChecked={activeOrder?.paymentMethod === "card"} /> Card
+                    <input type="radio" name="paymentMethod" value="CARD" defaultChecked={activeOrder?.paymentMethod === "card"} /> Card
                   </label>
                   <label>
-                    <input type="radio" name="paymentMethod" value="gcash" defaultChecked={activeOrder?.paymentMethod === "gcash"} /> GCash
+                    <input type="radio" name="paymentMethod" value="EWALLET" defaultChecked={activeOrder?.paymentMethod === "gcash"} /> GCash
                   </label>
                 </div>
               </fieldset>

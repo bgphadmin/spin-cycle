@@ -58,7 +58,7 @@ export const StandardHeader3Buttons: React.FC<FormHeaderProps> = ({
                     onClick={onCancel}
                     className="h-10 min-w-0 bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700"
                   >
-                    {actionLoading === "cancel" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Cancel"}
+                    {actionLoading === "cancel" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Cancel Order"}
                   </Button>
                 </>
               )}

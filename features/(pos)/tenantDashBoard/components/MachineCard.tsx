@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import OrderModal from "./OrderModal";
+import OrderModal from "../../../orders/components/OrderModal";
 
 type MachineCardProps = {
   id: string;

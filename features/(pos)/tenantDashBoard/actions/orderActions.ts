@@ -1,6 +1,6 @@
 "use server";
 
-import { MachineStatus, MachineType } from "@prisma/client";
+import { MachineStatus, MachineType, PaymentMethod } from "@prisma/client";
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
@@ -52,7 +52,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
     const machineId = String(formData.get("machineId") ?? "");
     const baseServiceId = String(formData.get("baseServiceId") ?? "");
     const customerName = String(formData.get("customerName") ?? "").trim();
-    const paymentMethod = String(formData.get("paymentMethod") ?? "");
+    const paymentMethod = String(formData.get("paymentMethod") ?? "") as PaymentMethod;
     const extraServiceIds = formData.getAll("extraServices").map(String);
     const inventoryQuantities = new Map<string, number>();
     for (const [key, value] of formData.entries()) {
@@ -63,7 +63,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       }
       if (quantity > 0) inventoryQuantities.set(key.replace("inventory_", ""), quantity);
     }
-    if (!orderId || !machineId || !baseServiceId || !customerName || !["cash", "card", "gcash"].includes(paymentMethod)) {
+    if (!orderId || !machineId || !baseServiceId || !customerName || !["CASH", "CARD", "EWALLET"].includes(paymentMethod)) {
       throw new Error("Order, machine, service, customer, and payment method are required.");
     }
     await db.$transaction(async (tx) => {

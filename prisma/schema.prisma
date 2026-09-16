@@ -26,6 +26,12 @@ enum Role {
   SUPERUSER
 }
 
+enum PaymentMethod {
+  CASH
+  CARD
+  EWALLET
+}
+
 model Tenant {
   id                 String             @id @default(uuid())
   clerkOrgId         String             @unique
@@ -78,7 +84,6 @@ enum LaundryOrderStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
-  PAID
   CANCELLED
 }
 
@@ -89,7 +94,9 @@ model LaundryOrder {
   customerId    String?
   status        LaundryOrderStatus @default(PENDING) // pending, in_progress, completed, paid
   total         Float
-  paymentMethod String? // cash, card, gcash
+  paid          Boolean            @default(false)
+  paidAt        DateTime?
+  paymentMethod PaymentMethod? // cash, card, gcash
   createdAt     DateTime           @default(now())
 
   customer      Customer?      @relation(fields: [customerId], references: [id])
@@ -120,14 +127,14 @@ enum ServiceType {
 }
 
 model Service {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   tenantId  String
   type      ServiceType
   name      String // e.g. "Wash", "Dry", "Fold"
   price     Float
   duration  Int? // optional: minutes per cycle
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   tenant     Tenant      @relation(fields: [tenantId], references: [id])
   orderItems OrderItem[]
