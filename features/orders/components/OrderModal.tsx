@@ -40,6 +40,7 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [selectedOrderType, setSelectedOrderType] = useState("WALK_IN");
 
   useEffect(() => {
     async function fetchData() {
@@ -56,10 +57,12 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
     if (status === "IN_USE") {
       setActiveOrder(null);
       setSelectedPaymentMethod("");
+      setSelectedOrderType("WALK_IN");
       void getActiveOrderAction(machineId).then(setActiveOrder);
     } else {
       setActiveOrder(null);
       setSelectedPaymentMethod("");
+      setSelectedOrderType("WALK_IN");
     }
   }, [machineId, status]);
 
@@ -73,6 +76,10 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
         .trim()
         .toUpperCase()
     );
+  }, [activeOrder]);
+
+  useEffect(() => {
+    setSelectedOrderType(String(activeOrder?.orderType ?? "WALK_IN").toUpperCase());
   }, [activeOrder]);
 
   return (
@@ -125,6 +132,32 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                 defaultValue={activeOrder?.customer?.name ?? ""}
                 customers={customers}
               />
+
+              <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
+                <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                  Order Type
+                </legend>
+                <div className="flex gap-4 mt-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="WALK_IN"
+                      checked={selectedOrderType === "WALK_IN"}
+                      onChange={(event) => setSelectedOrderType(event.target.value)}
+                    /> Walk-in
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="DELIVERY"
+                      checked={selectedOrderType === "DELIVERY"}
+                      onChange={(event) => setSelectedOrderType(event.target.value)}
+                    /> Delivery
+                  </label>
+                </div>
+              </fieldset>
 
               <fieldset className="relative rounded-md border border-gray-200 p-2 mt-8">
                 <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">

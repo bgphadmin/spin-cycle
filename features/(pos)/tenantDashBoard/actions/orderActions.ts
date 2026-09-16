@@ -64,6 +64,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
     const baseServiceId = String(formData.get("baseServiceId") ?? "");
     const customerName = String(formData.get("customerName") ?? "").trim();
     const paymentMethod = String(formData.get("paymentMethod") ?? "") as PaymentMethod;
+    const orderType = String(formData.get("orderType") ?? "WALK_IN");
     const extraServiceIds = formData.getAll("extraServices").map(String);
     const inventoryQuantities = new Map<string, number>();
     for (const [key, value] of formData.entries()) {
@@ -74,7 +75,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       }
       if (quantity > 0) inventoryQuantities.set(key.replace("inventory_", ""), quantity);
     }
-    if (!orderId || !machineId || !baseServiceId || !customerName || !["CASH", "CARD", "EWALLET"].includes(paymentMethod)) {
+    if (!orderId || !machineId || !baseServiceId || !customerName || !["CASH", "CARD", "EWALLET"].includes(paymentMethod) || !["WALK_IN", "DELIVERY"].includes(orderType)) {
       throw new Error("Order, machine, service, customer, and payment method are required.");
     }
     await db.$transaction(async (tx) => {
@@ -175,7 +176,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       });
       await tx.laundryOrder.update({
         where: { id: order.id },
-        data: { customerId: customer.id, paymentMethod, total },
+        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total },
       });
       if (order.payments[0]) {
         await tx.payment.update({ where: { id: order.payments[0].id }, data: { amount: total, method: paymentMethod } });

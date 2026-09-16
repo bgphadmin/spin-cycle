@@ -87,12 +87,18 @@ enum LaundryOrderStatus {
   CANCELLED
 }
 
+enum LaundryOrderType {
+  WALK_IN
+  DELIVERY
+}
+
 model LaundryOrder {
   id            String             @id @default(uuid())
   tenantId      String
   userId        String             @default("system")
   customerId    String?
   status        LaundryOrderStatus @default(PENDING) // pending, in_progress, completed, paid
+  orderType     LaundryOrderType   @default(WALK_IN)
   total         Float
   paid          Boolean            @default(false)
   paidAt        DateTime?

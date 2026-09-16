@@ -8,7 +8,9 @@ import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 
 const paymentMethods = ["CASH", "CARD", "EWALLET"] as const;
+const orderTypes = ["WALK_IN", "DELIVERY"] as const;
 type PaymentMethod = (typeof paymentMethods)[number];
+type OrderType = (typeof orderTypes)[number];
 
 export async function createOrderAction(
   _prevState: unknown,
@@ -21,6 +23,7 @@ export async function createOrderAction(
     const baseServiceId = String(formData.get("baseServiceId") ?? "");
     const customerName = String(formData.get("customerName") ?? "").trim();
     const paymentMethod = String(formData.get("paymentMethod") ?? "") as PaymentMethod;
+    const orderType = String(formData.get("orderType") ?? "WALK_IN") as OrderType;
     const extraServiceIds = formData.getAll("extraServices").map(String);
 
     if (!userId || !orgId) throw new Error("You must be signed in to create an order.");
@@ -29,6 +32,9 @@ export async function createOrderAction(
     if (!customerName) throw new Error("Customer name is required.");
     if (!paymentMethods.includes(paymentMethod)) {
       throw new Error("A valid payment method is required.");
+    }
+    if (!orderTypes.includes(orderType)) {
+      throw new Error("A valid order type is required.");
     }
 
     const inventoryQuantities = new Map<string, number>();
@@ -127,6 +133,7 @@ export async function createOrderAction(
           userId,
           customerId: customer.id,
           status: "IN_PROGRESS",
+          orderType,
           paymentMethod,
           total,
           items: { create: [...serviceItems, ...inventoryOrderItems] },
