@@ -26,11 +26,14 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
   }
 
   const isInUse = status === "IN_USE";
+  const isUnavailable = status === "UNAVAILABLE";
 
   return (
     <div
-      className="rounded bg-card shadow-sm p-4 cursor-pointer hover:shadow-lg transition flex flex-col items-center"
-      onClick={() => setOpen(true)}
+      className={`rounded bg-card shadow-sm p-4 transition flex flex-col items-center ${
+        isUnavailable ? "cursor-default" : "cursor-pointer hover:shadow-lg"
+      }`}
+      onClick={isUnavailable ? undefined : () => setOpen(true)}
     >
       {/* Machine image with shake animation */}
       <Image
