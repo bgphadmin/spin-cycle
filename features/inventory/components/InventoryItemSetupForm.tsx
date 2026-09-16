@@ -7,10 +7,13 @@ import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { StandardRadioGroup } from "@/components/ui/custom/StandardRadioGroup";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { addInventoryItemAction } from "../actions/inventoryActions";
+import StandardHeader2 from "@/components/utils/StandardHeader2";
+import { useRouter } from "next/navigation";
 
 export default function InventoryItemSetupForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const { orgRole } = useClientAuthClaims();
+  const router = useRouter();
 
   return (
     <div className="max-h-[94vh] flex items-start justify-center bg-white px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg pt-12 mt-8 pb-34 mb-4">
@@ -21,12 +24,13 @@ export default function InventoryItemSetupForm() {
       >
         {({ loading }) => (
           <div className="space-y-6">
-            <StandardHeader
+            <StandardHeader2
               buttonName="Save"
               withButton={orgRole === "org:admin"}
               title="Add Inventory Item"
               description="Add stock items and supplies used by your shop."
               loading={loading}
+              onCancel={() => router.back()}
             />
             <div className="grid gap-5 sm:grid-cols-2">
               <StandardInput name="name" placeholder="Item Name" required />

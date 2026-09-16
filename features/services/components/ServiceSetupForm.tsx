@@ -7,10 +7,13 @@ import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { StandardRadioGroup } from "@/components/ui/custom/StandardRadioGroup";
 import { addServiceAction } from "../actions/addServiceAction";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
+import { useRouter } from "next/navigation";
+import StandardHeader2 from "@/components/utils/StandardHeader2";
 
 export default function ServiceSetupForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const { orgRole } = useClientAuthClaims();
+  const router = useRouter()
 
   const handleSuccess = () => {
     formRef.current?.reset();
@@ -21,12 +24,13 @@ export default function ServiceSetupForm() {
       <FormContainer action={addServiceAction} onSuccess={handleSuccess} ref={formRef}>
         {({ loading }) => (
           <div className="space-y-6">
-            <StandardHeader
+            <StandardHeader2
               buttonName="Save"
               withButton={orgRole === "org:admin"}
               title="Add Service"
               description="Add a laundry service and its pricing to your shop."
               loading={loading}
+              onCancel={() => router.back()}
             />
             <div className="grid gap-5 sm:grid-cols-2">
               <StandardRadioGroup
