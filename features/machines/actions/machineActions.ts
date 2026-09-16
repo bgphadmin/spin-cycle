@@ -45,7 +45,7 @@ export async function updateMachineAction(
 
         return {
             message: JSON.stringify([
-                { message: "Rice item updated successfully" },
+                { message: "Machine info updated successfully" },
                 { result: "success" },
                 { machine }
             ]),
