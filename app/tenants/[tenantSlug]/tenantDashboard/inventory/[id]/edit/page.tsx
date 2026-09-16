@@ -5,5 +5,11 @@ import EditInventoryItemForm from "@/features/inventory/components/EditInventory
 export default async function EditInventoryItemPage({ params }: { params: { id: string } }) {
   const { orgRole } = await getAuthContext();
   const item = await getInventoryItemByIdAction(params.id);
-  return <EditInventoryItemForm userRole={orgRole || ""} item={item} />;
+  return (
+    <main className="mx-auto w-full max-w-3xl px-6 mt-10 mb-25">
+      <EditInventoryItemForm userRole={orgRole || ""} item={item} />;
+    </main>
+  )
+
+
 }
