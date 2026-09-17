@@ -163,6 +163,7 @@ model InventoryItem {
   type      String // "retail" | "consumable"
   unit      String // ml, pack, sachet
   stock     Int      @default(0)
+  threshold Int      @default(0)
   price     Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

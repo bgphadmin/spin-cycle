@@ -50,7 +50,7 @@ export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
         </div>
       </div>
 
-      <div className="space-y-4 p-5 pt-0">
+      <div className="space-y-4 p-5 -mt-1 ">
         {sale.machineGroups.map((group) => (
           <section key={group.machineName}>
             <h3 className="mb-2 text-sm font-semibold text-gray-700">{group.machineName}</h3>

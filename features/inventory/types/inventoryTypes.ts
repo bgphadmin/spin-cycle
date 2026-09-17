@@ -4,5 +4,6 @@ export type InventoryItem = {
   type: string;
   unit: string;
   stock: number;
+  threshold: number;
   price: number;
 };

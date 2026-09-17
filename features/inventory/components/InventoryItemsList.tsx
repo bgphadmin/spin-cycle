@@ -52,7 +52,7 @@ export default function InventoryItemsList() {
       ) : view === "table" ? (
         <div className="overflow-hidden rounded border border-gray-200 bg-card shadow-2xl">
           <Table>
-            <StandardTableHeader columns={[{ label: "Name" }, { label: "Type" }, { label: "Unit" }, { label: "Stock" }, { label: "Price" }]} />
+            <StandardTableHeader columns={[{ label: "Name" }, { label: "Type" }, { label: "Unit" }, { label: "Stock" }, { label: "Threshold" }, { label: "Price" }]} />
             <TableBody>
               {items.map((item) => (
                 <TableRow
@@ -64,6 +64,7 @@ export default function InventoryItemsList() {
                   <TableCell className="border-b border-gray-300 capitalize">{item.type}</TableCell>
                   <TableCell className="border-b border-gray-300">{item.unit}</TableCell>
                   <TableCell className="border-b border-gray-300">{item.stock}</TableCell>
+                  <TableCell className="border-b border-gray-300">{item.threshold}</TableCell>
                   <TableCell className="border-b border-gray-300">₱{item.price.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
@@ -81,6 +82,7 @@ export default function InventoryItemsList() {
               <CardContent className="space-y-1 text-sm text-muted-foreground">
                 <p>Unit: {item.unit}</p>
                 <p>Stock: {item.stock}</p>
+                <p>Low-stock threshold: {item.threshold}</p>
                 <p>Price: ₱{item.price.toFixed(2)}</p>
               </CardContent>
               <CardFooter>

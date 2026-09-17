@@ -13,5 +13,6 @@ export const inventoryItemSchema = z.object({
     .min(1, { message: "Unit is required" })
     .max(30, { message: "Unit must not exceed 30 characters" }),
   stock: z.coerce.number().int().nonnegative({ message: "Stock cannot be negative" }),
+  threshold: z.coerce.number().int().nonnegative({ message: "Threshold cannot be negative" }),
   price: z.coerce.number().finite().nonnegative({ message: "Price cannot be negative" }),
 });

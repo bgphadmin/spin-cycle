@@ -45,6 +45,7 @@ export default function InventoryItemSetupForm() {
               />
               <StandardInput name="unit" placeholder="Unit (e.g. bottle, pack, ml)" required />
               <StandardInput name="stock" type="number" min="0" step="1" placeholder="Stock" required />
+              <StandardInput name="threshold" type="number" min="0" step="1" placeholder="Low-stock threshold" required />
               <StandardInput name="price" type="number" min="0" step="0.01" placeholder="Price" required />
             </div>
           </div>

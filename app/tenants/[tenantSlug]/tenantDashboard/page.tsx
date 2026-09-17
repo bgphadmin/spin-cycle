@@ -1,5 +1,6 @@
 import { getMachines } from '@/features/(pos)/tenantDashBoard/actions/getMachines';
-import MachinesGrid from '@/features/(pos)/tenantDashBoard/components/MachineGrid';
+import TenantDashboardTabs from '@/features/(pos)/tenantDashBoard/components/TenantDashboardTabs';
+import { getInventoryItemsAction } from '@/features/inventory/actions/inventoryActions';
 import accessTenantIdServer from '@/lib/accessTenantIdServer';
 import React from 'react'
 import { string } from 'zod';
@@ -9,7 +10,10 @@ const TenantDashboardPage = async () => {
 
   const tenantId = await accessTenantIdServer()
 
-  const machines = await getMachines(tenantId as string);
+  const [machines, inventoryResult] = await Promise.all([
+    getMachines(tenantId as string),
+    getInventoryItemsAction(),
+  ]);
 
   // Map to props expected by MachineGrid
   const machineProps = machines.map(m => ({
@@ -19,8 +23,8 @@ const TenantDashboardPage = async () => {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-1xl px-12 mt-10 mb-25" >
-        <MachinesGrid />
+    <main className="mx-auto w-full max-w-1xl px-20 mt-10 mb-25" >
+        <TenantDashboardTabs inventoryItems={inventoryResult.inventoryItems} />
     </main>
   )
 }

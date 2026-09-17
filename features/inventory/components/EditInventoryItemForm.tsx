@@ -68,6 +68,7 @@ export default function EditInventoryItemForm({
               />
               <StandardInput name="unit" placeholder="Unit" defaultValue={item.unit} required />
               <StandardInput name="stock" type="number" min="0" step="1" placeholder="Stock" defaultValue={item.stock} required />
+              <StandardInput name="threshold" type="number" min="0" step="1" placeholder="Low-stock threshold" defaultValue={item.threshold} required />
               <StandardInput name="price" type="number" min="0" step="0.01" placeholder="Price" defaultValue={item.price} required />
             </div>
           </div>
