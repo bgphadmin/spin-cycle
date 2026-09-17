@@ -1,0 +1,118 @@
+"use server";
+
+import db from "@/utils/db";
+import { auth } from "@clerk/nextjs/server";
+import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+
+export type SalesLine = {
+  id: number;
+  name: string;
+  kind: "Service" | "Item";
+  quantity: number;
+  price: number;
+  total: number;
+};
+
+export type SalesMachineGroup = {
+  machineName: string;
+  lines: SalesLine[];
+};
+
+export type CustomerSalesCard = {
+  customerId: string;
+  customerName: string;
+  paymentMethods: string[];
+  orderTypes: string[];
+  total: number;
+  machineGroups: SalesMachineGroup[];
+};
+
+async function getTenantId() {
+  const { userId } = await auth();
+  const { orgId } = await getServerAuthClaims();
+  if (!userId || !orgId) throw new Error("Organization context is required.");
+
+  const tenant = await db.tenant.findUnique({
+    where: { clerkOrgId: orgId },
+    select: { id: true },
+  });
+  if (!tenant) throw new Error("Tenant not found for this organization.");
+  return tenant.id;
+}
+
+export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
+  const tenantId = await getTenantId();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setDate(endOfDay.getDate() + 1);
+
+  const orders = await db.laundryOrder.findMany({
+    where: {
+      tenantId,
+      createdAt: { gte: startOfDay, lt: endOfDay },
+      status: { in: ["COMPLETED", "IN_PROGRESS"] },
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      customer: { select: { id: true, name: true } },
+      payments: { select: { method: true } },
+      items: {
+        select: {
+          id: true,
+          quantity: true,
+          price: true,
+          service: { select: { name: true } },
+          inventoryItem: { select: { name: true } },
+        },
+      },
+      machineUsages: {
+        select: { machine: { select: { name: true } } },
+      },
+    },
+  });
+
+  const grouped = new Map<string, CustomerSalesCard>();
+
+  for (const order of orders) {
+    const customerId = order.customer?.id ?? `walk-in-${order.id}`;
+    const customerName = order.customer?.name ?? "Walk-in";
+    const paymentMethod = order.paymentMethod ?? order.payments[0]?.method ?? "UNPAID";
+    const orderType = order.orderType.replace("_", "-");
+    const machineName = order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned";
+    const card = grouped.get(customerId) ?? {
+      customerId,
+      customerName,
+      paymentMethods: [],
+      orderTypes: [],
+      total: 0,
+      machineGroups: [],
+    };
+
+    if (!card.paymentMethods.includes(paymentMethod)) card.paymentMethods.push(paymentMethod);
+    if (!card.orderTypes.includes(orderType)) card.orderTypes.push(orderType);
+    card.total += order.total;
+
+    let machineGroup = card.machineGroups.find((group) => group.machineName === machineName);
+    if (!machineGroup) {
+      machineGroup = { machineName, lines: [] };
+      card.machineGroups.push(machineGroup);
+    }
+
+    for (const item of order.items) {
+      const name = item.service?.name ?? item.inventoryItem?.name ?? "Order item";
+      machineGroup.lines.push({
+        id: item.id,
+        name,
+        kind: item.service ? "Service" : "Item",
+        quantity: item.quantity,
+        price: item.price,
+        total: item.price * item.quantity,
+      });
+    }
+
+    grouped.set(customerId, card);
+  }
+
+  return [...grouped.values()];
+}

@@ -24,7 +24,7 @@ import { useOrganization } from "@clerk/nextjs";
 
 const navItems = [
   { href: "/tenants/dashboard/tenantDashboard", label: "Dashboard", icon: HomeIcon },
-  { href: "/dashboard/tenants/{tenantId}/sales", label: "Sales", icon: ShoppingCartIcon },
+  { href: "/tenants/sales/tenantDashboard/sales", label: "Sales", icon: ShoppingCartIcon },
   { href: "/dashboard/tenants/{tenantId}/expenses", label: "Expenses", icon: CurrencyDollarIcon },
   { href: "/tenants/inventory/tenantDashboard/inventory", label: "Inventory", icon: ArchiveBoxIcon },
 ];
