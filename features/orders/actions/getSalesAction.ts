@@ -21,6 +21,8 @@ export type SalesMachineGroup = {
 export type CustomerSalesCard = {
   customerId: string;
   customerName: string;
+  orderIds: string[];
+  isPaid: boolean;
   paymentMethods: string[];
   orderTypes: string[];
   total: number;
@@ -83,12 +85,16 @@ export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
     const card = grouped.get(customerId) ?? {
       customerId,
       customerName,
+      orderIds: [],
+      isPaid: true,
       paymentMethods: [],
       orderTypes: [],
       total: 0,
       machineGroups: [],
     };
 
+    card.orderIds.push(order.id);
+    card.isPaid = card.isPaid && order.paid;
     if (!card.paymentMethods.includes(paymentMethod)) card.paymentMethods.push(paymentMethod);
     if (!card.orderTypes.includes(orderType)) card.orderTypes.push(orderType);
     card.total += order.total;
