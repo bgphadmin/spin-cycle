@@ -111,6 +111,12 @@ export default function BottomNav() {
                 icon={BuildingOfficeIcon}
                 onSelect={() => setOpen(false)}
               />
+              <DropdownNavItem
+                href={`/tenants/${orgSlug}/adminDashboard/`}
+                label="Admin"
+                icon={BuildingOfficeIcon}
+                onSelect={() => setOpen(false)}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </li>
