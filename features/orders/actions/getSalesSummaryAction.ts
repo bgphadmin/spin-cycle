@@ -3,6 +3,7 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { businessDateKey, getBusinessDayRange } from "@/utils/businessDate";
 
 export type SalesSummaryLine = {
   name: string;
@@ -38,13 +39,6 @@ async function getTenantId() {
   return tenant.id;
 }
 
-function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function addLine(
   lines: SalesSummaryLine[],
   item: { service: { name: string } | null; inventoryItem: { name: string } | null; quantity: number; price: number },
@@ -62,10 +56,7 @@ function addLine(
 
 export async function getSalesSummaryAction(): Promise<SalesSummary> {
   const tenantId = await getTenantId();
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
+  const { start: startOfDay, end: endOfDay } = getBusinessDayRange();
 
   const orders = await db.laundryOrder.findMany({
     where: {
@@ -105,7 +96,7 @@ export async function getSalesSummaryAction(): Promise<SalesSummary> {
     }
 
     if (!order.paid) {
-      const orderDate = localDateKey(order.createdAt);
+      const orderDate = businessDateKey(order.createdAt);
       const customerName = order.customer?.name ?? "Walk-in";
       const id = `${customerName}:${orderDate}`;
       const row = unpaidGroups.get(id) ?? {

@@ -3,6 +3,7 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { getBusinessDayRange } from "@/utils/businessDate";
 
 export type SalesLine = {
   id: number;
@@ -44,10 +45,7 @@ async function getTenantId() {
 
 export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
   const tenantId = await getTenantId();
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
+  const { start: startOfDay, end: endOfDay } = getBusinessDayRange();
 
   const orders = await db.laundryOrder.findMany({
     where: {

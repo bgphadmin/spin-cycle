@@ -3,6 +3,7 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { businessDateKey, businessDateLabel, getBusinessDayRange, getBusinessYearStart } from "@/utils/businessDate";
 
 type DailyPoint = {
   date: string;
@@ -37,7 +38,7 @@ async function getTenantId() {
 }
 
 function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return businessDateKey(date);
 }
 
 function createDateRange(start: Date, end: Date) {
@@ -46,7 +47,7 @@ function createDateRange(start: Date, end: Date) {
   while (cursor <= end) {
     dates.push({
       date: dateKey(cursor),
-      label: cursor.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      label: businessDateLabel(cursor),
       total: 0,
     });
     cursor.setDate(cursor.getDate() + 1);
@@ -56,11 +57,8 @@ function createDateRange(start: Date, end: Date) {
 
 export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytics> {
   const tenantId = await getTenantId();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const startOfYear = new Date(today.getFullYear(), 0, 1);
+  const { start: today, end: tomorrow } = getBusinessDayRange();
+  const startOfYear = getBusinessYearStart();
 
   const orders = await db.laundryOrder.findMany({
     where: {
