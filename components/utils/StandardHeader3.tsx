@@ -12,11 +12,6 @@ interface FormHeaderProps {
   title: string;
   description: string;
   loading: boolean;
-  showCompleteCancel?: boolean;
-  disabled?: boolean;
-  actionLoading?: "complete" | "cancel" | null;
-  onComplete?: () => void;
-  onCancel?: () => void;
   onBack?: () => void;
 }
 
@@ -26,11 +21,6 @@ export const StandardHeader3Buttons: React.FC<FormHeaderProps> = ({
   title,
   description,
   loading,
-  showCompleteCancel = false,
-  disabled = false,
-  actionLoading = null,
-  onComplete,
-  onCancel,
   onBack,
 }) => {
 
@@ -48,40 +38,20 @@ export const StandardHeader3Buttons: React.FC<FormHeaderProps> = ({
         <div>
           {withButton ?
             (
-              <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-4">
-                {showCompleteCancel && (
-                  <>
-                    <Button
-                      variant="standard_3buttons"
-                      type='button'
-                      onClick={onBack}
-                      className="h-10 min-w-0 bg-gray-400 px-3 py-2 text-sm text-white hover:bg-gray-500" >
-                      Back
-                    </Button>
-                    <Button
-                      variant="standard_3buttons"
-                      type="button"
-                      disabled={loading || disabled}
-                      onClick={onComplete}
-                      className="h-10 min-w-0 bg-teal-500 px-3 py-2 text-sm text-white hover:bg-teal-600"
-                    >
-                      {actionLoading === "complete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Complete"}
-                    </Button>
-                    <Button
-                      variant="standard_3buttons"
-                      type="button"
-                      disabled={loading || disabled}
-                      onClick={onCancel}
-                      className="h-10 min-w-0 bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700"
-                    >
-                      {actionLoading === "cancel" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Cancel Order"}
-                    </Button>
-                  </>
-                )}
+              <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
+                <Button
+                  variant="standard_3buttons"
+                  type="button"
+                  onClick={onBack}
+                  disabled={loading}
+                  className="h-10 min-w-0 bg-gray-400 px-3 py-2 text-sm text-white hover:bg-gray-500"
+                >
+                  Back
+                </Button>
                 <Button
                   variant="standard_3buttons"
                   type="submit"
-                  disabled={loading || disabled}
+                  disabled={loading}
                   className="h-10 min-w-0 bg-orange-200 px-3 py-2 text-sm text-orange-900 hover:bg-orange-300"
                 >
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : buttonName}

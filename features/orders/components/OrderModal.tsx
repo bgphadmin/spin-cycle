@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import FormContainer from "@/components/utils/FormContainer";
 import { createOrderAction } from "../../(pos)/tenantDashBoard/actions/createOrderAction";
-import { cancelOrderAction, completeOrderAction, getActiveOrderAction, updateOrderAction } from "../../(pos)/tenantDashBoard/actions/orderActions";
+import { getActiveOrderAction, updateOrderAction } from "../../(pos)/tenantDashBoard/actions/orderActions";
 import { getCustomersAction, getInventoryAction, getServicesAction } from "@/features/orders/actions/getData";
 import type { Customer } from "@/features/orders/actions/getData";
 import StandardHeader3Buttons from "@/components/utils/StandardHeader3";
@@ -37,7 +37,6 @@ type InventoryItem = {
 
 export default function OrderModal({ machineId, type, status, onClose }: OrderModalProps) {
   const [activeOrder, setActiveOrder] = useState<any>(null);
-  const [actionLoading, setActionLoading] = useState<"complete" | "cancel" | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -122,20 +121,7 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                       withButton={true}
                       buttonName={status === "IN_USE" ? "Update" : "Save Order"}
                       loading={loading}
-                      disabled={actionLoading !== null}
-                      actionLoading={actionLoading}
-                      showCompleteCancel={status === "IN_USE" && !!activeOrder}
                       onBack={onClose}
-                      onComplete={async () => {
-                        setActionLoading("complete");
-                        await completeOrderAction(activeOrder.id);
-                        onClose();
-                      }}
-                      onCancel={async () => {
-                        setActionLoading("cancel");
-                        await cancelOrderAction(activeOrder.id);
-                        onClose();
-                      }}
                     />)
                 }
               </div>
