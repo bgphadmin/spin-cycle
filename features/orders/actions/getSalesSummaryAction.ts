@@ -33,10 +33,10 @@ async function getTenantId() {
 
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgId: orgId },
-    select: { id: true },
+    select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return tenant.id;
+  return tenant;
 }
 
 function addLine(
@@ -55,12 +55,12 @@ function addLine(
 }
 
 export async function getSalesSummaryAction(): Promise<SalesSummary> {
-  const tenantId = await getTenantId();
-  const { start: startOfDay, end: endOfDay } = getBusinessDayRange();
+  const tenant = await getTenantId();
+  const { start: startOfDay, end: endOfDay } = getBusinessDayRange(new Date(), tenant.timeZone);
 
   const orders = await db.laundryOrder.findMany({
     where: {
-      tenantId,
+      tenantId: tenant.id,
       status: { in: ["COMPLETED", "IN_PROGRESS"] },
       OR: [
         { paid: true, createdAt: { gte: startOfDay, lt: endOfDay } },
@@ -96,7 +96,7 @@ export async function getSalesSummaryAction(): Promise<SalesSummary> {
     }
 
     if (!order.paid) {
-      const orderDate = businessDateKey(order.createdAt);
+      const orderDate = businessDateKey(order.createdAt, tenant.timeZone);
       const customerName = order.customer?.name ?? "Walk-in";
       const id = `${customerName}:${orderDate}`;
       const row = unpaidGroups.get(id) ?? {

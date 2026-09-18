@@ -118,6 +118,7 @@ export async function editTenantAction(id: string, formData: FormData): Promise<
           phone: validatedFields.phone,
           email: validatedFields.email,
           subscriptionStatus: validatedFields.subscriptionStatus,
+          timeZone: validatedFields.timeZone,
         },
       });
 
@@ -186,6 +187,7 @@ export async function addTenantAction(
           subscriptionStatus: validatedFields.subscriptionStatus,
           clerkOrgId: "",
           clerkOrgSlug: "",
+          timeZone: validatedFields.timeZone,
         },
       });
       return tenant;

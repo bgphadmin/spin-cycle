@@ -39,6 +39,7 @@ export async function registerShopAction(
           ...fields,
           email: fields.email || "",
           subscriptionStatus: "PREMIUM",
+          timeZone: fields.timeZone,
           clerkOrgId: orgId ?? userId,
           clerkOrgSlug: orgSlug ?? "",
         },

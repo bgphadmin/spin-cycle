@@ -35,4 +35,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-Sales-day boundaries use Philippine time by default (`Asia/Manila`) so they do not depend on the server's local time zone. Set the server-side `APP_TIME_ZONE` environment variable in each deployment if a tenant operates in another IANA time zone.
+Sales-day boundaries use each tenant's configured IANA time zone. Existing tenants are migrated to Philippine time (`Asia/Manila`), and new shops choose their business time zone during registration. `APP_TIME_ZONE` remains only as a fallback for shared date helpers that are called without a tenant context.

@@ -21,6 +21,7 @@ import { addTenantAction, getTenantsPerPage } from "@/utils/actions/tenant/tenan
 import TenantButton from "./TenantButton"
 import TenantGrid, { type TenantRow } from "./TenantGrid"
 import { EditTenantItem } from "./EditTenantItem"
+import { COMMON_TIME_ZONES, DEFAULT_TIME_ZONE } from "@/utils/timeZones"
 
 interface TenantManagerProps {
     initialRows: Tenant[]
@@ -36,6 +37,7 @@ const defaultFormState = {
     phone: "",
     email: "",
     subscriptionStatus: "REGULAR",
+    timeZone: DEFAULT_TIME_ZONE,
 }
 
 const mapTenantToRow = (tenant: Partial<Tenant> & {
@@ -55,6 +57,7 @@ const mapTenantToRow = (tenant: Partial<Tenant> & {
     email: tenant.email?.toString() ?? "",
     subscriptionStatus: tenant.subscriptionStatus ?? SubscriptionStatus.REGULAR,
     createdAt: tenant.createdAt ? new Date(tenant.createdAt) : new Date(),
+    timeZone: tenant.timeZone ?? DEFAULT_TIME_ZONE,
 })
 
 export default function TenantManager({ initialRows, total }: TenantManagerProps) {
@@ -97,6 +100,7 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
                         email: r.email,
                         subscriptionStatus: r.subscriptionStatus,
                         createdAt: new Date(r.createdAt),
+                        timeZone: r.timeZone ?? DEFAULT_TIME_ZONE,
                     })))
                     setTotalCount(total)
                 } catch (err: unknown) {
@@ -236,6 +240,21 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
                                                 <option value="REGULAR">REGULAR</option>
                                                 <option value="PREMIUM">PREMIUM</option>
                                                 <option value="INACTIVE">INACTIVE</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2 sm:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Business Time Zone
+                                            </label>
+                                            <select
+                                                name="timeZone"
+                                                value={formValues.timeZone}
+                                                onChange={handleFormChange}
+                                                className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                                            >
+                                                {COMMON_TIME_ZONES.map((timeZone) => (
+                                                    <option key={timeZone} value={timeZone}>{timeZone}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>

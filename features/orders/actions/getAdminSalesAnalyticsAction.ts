@@ -31,38 +31,38 @@ async function getTenantId() {
 
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgId: orgId },
-    select: { id: true },
+    select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return tenant.id;
+  return tenant;
 }
 
-function dateKey(date: Date) {
-  return businessDateKey(date);
+function dateKey(date: Date, timeZone: string) {
+  return businessDateKey(date, timeZone);
 }
 
-function createDateRange(start: Date, end: Date) {
+function createDateRange(start: Date, end: Date, timeZone: string) {
   const dates: DailyPoint[] = [];
   const cursor = new Date(start);
   while (cursor <= end) {
     dates.push({
-      date: dateKey(cursor),
-      label: businessDateLabel(cursor),
+      date: dateKey(cursor, timeZone),
+      label: businessDateLabel(cursor, timeZone),
       total: 0,
     });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
 }
 
 export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytics> {
-  const tenantId = await getTenantId();
-  const { start: today, end: tomorrow } = getBusinessDayRange();
-  const startOfYear = getBusinessYearStart();
+  const tenant = await getTenantId();
+  const { start: today, end: tomorrow } = getBusinessDayRange(new Date(), tenant.timeZone);
+  const startOfYear = getBusinessYearStart(new Date(), tenant.timeZone);
 
   const orders = await db.laundryOrder.findMany({
     where: {
-      tenantId,
+      tenantId: tenant.id,
       paid: true,
       status: { in: ["COMPLETED", "IN_PROGRESS"] },
       createdAt: { gte: startOfYear, lt: tomorrow },
@@ -82,7 +82,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     },
   });
 
-  const dailySales = createDateRange(startOfYear, today);
+  const dailySales = createDateRange(startOfYear, today, tenant.timeZone);
   const dailySalesByDate = new Map(dailySales.map((point) => [point.date, point]));
   const serviceByName = new Map<string, Map<string, number>>();
   const inventoryByName = new Map<string, Map<string, number>>();
@@ -94,7 +94,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
   const customerTotals = new Map<string, number>();
 
   for (const order of orders) {
-    const orderDate = dateKey(order.createdAt);
+    const orderDate = dateKey(order.createdAt, tenant.timeZone);
     const dailyPoint = dailySalesByDate.get(orderDate);
     if (dailyPoint) dailyPoint.total += order.total;
 

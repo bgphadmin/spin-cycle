@@ -43,6 +43,7 @@ export async function registerShopAction(
           clerkOrgSlug: orgSlug as string,
           email: fields.email || "",
           subscriptionStatus: "PREMIUM",
+          timeZone: fields.timeZone,
         },
       });
 

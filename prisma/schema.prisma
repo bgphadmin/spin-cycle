@@ -42,6 +42,7 @@ model Tenant {
   phone              String
   address            String
   email              String
+  timeZone           String             @default("Asia/Manila")
   subscriptionStatus SubscriptionStatus @default(REGULAR)
   createdAt          DateTime           @default(now())
 

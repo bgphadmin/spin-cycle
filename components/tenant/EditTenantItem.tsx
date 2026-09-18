@@ -18,6 +18,7 @@ import { deleteTenantItemAction, editTenantAction } from "@/utils/actions/tenant
 import { TenantRow } from "./TenantGrid";
 import type { Tenant } from "@prisma/client";
 import { Input } from "../ui/input";
+import { COMMON_TIME_ZONES, DEFAULT_TIME_ZONE } from "@/utils/timeZones";
 
 // #TODO: Hello
 
@@ -40,6 +41,7 @@ export function EditTenantItem({
         email: string | null;
         subscriptionStatus: string;
         createdAt: Date;
+        timeZone: string;
     },
     open: boolean,
     onOpenChange: (open: boolean) => void, showTrigger?: boolean,
@@ -69,6 +71,7 @@ export function EditTenantItem({
                 email: formData.get("email") as string,
                 subscriptionStatus: formData.get("subscriptionStatus") as Tenant["subscriptionStatus"],
                 createdAt: new Date(item.createdAt),
+                timeZone: formData.get("timeZone") as string,
             };
             onOpenChange(false);
             onEditSuccess?.(updatedRow);
@@ -180,6 +183,18 @@ export function EditTenantItem({
                                     <option value="REGULAR">REGULAR</option>
                                     <option value="PREMIUM">PREMIUM</option>
                                     <option value="INACTIVE">INACTIVE</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2 pb-4 sm:col-span-2">
+                                <label className="text-sm font-medium text-foreground">Business Time Zone</label>
+                                <select
+                                    name="timeZone"
+                                    defaultValue={item.timeZone || DEFAULT_TIME_ZONE}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                                >
+                                    {COMMON_TIME_ZONES.map((timeZone) => (
+                                        <option key={timeZone} value={timeZone}>{timeZone}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>

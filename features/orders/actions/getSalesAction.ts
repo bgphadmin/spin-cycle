@@ -37,19 +37,19 @@ async function getTenantId() {
 
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgId: orgId },
-    select: { id: true },
+    select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return tenant.id;
+  return tenant;
 }
 
 export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
-  const tenantId = await getTenantId();
-  const { start: startOfDay, end: endOfDay } = getBusinessDayRange();
+  const tenant = await getTenantId();
+  const { start: startOfDay, end: endOfDay } = getBusinessDayRange(new Date(), tenant.timeZone);
 
   const orders = await db.laundryOrder.findMany({
     where: {
-      tenantId,
+      tenantId: tenant.id,
       createdAt: { gte: startOfDay, lt: endOfDay },
       status: { in: ["COMPLETED", "IN_PROGRESS"] },
     },

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { StandardFormTitle } from "@/components/ui/custom/StandardTitle";
 import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { registerShopAction } from "../actions";
+import { COMMON_TIME_ZONES, DEFAULT_TIME_ZONE } from "@/utils/timeZones";
 
 export default function RegisterShopForm() {
   const router = useRouter();
@@ -54,6 +55,22 @@ export default function RegisterShopForm() {
               <div className="sm:col-span-2">
                 <StandardInput name="address" placeholder="Address" as="textarea" required />
               </div>
+              <label className="sm:col-span-2 space-y-2 text-sm font-medium text-foreground">
+                Business time zone
+                <select
+                  name="timeZone"
+                  defaultValue={DEFAULT_TIME_ZONE}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                >
+                  {COMMON_TIME_ZONES.map((timeZone) => (
+                    <option key={timeZone} value={timeZone}>{timeZone}</option>
+                  ))}
+                </select>
+                <span className="block text-xs font-normal text-muted-foreground">
+                  Used to determine the business date for Today&apos;s Sales.
+                </span>
+              </label>
             </div>
           </div>
         )}
