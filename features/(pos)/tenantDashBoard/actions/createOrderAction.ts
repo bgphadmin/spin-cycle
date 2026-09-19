@@ -25,6 +25,7 @@ export async function createOrderAction(
     const paymentMethod = String(formData.get("paymentMethod") ?? "") as PaymentMethod;
     const orderType = String(formData.get("orderType") ?? "WALK_IN") as OrderType;
     const extraServiceIds = formData.getAll("extraServices").map(String);
+    const isPaid = formData.get("paid") === "on";
 
     if (!userId || !orgId) throw new Error("You must be signed in to create an order.");
     if (!machineId) throw new Error("Machine is required.");
@@ -35,6 +36,9 @@ export async function createOrderAction(
     }
     if (!orderTypes.includes(orderType)) {
       throw new Error("A valid order type is required.");
+    }
+    if (typeof isPaid !== "boolean") {
+      throw new Error("Paid status is required.");
     }
 
     const inventoryQuantities = new Map<string, number>();
@@ -136,6 +140,7 @@ export async function createOrderAction(
           orderType,
           paymentMethod,
           total,
+          paid: isPaid,
           items: { create: [...serviceItems, ...inventoryOrderItems] },
           machineUsages: {
             create: {

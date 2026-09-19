@@ -5,6 +5,7 @@ import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
+import { revalidatePath } from "next/cache";
 
 async function tenantId() {
   const { userId } = await auth();
@@ -67,6 +68,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
     const orderType = String(formData.get("orderType") ?? "WALK_IN");
     const extraServiceIds = formData.getAll("extraServices").map(String);
     const inventoryQuantities = new Map<string, number>();
+    const isPaid = formData.get("paid") === "on";
     for (const [key, value] of formData.entries()) {
       if (!key.startsWith("inventory_")) continue;
       const quantity = Number(value);
@@ -176,7 +178,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       });
       await tx.laundryOrder.update({
         where: { id: order.id },
-        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total },
+        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total, paid: isPaid },
       });
       if (order.payments[0]) {
         await tx.payment.update({ where: { id: order.payments[0].id }, data: { amount: total, method: paymentMethod } });
@@ -184,6 +186,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
         await tx.payment.create({ data: { orderId: order.id, amount: total, method: paymentMethod } });
       }
     }, { maxWait: 10000, timeout: 15000 });
+    revalidatePath(`/tenants/orgSlug/tenantDashboard/sales`);
     return { message: JSON.stringify([{ message: "Order updated successfully.", result: "success" }]) };
   } catch (error) { return renderError(error); }
 }
