@@ -104,6 +104,7 @@ model LaundryOrder {
   paid          Boolean            @default(false)
   paidAt        DateTime?
   paymentMethod PaymentMethod? // cash, card, gcash
+  comment       String?
   createdAt     DateTime           @default(now())
 
   customer      Customer?      @relation(fields: [customerId], references: [id])

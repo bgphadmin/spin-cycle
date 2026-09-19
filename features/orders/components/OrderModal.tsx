@@ -140,7 +140,6 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                   defaultValue={activeOrder?.customer?.name ?? ""}
                   customers={customers}
                 />
-
                 <div className="grid gap-6 sm:grid-cols-2">
                   <fieldset className="relative rounded-md border border-gray-200 mt- p-2">
                     <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
@@ -292,6 +291,18 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                     </label>
                   </div>
                 </fieldset>
+                {/* Comment: Add comment section for the laundry order */}
+                <div className="mt-4">
+                  <label>
+                    Comment:
+                    <textarea
+                      name="comment"
+                      defaultValue={activeOrder?.comment ?? ""}
+                      className="w-full rounded-md border border-gray-300 p-1"
+                    />
+                  </label>
+                </div>
+
               </div>
             )}
           </FormContainer>

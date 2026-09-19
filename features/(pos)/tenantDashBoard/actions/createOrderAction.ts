@@ -26,6 +26,7 @@ export async function createOrderAction(
     const orderType = String(formData.get("orderType") ?? "WALK_IN") as OrderType;
     const extraServiceIds = formData.getAll("extraServices").map(String);
     const isPaid = formData.get("paid") === "on";
+    const comment = String(formData.get("comment") ?? "").trim();
 
     if (!userId || !orgId) throw new Error("You must be signed in to create an order.");
     if (!machineId) throw new Error("Machine is required.");
@@ -140,6 +141,7 @@ export async function createOrderAction(
           orderType,
           paymentMethod,
           total,
+          comment,
           paid: isPaid,
           items: { create: [...serviceItems, ...inventoryOrderItems] },
           machineUsages: {

@@ -69,6 +69,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
     const extraServiceIds = formData.getAll("extraServices").map(String);
     const inventoryQuantities = new Map<string, number>();
     const isPaid = formData.get("paid") === "on";
+    const comment = String(formData.get("comment") ?? "").trim();
     for (const [key, value] of formData.entries()) {
       if (!key.startsWith("inventory_")) continue;
       const quantity = Number(value);
@@ -178,7 +179,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       });
       await tx.laundryOrder.update({
         where: { id: order.id },
-        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total, paid: isPaid },
+        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total, paid: isPaid, comment },
       });
       if (order.payments[0]) {
         await tx.payment.update({ where: { id: order.payments[0].id }, data: { amount: total, method: paymentMethod } });
