@@ -84,9 +84,8 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
 
   return (
     <div
-      className={`rounded bg-card shadow-sm p-4 transition flex flex-col items-center ${
-        isUnavailable ? "cursor-default" : "cursor-pointer hover:shadow-lg"
-      }`}
+      className={`rounded bg-card shadow-sm p-4 transition flex flex-col items-center ${isUnavailable ? "cursor-default" : "cursor-pointer hover:shadow-lg"
+        }`}
       onClick={isUnavailable ? undefined : () => setOpen(true)}
     >
       {/* Machine image with shake animation, flanked by Cancel/Complete when in use */}
@@ -163,6 +162,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
 
       {open && (
         <OrderModal
+          name={name}
           machineId={id}
           type={type}
           status={status}

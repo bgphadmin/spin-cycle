@@ -12,6 +12,7 @@ import CustomerInput from "@/components/utils/CustomerInput";
 import OrderModalSkeleton from "@/components/utils/OrderModalSkeleton";
 
 type OrderModalProps = {
+  name: string;
   machineId: string;
   type: "washer" | "dryer";
   onClose: () => void;
@@ -35,7 +36,7 @@ type InventoryItem = {
 
 
 
-export default function OrderModal({ machineId, type, status, onClose }: OrderModalProps) {
+export default function OrderModal({ name, machineId, type, status, onClose }: OrderModalProps) {
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -115,19 +116,19 @@ export default function OrderModal({ machineId, type, status, onClose }: OrderMo
                   {status === "AVAILABLE" ?
                     <StandardHeader2
                       buttonName="Submit"
-                      description="Enter your order here"
+                      description={`Machine: ${name}`}
                       withButton
                       title="New Order"
                       loading={loading}
                       onCancel={onClose}
                     /> : (
-                      <StandardHeader3Buttons
+                      <StandardHeader2
                         title={status === "IN_USE" ? "Order" : "New Order"}
-                        description={status === "IN_USE" ? "" : "Create order sales for this machine."}
+                        description={status === "IN_USE" ? `Machine: ${name}` : "Create order sales for this machine - " + name}
                         withButton={true}
                         buttonName={status === "IN_USE" ? "Update" : "Save Order"}
                         loading={loading}
-                        onBack={onClose}
+                        onCancel={onClose}
                       />)
                   }
                 </div>
