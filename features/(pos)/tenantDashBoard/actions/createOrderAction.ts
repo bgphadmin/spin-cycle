@@ -143,6 +143,7 @@ export async function createOrderAction(
           total,
           comment,
           paid: isPaid,
+          paidAt: isPaid ? new Date() : null,
           items: { create: [...serviceItems, ...inventoryOrderItems] },
           machineUsages: {
             create: {
