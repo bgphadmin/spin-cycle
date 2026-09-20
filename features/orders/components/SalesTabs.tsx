@@ -9,9 +9,11 @@ import SalesSummary from "@/features/orders/components/SalesSummary";
 export default function SalesTabs({
   sales,
   summary,
+  userFullName,
 }: {
   sales: CustomerSalesCard[];
   summary: SalesSummaryData;
+  userFullName: string;
 }) {
   const [activeTab, setActiveTab] = useState<"customers" | "summary">("customers");
 
@@ -44,7 +46,7 @@ export default function SalesTabs({
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {sales.map((sale) => (
-            <SalesCard key={sale.customerId} sale={sale} />
+            <SalesCard key={sale.customerId} sale={sale} userFullName={userFullName} />
           ))}
         </div>
       )}
