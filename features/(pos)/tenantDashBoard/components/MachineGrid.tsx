@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
-import  MachineCard  from "./MachineCard"; // your card component
+import MachineCard from "./MachineCard"; // your card component
 import { Machine } from "@prisma/client";
-import  CardSkeleton  from "@/components/utils/cardSkeleton";
+import CardSkeleton from "@/components/utils/cardSkeleton";
 
 type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 

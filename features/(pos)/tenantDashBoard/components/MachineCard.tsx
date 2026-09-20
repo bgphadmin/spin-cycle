@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import LoadingDeleteButton from "@/components/utils/LoadingDeleteButton";
 import { cancelOrderAction, completeOrderAction, getActiveOrderAction } from "../actions/orderActions";
+type ActiveOrder = Awaited<ReturnType<typeof getActiveOrderAction>>;
 
 type MachineCardProps = {
   id: string;
@@ -28,6 +29,7 @@ type MachineCardProps = {
 export default function MachineCard({ id, name, type, status, usageCount, onOrderCreated }: MachineCardProps) {
   const [open, setOpen] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [order, setOrder] = useState<ActiveOrder | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [completing, setCompleting] = useState(false);
 
@@ -52,6 +54,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
     async function loadActiveOrder() {
       const order = await getActiveOrderAction(id);
       if (!cancelled) setActiveOrderId(order?.id ?? null);
+      if (!cancelled) setOrder(order ?? null);
     }
     void loadActiveOrder();
     return () => {
@@ -88,6 +91,13 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
         }`}
       onClick={isUnavailable ? undefined : () => setOpen(true)}
     >
+
+      {isInUse && activeOrderId && (
+        <div className="shrink-0 px-3 py-2 text-sm font-bold text-center">
+          {order?.customer?.name ?? ""}
+        </div>
+      )}
+
       {/* Machine image with shake animation, flanked by Cancel/Complete when in use */}
       <div className="mb-3 flex w-full items-center justify-center gap-3">
         {isInUse && activeOrderId && (
@@ -108,6 +118,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
           width={120}
           height={120}
           className={isInUse ? "animate-shake" : ""}
+          priority
         />
 
         {isInUse && activeOrderId && (
@@ -157,7 +168,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
       {/* Machine info */}
       <h3 className="font-semibold">{name}</h3>
       <p className="text-sm text-muted-foreground capitalize">{type}</p>
-      <p className="text-sm">Status: {status}</p>
+      <p className="text-sm">Status: {status === "AVAILABLE" ? "Available" : status === "IN_USE" ? "In Use" : "Unavailable"}</p>
       <p className="text-sm">Usage Count: {usageCount}</p>
 
       {open && (
