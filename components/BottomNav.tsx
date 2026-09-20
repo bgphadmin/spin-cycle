@@ -26,7 +26,6 @@ const navItems = [
   { href: "/tenants/dashboard/tenantDashboard", label: "Dashboard", icon: HomeIcon },
   { href: "/tenants/sales/tenantDashboard/sales", label: "Sales", icon: ShoppingCartIcon },
   { href: "/tenants/expense/tenantDashboard/expense", label: "Expenses", icon: CurrencyDollarIcon },
-  { href: "/tenants/inventory/tenantDashboard/inventory", label: "Inventory", icon: ArchiveBoxIcon },
 ];
 
 export default function BottomNav() {
