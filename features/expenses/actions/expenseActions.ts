@@ -116,6 +116,22 @@ export async function addExpenseAction(
       amount: formData.get("amount"),
       notes: formData.get("notes"),
     });
+    const expenseDate = String(formData.get("expenseDate") ?? "").trim();
+    let createdAt: Date | undefined;
+    if (expenseDate) {
+      if (!currentUser.isAdmin) throw new Error("Only admins can set an expense date.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) throw new Error("Expense date must be valid.");
+      const [year, month, day] = expenseDate.split("-").map(Number);
+      const parsedDate = new Date(Date.UTC(year, month - 1, day));
+      if (
+        parsedDate.getUTCFullYear() !== year ||
+        parsedDate.getUTCMonth() !== month - 1 ||
+        parsedDate.getUTCDate() !== day
+      ) {
+        throw new Error("Expense date must be valid.");
+      }
+      createdAt = businessDayRangeFromKey(expenseDate, tenant.timeZone).start;
+    }
 
     const expense = await db.expense.create({
       data: {
@@ -124,6 +140,7 @@ export async function addExpenseAction(
         category: fields.category,
         amount: fields.amount,
         notes: fields.notes === "" ? null : fields.notes,
+        ...(createdAt ? { createdAt } : {}),
       },
     });
 

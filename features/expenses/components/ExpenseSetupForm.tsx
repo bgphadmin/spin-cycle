@@ -9,11 +9,20 @@ import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { addExpenseAction } from "../actions/expenseActions";
 import ExpenseCategoryField from "./ExpenseCategoryField";
 
+function todayDateKey() {
+  const today = new Date();
+  return [today.getFullYear(), today.getMonth() + 1, today.getDate()]
+    .map((value, index) => (index === 0 ? String(value) : String(value).padStart(2, "0")))
+    .join("-");
+}
+
 export default function ExpenseSetupForm() {
   const formRef = useRef<HTMLFormElement>(null);
-  const { isLoaded } = useClientAuthClaims();
+  const { isLoaded, orgRole } = useClientAuthClaims();
+  const isAdmin = orgRole === "org:admin";
   const router = useRouter();
   const [formKey, setFormKey] = useState(0);
+  const [expenseDate] = useState(todayDateKey);
 
   const handleSuccess = () => {
     formRef.current?.reset();
@@ -35,6 +44,15 @@ export default function ExpenseSetupForm() {
             />
             <div className="grid gap-5 sm:grid-cols-2">
               <ExpenseCategoryField key={formKey} />
+              {isAdmin && (
+                <StandardInput
+                  name="expenseDate"
+                  type="date"
+                  label="Expense date"
+                  defaultValue={expenseDate}
+                  required
+                />
+              )}
               <StandardInput
                 name="amount"
                 type="number"
@@ -56,4 +74,3 @@ export default function ExpenseSetupForm() {
     </div>
   );
 }
-
