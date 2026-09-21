@@ -108,7 +108,7 @@ export default function BottomNav() {
                 onSelect={() => setOpen(false)}
               />
               <DropdownNavItem
-                href={`/dashboard/tenants/${tenantId}/customers`}
+                href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
                 label="Customers"
                 icon={UserIcon}
                 onSelect={() => setOpen(false)}

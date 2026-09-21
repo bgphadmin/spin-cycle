@@ -52,6 +52,7 @@ model Tenant {
   inventoryTxns  InventoryTransaction[]
   orders         LaundryOrder[]
   expenses       Expense[]
+  customers      Customer[]
   MachineUsage   MachineUsage[]
   services       Service[]
 }
@@ -73,12 +74,15 @@ model User {
 model Customer {
   id        String   @id @default(uuid())
   tenantId  String
-  name      String   @unique
+  name      String
   phone     String?
   email     String?
   createdAt DateTime @default(now())
 
+  tenant Tenant @relation(fields: [tenantId], references: [id])
   orders LaundryOrder[]
+
+  @@unique([tenantId, name])
 }
 
 enum LaundryOrderStatus {
