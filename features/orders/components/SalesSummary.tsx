@@ -72,7 +72,7 @@ export default function SalesSummary({ summary }: { summary: SalesSummaryData })
                         {isExpanded && (
                           <div className="border-t border-gray-100 bg-gray-50 px-3 py-3">
                             {row.lines.map((line) => (
-                              <div key={`${row.id}-${line.orderId}-${line.kind}-${line.name}`} className="flex justify-between gap-3 py-1 text-xs text-gray-600">
+                              <div key={`${row.id}-${line.kind}-${line.name}`} className="flex justify-between gap-3 py-1 text-xs text-gray-600">
                                 <span>{line.name} ({line.kind}) · {line.quantity} × {money(line.total / line.quantity)}</span>
                                 <span className="font-medium text-gray-700">{money(line.total)}</span>
                               </div>

@@ -17,7 +17,7 @@ export type UnpaidSalesRow = {
   customerName: string;
   orderDate: string;
   total: number;
-  lines: Array<SalesSummaryLine & { orderId: string }>;
+  lines: SalesSummaryLine[];
 };
 
 export type SalesSummary = {
@@ -107,11 +107,7 @@ export async function getSalesSummaryAction(): Promise<SalesSummary> {
         lines: [],
       };
       row.total += order.total;
-      for (const item of order.items) {
-        const name = item.service?.name ?? item.inventoryItem?.name ?? "Order item";
-        const kind = item.service ? "Service" : "Item";
-        row.lines.push({ orderId: order.id, name, kind, quantity: item.quantity, total: item.price * item.quantity });
-      }
+      for (const item of order.items) addLine(row.lines, item);
       unpaidGroups.set(id, row);
     }
   }
