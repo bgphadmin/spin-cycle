@@ -72,6 +72,24 @@ export function getBusinessYearStart(now = new Date(), timeZone = BUSINESS_TIME_
   return localDateToUtc({ year, month: 1, day: 1 }, timeZone);
 }
 
+export function getBusinessMonthStart(now = new Date(), timeZone = BUSINESS_TIME_ZONE) {
+  const { year, month } = getDateParts(now, timeZone);
+  return localDateToUtc({ year, month, day: 1 }, timeZone);
+}
+
+/**
+ * Converts a "YYYY-MM-DD" business-day key (e.g. from a date-range picker) into
+ * the UTC range covering that day in the given timezone.
+ */
+export function businessDayRangeFromKey(dateKey: string, timeZone = BUSINESS_TIME_ZONE) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const parts: DateParts = { year, month, day };
+  return {
+    start: localDateToUtc(parts, timeZone),
+    end: localDateToUtc(nextDate(parts), timeZone),
+  };
+}
+
 export function businessDateKey(date: Date, timeZone = BUSINESS_TIME_ZONE) {
   return dateKeyFromParts(getDateParts(date, timeZone));
 }

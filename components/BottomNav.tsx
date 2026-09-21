@@ -22,11 +22,7 @@ import { useState } from "react";
 import DropdownNavItem from "./DropDownNavItem";
 import { useOrganization } from "@clerk/nextjs";
 
-const navItems = [
-  { href: "/tenants/dashboard/tenantDashboard", label: "Dashboard", icon: HomeIcon },
-  { href: "/tenants/sales/tenantDashboard/sales", label: "Sales", icon: ShoppingCartIcon },
-  { href: "/tenants/expense/tenantDashboard/expense", label: "Expenses", icon: CurrencyDollarIcon },
-];
+
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -37,6 +33,13 @@ export default function BottomNav() {
   const orgSlug = organization?.slug
 
   const hideBottomNav = pathname === "/registerShop" || pathname === "/"; // 👈 condition
+
+  const navItems = [
+    { href: "/tenants/dashboard/tenantDashboard", label: "Dashboard", icon: HomeIcon },
+    { href: "/tenants/sales/tenantDashboard/sales", label: "Sales", icon: ShoppingCartIcon },
+    { href: "/tenants/" + orgSlug + "/tenantDashboard/expense", label: "Expenses", icon: CurrencyDollarIcon }
+  ];
+
 
   if (hideBottomNav) {
     return null; // 👈 don't render anything
@@ -90,6 +93,12 @@ export default function BottomNav() {
                 href={`/tenants/${orgSlug}/tenantDashboard/services/`}
                 label="Services"
                 icon={UserIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href={`/tenants/${orgSlug}/tenantDashboard/expense/`}
+                label="Expenses"
+                icon={CurrencyDollarIcon}
                 onSelect={() => setOpen(false)}
               />
               <DropdownNavItem

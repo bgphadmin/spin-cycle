@@ -46,6 +46,7 @@ export function StandardSelect({
       )}
       
       <Select
+        name={name}
         value={value}
         onValueChange={onValueChange}
         defaultValue={defaultValue}
@@ -58,7 +59,7 @@ export function StandardSelect({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         
-        <SelectContent>
+        <SelectContent className="bg-teal-100">
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

@@ -18,8 +18,7 @@ export async function getMachineByIdAction(id: string) {
         });
         return machineData
     } catch (error) {
-        console.log ("Something went wrong");
-        return null
+        return { message: "Something went wrong" };
     }
 }
 

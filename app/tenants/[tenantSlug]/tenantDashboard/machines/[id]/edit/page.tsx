@@ -11,9 +11,13 @@ export default async function EditMachinePage({ params }: { params: { id: string
     return (
         <main className="mx-auto w-full max-w-3xl px-6 mt-10 mb-25">
             <EditMachineForm
-                key={machineData ? `${machineData.id}-${machineData.status}` : "machine-not-found"}
+                key={
+                    machineData && "id" in machineData
+                        ? `${machineData.id}-${machineData.status}`
+                        : "machine-not-found"
+                }
                 userRole={orgRole || ""}
-                machine={machineData}
+                machine={machineData && "id" in machineData ? machineData : null}
             />
         </main>
     );
