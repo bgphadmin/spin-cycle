@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import Spinner from "@/components/utils/Spinner";
 import StandardHeaderHref from "@/components/utils/StandardHeaderHref";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
@@ -16,6 +17,7 @@ const columns: Array<{ key: SortKey; label: string }> = [
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
 ];
+const ROWS_PER_PAGE = 10;
 
 export default function CustomersList() {
   const { isLoaded } = useClientAuthClaims();
@@ -25,6 +27,7 @@ export default function CustomersList() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +44,7 @@ export default function CustomersList() {
   }, []);
 
   function toggleSort(key: SortKey) {
+    setCurrentPage(1);
     if (sortKey === key) setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
@@ -56,6 +60,20 @@ export default function CustomersList() {
       return sortDir === "asc" ? result : -result;
     });
   }, [customers, search, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / ROWS_PER_PAGE));
+  const visibleCustomers = filteredSorted.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   return (
     <div className="mt-8 space-y-6">
@@ -86,7 +104,7 @@ export default function CustomersList() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSorted.map((customer) => (
+                {visibleCustomers.map((customer) => (
                   <tr key={customer.id} onClick={() => isLoaded && router.push(`./customer/${customer.id}/edit`)} className={`border-b border-gray-100 last:border-0 ${isLoaded ? "cursor-pointer hover:bg-teal-50" : "cursor-not-allowed"}`}>
                     <td className="px-3 py-3 font-medium text-gray-800">{customer.name}</td>
                     <td className="px-3 py-3 text-gray-600">{customer.phone || "—"}</td>
@@ -95,6 +113,35 @@ export default function CustomersList() {
                 ))}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="flex flex-col gap-3 border-t border-gray-200 px-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}-
+                  {Math.min(currentPage * ROWS_PER_PAGE, filteredSorted.length)} of {filteredSorted.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((page) => page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((page) => page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
