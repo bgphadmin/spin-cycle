@@ -21,20 +21,22 @@ const SignedInLandingPage = async () => {
   if (orgRole === "org:admin" && orgSlug) {
     return (
       <SignedIn>
-        <Link href={`/tenants/${orgSlug}/tenantDashboard`}>
-          <Button
-            variant="standard"
-          >
-            Go to Dashboard
-          </Button>
-        </Link>
-        <Link href="/inviteStaff">
-          <Button
-            variant="standard"
-          >
-            Invite Staff Members
-          </Button>
-        </Link>
+          <Link href={`/tenants/${orgSlug}/tenantDashboard`}>
+            <Button
+              variant="standard"
+              className="mb-3"
+
+            >
+              Go to Dashboard
+            </Button>
+          </Link>
+          <Link href="/inviteStaff">
+            <Button
+              variant="standard"
+            >
+              Invite Staff Members
+            </Button>
+          </Link>
       </SignedIn>
     )
   } else if (orgRole === "org:member" && orgSlug) {
