@@ -11,6 +11,14 @@ type DailyPoint = {
   total: number;
 };
 
+export type DailyFinancialPoint = {
+  date: string;
+  label: string;
+  sales: number;
+  expense: number;
+  profit: number;
+};
+
 export type AnalyticsSeries = {
   name: string;
   data: DailyPoint[];
@@ -18,6 +26,7 @@ export type AnalyticsSeries = {
 
 export type AdminSalesAnalytics = {
   dailySales: DailyPoint[];
+  dailyFinancials: DailyFinancialPoint[];
   serviceSeries: AnalyticsSeries[];
   inventorySeries: AnalyticsSeries[];
   categoryTotals: Array<{ name: string; total: number }>;
@@ -81,9 +90,20 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       },
     },
   });
+  const expenses = await db.expense.findMany({
+    where: {
+      tenantId: tenant.id,
+      createdAt: { gte: startOfYear, lt: tomorrow },
+    },
+    select: {
+      amount: true,
+      createdAt: true,
+    },
+  });
 
   const dailySales = createDateRange(startOfYear, today, tenant.timeZone);
   const dailySalesByDate = new Map(dailySales.map((point) => [point.date, point]));
+  const dailyExpensesByDate = new Map<string, number>();
   const serviceByName = new Map<string, Map<string, number>>();
   const inventoryByName = new Map<string, Map<string, number>>();
   const categoryTotals = new Map([
@@ -118,6 +138,11 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     }
   }
 
+  for (const expense of expenses) {
+    const expenseDate = dateKey(expense.createdAt, tenant.timeZone);
+    dailyExpensesByDate.set(expenseDate, (dailyExpensesByDate.get(expenseDate) ?? 0) - Math.abs(expense.amount));
+  }
+
   const toSeries = (source: Map<string, Map<string, number>>): AnalyticsSeries[] =>
     [...source.entries()].map(([name, values]) => ({
       name,
@@ -126,6 +151,16 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
 
   return {
     dailySales,
+    dailyFinancials: dailySales.map((point) => {
+      const expense = dailyExpensesByDate.get(point.date) ?? 0;
+      return {
+        date: point.date,
+        label: point.label,
+        sales: point.total,
+        expense,
+        profit: point.total + expense,
+      };
+    }),
     serviceSeries: toSeries(serviceByName),
     inventorySeries: toSeries(inventoryByName),
     categoryTotals: [...categoryTotals.entries()].map(([name, total]) => ({ name, total })),

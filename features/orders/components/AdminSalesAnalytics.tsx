@@ -6,9 +6,12 @@ import {
   Brush,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
+  Line,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -89,6 +92,44 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
                 travellerWidth={12}
               />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-teal-800">Daily sales, expenses, and profit</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={analytics.dailyFinancials}
+              barCategoryGap="18%"
+              margin={{ top: 10, right: 20, left: 10, bottom: 40 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" interval={29} angle={-35} textAnchor="end" height={60} tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={(value) => `₱${Number(value).toLocaleString()}`} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(value) => money(Number(value ?? 0))} />
+              <Legend />
+              <ReferenceLine y={0} stroke="#6b7280" />
+              <Bar dataKey="sales" name="Sales" stackId="sales" fill="#5eead4" barSize={24} />
+              <Bar dataKey="expense" name="Expense" stackId="expense" fill="#fdba74" barSize={24} />
+              <Line
+                type="monotone"
+                dataKey="profit"
+                name="Profit"
+                stroke="#2563eb"
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+              <Brush
+                dataKey="label"
+                height={24}
+                startIndex={initialStartIndex(analytics.dailyFinancials.length)}
+                endIndex={Math.max(0, analytics.dailyFinancials.length - 1)}
+                travellerWidth={12}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
