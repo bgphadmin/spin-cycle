@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import Spinner from "@/components/utils/Spinner";
 import StandardHeaderHref from "@/components/utils/StandardHeaderHref";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
@@ -32,6 +33,7 @@ const columns: Array<{ key: SortKey; label: string }> = [
   { key: "amount", label: "Amount" },
   { key: "createdAt", label: "Created At" },
 ];
+const ROWS_PER_PAGE = 10;
 
 export default function ExpensesList() {
   const { isLoaded } = useClientAuthClaims();
@@ -46,6 +48,7 @@ export default function ExpensesList() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +66,7 @@ export default function ExpensesList() {
   }, [startDate, endDate]);
 
   function toggleSort(key: SortKey) {
+    setCurrentPage(1);
     if (sortKey === key) {
       setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
     } else {
@@ -104,6 +108,19 @@ export default function ExpensesList() {
   }, [expenses, search, sortKey, sortDir]);
 
   const total = filteredSorted.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / ROWS_PER_PAGE));
+  const visibleExpenses = filteredSorted.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, startDate, endDate]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   return (
     <div className="mt-8 space-y-6">
@@ -188,7 +205,7 @@ export default function ExpensesList() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSorted.map((expense) => (
+                {visibleExpenses.map((expense) => (
                   <tr
                     key={expense.id}
                     onClick={() => openExpenseEditor(expense.id)}
@@ -209,6 +226,35 @@ export default function ExpensesList() {
                 ))}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="flex flex-col gap-3 border-t border-gray-200 px-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}-
+                  {Math.min(currentPage * ROWS_PER_PAGE, filteredSorted.length)} of {filteredSorted.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((page) => page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((page) => page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
