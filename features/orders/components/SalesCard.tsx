@@ -9,7 +9,7 @@ function formatPaymentMethod(method: string) {
   return method === "EWALLET" ? "E-Wallet" : method.charAt(0) + method.slice(1).toLowerCase();
 }
 
-export default function SalesCard({ sale, userFullName }: { sale: CustomerSalesCard; userFullName: string }) {
+export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState(sale.isPaid);
   const [isPending, startTransition] = useTransition();
@@ -43,7 +43,7 @@ export default function SalesCard({ sale, userFullName }: { sale: CustomerSalesC
           <p className="text-sm text-gray-500">
             {sale.orderTypes.map((type) => type.charAt(0).toUpperCase() + type.slice(1)).join(", ")}
           </p>
-          <p className="text-sm text-gray-500 mt-1">Handled by: {userFullName}</p>
+          <p className="text-sm text-gray-500 mt-1">Handled by: {sale.handledByNames.join(", ")}</p>
         </div>
         <div className="text-left sm:text-right">
           <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>

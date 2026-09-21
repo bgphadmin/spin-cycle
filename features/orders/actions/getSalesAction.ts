@@ -26,6 +26,7 @@ export type CustomerSalesCard = {
   isPaid: boolean;
   paymentMethods: string[];
   orderTypes: string[];
+  handledByNames: string[];
   total: number;
   machineGroups: SalesMachineGroup[];
 };
@@ -74,12 +75,19 @@ export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
 
   const grouped = new Map<string, CustomerSalesCard>();
 
+  const staffUsers = await db.user.findMany({
+    where: { tenantId: tenant.id, clerkId: { in: [...new Set(orders.map((order) => order.userId))] } },
+    select: { clerkId: true, name: true },
+  });
+  const staffNameByClerkId = new Map(staffUsers.map((user) => [user.clerkId, user.name]));
+
   for (const order of orders) {
     const customerId = order.customer?.id ?? `walk-in-${order.id}`;
     const customerName = order.customer?.name ?? "Walk-in";
     const paymentMethod = order.paymentMethod ?? order.payments[0]?.method ?? "UNPAID";
     const orderType = order.orderType.replace("_", "-");
     const machineName = order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned";
+    const handledByName = staffNameByClerkId.get(order.userId) ?? "Unknown";
     const card = grouped.get(customerId) ?? {
       customerId,
       customerName,
@@ -87,6 +95,7 @@ export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
       isPaid: true,
       paymentMethods: [],
       orderTypes: [],
+      handledByNames: [],
       total: 0,
       machineGroups: [],
     };
@@ -95,6 +104,7 @@ export async function getTodaySalesAction(): Promise<CustomerSalesCard[]> {
     card.isPaid = card.isPaid && order.paid;
     if (!card.paymentMethods.includes(paymentMethod)) card.paymentMethods.push(paymentMethod);
     if (!card.orderTypes.includes(orderType)) card.orderTypes.push(orderType);
+    if (!card.handledByNames.includes(handledByName)) card.handledByNames.push(handledByName);
     card.total += order.total;
 
     let machineGroup = card.machineGroups.find((group) => group.machineName === machineName);

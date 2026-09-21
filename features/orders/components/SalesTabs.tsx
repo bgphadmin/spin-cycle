@@ -10,11 +10,9 @@ import { Input } from "@/components/ui/input";
 export default function SalesTabs({
   sales,
   summary,
-  userFullName,
 }: {
   sales: CustomerSalesCard[];
   summary: SalesSummaryData;
-  userFullName: string;
 }) {
   const [activeTab, setActiveTab] = useState<"customers" | "summary">("customers");
   const [customerSearch, setCustomerSearch] = useState("");
@@ -69,7 +67,7 @@ export default function SalesTabs({
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
               {filteredSales.map((sale) => (
-                <SalesCard key={sale.customerId} sale={sale} userFullName={userFullName} />
+                <SalesCard key={sale.customerId} sale={sale} />
               ))}
             </div>
           )}
