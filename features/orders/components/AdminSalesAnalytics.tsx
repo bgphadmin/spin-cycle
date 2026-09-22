@@ -74,7 +74,7 @@ function MultiSeriesChart({ title, series }: { title: string; series: AnalyticsS
 export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSalesAnalytics }) {
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+      {/* <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-teal-800">Daily total sales</h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +94,7 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </section> */}
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-teal-800">Daily sales, expenses, and profit</h2>
