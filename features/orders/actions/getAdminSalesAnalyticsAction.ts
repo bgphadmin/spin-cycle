@@ -3,7 +3,13 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { businessDateKey, businessDateLabel, getBusinessDayRange, getBusinessYearStart } from "@/utils/businessDate";
+import {
+  businessDateKey,
+  businessDateLabel,
+  getBusinessDayRange,
+  getBusinessMonthStart,
+  getBusinessYearStart,
+} from "@/utils/businessDate";
 
 type DailyPoint = {
   date: string;
@@ -27,6 +33,15 @@ export type AnalyticsSeries = {
 export type AdminSalesAnalytics = {
   dailySales: DailyPoint[];
   dailyFinancials: DailyFinancialPoint[];
+  monthToDate: {
+    sales: number;
+    expense: number;
+    profit: number;
+  };
+  monthToDateRange: {
+    start: string;
+    end: string;
+  };
   serviceSeries: AnalyticsSeries[];
   inventorySeries: AnalyticsSeries[];
   categoryTotals: Array<{ name: string; total: number }>;
@@ -149,18 +164,40 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       data: dailySales.map((point) => ({ ...point, total: values.get(point.date) ?? 0 })),
     }));
 
+  const dailyFinancials = dailySales.map((point) => {
+    const expense = dailyExpensesByDate.get(point.date) ?? 0;
+    return {
+      date: point.date,
+      label: point.label,
+      sales: point.total,
+      expense,
+      profit: point.total + expense,
+    };
+  });
+  const monthStartKey = businessDateKey(getBusinessMonthStart(new Date(), tenant.timeZone), tenant.timeZone);
+  const monthToDate = dailyFinancials
+    .filter((point) => point.date >= monthStartKey)
+    .reduce(
+      (totals, point) => ({
+        sales: totals.sales + point.sales,
+        expense: totals.expense + point.expense,
+        profit: totals.profit + point.profit,
+      }),
+      { sales: 0, expense: 0, profit: 0 },
+    );
+
   return {
     dailySales,
-    dailyFinancials: dailySales.map((point) => {
-      const expense = dailyExpensesByDate.get(point.date) ?? 0;
-      return {
-        date: point.date,
-        label: point.label,
-        sales: point.total,
-        expense,
-        profit: point.total + expense,
-      };
-    }),
+    dailyFinancials,
+    monthToDate: {
+      sales: monthToDate.sales,
+      expense: Math.abs(monthToDate.expense),
+      profit: monthToDate.profit,
+    },
+    monthToDateRange: {
+      start: monthStartKey,
+      end: dailyFinancials[dailyFinancials.length - 1]?.date ?? monthStartKey,
+    },
     serviceSeries: toSeries(serviceByName),
     inventorySeries: toSeries(inventoryByName),
     categoryTotals: [...categoryTotals.entries()].map(([name, total]) => ({ name, total })),
