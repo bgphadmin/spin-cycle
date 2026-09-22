@@ -3,21 +3,20 @@
 import { useEffect, useState, useTransition } from "react";
 import type { CustomerSalesCard } from "@/features/orders/actions/getSalesAction";
 import { toggleSalesPaymentAction } from "@/features/orders/actions/toggleSalesPaymentAction";
+import { updateSalesPaymentMethodAction } from "@/features/orders/actions/updateSalesPaymentMethodAction";
 import { useRouter } from "next/navigation";
-
-function formatPaymentMethod(method: string) {
-  return method === "EWALLET" ? "E-Wallet" : method.charAt(0) + method.slice(1).toLowerCase();
-}
 
 export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState(sale.isPaid);
+  const [paymentMethod, setPaymentMethod] = useState(sale.paymentMethods.length === 1 ? sale.paymentMethods[0] : "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsPaid(sale.isPaid);
-  }, [sale.isPaid]);
+    setPaymentMethod(sale.paymentMethods.length === 1 ? sale.paymentMethods[0] : "");
+  }, [sale.isPaid, sale.paymentMethods]);
 
   function togglePayment() {
     setError(null);
@@ -31,6 +30,22 @@ export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
       } catch (actionError) {
         setIsPaid(!nextPaid);
         setError(actionError instanceof Error ? actionError.message : "Unable to update payment status.");
+      }
+    });
+  }
+
+  function changePaymentMethod(method: string) {
+    setError(null);
+    const previousMethod = paymentMethod;
+    setPaymentMethod(method);
+    startTransition(async () => {
+      try {
+        const result = await updateSalesPaymentMethodAction(sale.orderIds, method);
+        setPaymentMethod(result.method);
+        router.refresh();
+      } catch (actionError) {
+        setPaymentMethod(previousMethod);
+        setError(actionError instanceof Error ? actionError.message : "Unable to update payment method.");
       }
     });
   }
@@ -74,7 +89,21 @@ export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
 
       <div className="border-t border-gray-200 px-5 pb-5 pt-3 text-sm text-gray-600">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span>Payment: {sale.paymentMethods.map(formatPaymentMethod).join(", ")}</span>
+          <label className="flex items-center gap-2">
+            <span>Payment:</span>
+            <select
+              aria-label={`Payment method for ${sale.customerName}`}
+              value={paymentMethod}
+              onChange={(event) => changePaymentMethod(event.target.value)}
+              disabled={isPending}
+              className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700"
+            >
+              {paymentMethod === "" && <option value="">Multiple methods</option>}
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="EWALLET">E-Wallet</option>
+            </select>
+          </label>
           <button
             type="button"
             onClick={togglePayment}
