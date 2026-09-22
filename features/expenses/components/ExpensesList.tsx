@@ -45,7 +45,8 @@ export default function ExpensesList() {
   const [{ startDate, endDate }, setRange] = useState(defaultRange);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,12 +82,13 @@ export default function ExpensesList() {
   }
 
   const filteredSorted = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const filtered = query
+    const userQuery = userSearch.trim().toLowerCase();
+    const categoryQuery = categorySearch.trim().toLowerCase();
+    const filtered = userQuery || categoryQuery
       ? expenses.filter(
           (expense) =>
-            expense.userName.toLowerCase().includes(query) ||
-            expenseCategoryLabel(expense.category).toLowerCase().includes(query)
+            (!userQuery || expense.userName.toLowerCase().includes(userQuery)) &&
+            (!categoryQuery || expenseCategoryLabel(expense.category).toLowerCase().includes(categoryQuery))
         )
       : expenses;
 
@@ -105,7 +107,7 @@ export default function ExpensesList() {
     });
 
     return sorted;
-  }, [expenses, search, sortKey, sortDir]);
+  }, [expenses, userSearch, categorySearch, sortKey, sortDir]);
 
   const total = filteredSorted.reduce((sum, expense) => sum + expense.amount, 0);
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / ROWS_PER_PAGE));
@@ -116,7 +118,7 @@ export default function ExpensesList() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate]);
+  }, [userSearch, categorySearch, startDate, endDate]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -138,16 +140,25 @@ export default function ExpensesList() {
       </section>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <Input
             type="text"
-            placeholder="Search by user or category..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by user..."
+            aria-label="Search expenses by user"
+            value={userSearch}
+            onChange={(event) => setUserSearch(event.target.value)}
+            className="max-w-sm"
+          />
+          <Input
+            type="text"
+            placeholder="Search by category..."
+            aria-label="Search expenses by category"
+            value={categorySearch}
+            onChange={(event) => setCategorySearch(event.target.value)}
             className="max-w-sm"
           />
           {loading && (
-            <span className="absolute right-3 top-2">
+            <span className="self-center">
               <Spinner />
             </span>
           )}
@@ -182,7 +193,7 @@ export default function ExpensesList() {
             {loading ? "Loading expenses..." : "No expenses recorded for this date range."}
           </p>
         ) : filteredSorted.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">No expenses match &quot;{search}&quot;.</p>
+          <p className="mt-4 text-sm text-gray-500">No expenses match the selected filters.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-120 text-left text-sm">
