@@ -4,6 +4,7 @@ import logo from '@/public/spin-cycle-logo.png'
 import React from 'react'
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
 import { Button } from './ui/button'
+import ThemeToggle from './ThemeToggle'
 
 const Header = () => {
     return (
@@ -21,10 +22,12 @@ const Header = () => {
                     />
                 </Link>
                 <SignedIn>
+                    <ThemeToggle />
                     <UserButton />
                 </SignedIn>
                 <SignedOut>
-                    <div className="md:flex text-teal-700 font-semibold">
+                    <div className="flex items-center md:flex text-teal-700 font-semibold">
+                        <ThemeToggle />
                         <Button asChild className='cursor-pointer font-semibold text-lg'>
                             <SignInButton
                                 mode="modal">
