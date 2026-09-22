@@ -1,34 +1,92 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Package } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { EmptyState } from "@/components/utils/EmptyState";
-import SkeletonTable from "@/components/utils/SkeletonTable";
+import Spinner from "@/components/utils/Spinner";
 import StandardHeaderHref from "@/components/utils/StandardHeaderHref";
-import { StandardTableHeader } from "@/components/utils/StandardTableHeader";
-import ViewToggle from "@/components/utils/ToggleView";
-import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { getInventoryItemsAction } from "../actions/inventoryActions";
-import { InventoryItem } from "../types/inventoryTypes";
+import type { InventoryItem } from "../types/inventoryTypes";
+
+type SortKey = "name" | "type" | "unit" | "stock" | "threshold" | "price";
+type SortDir = "asc" | "desc";
+
+const columns: Array<{ key: SortKey; label: string }> = [
+  { key: "name", label: "Name" },
+  { key: "type", label: "Type" },
+  { key: "unit", label: "Unit" },
+  { key: "stock", label: "Stock" },
+  { key: "threshold", label: "Threshold" },
+  { key: "price", label: "Price" },
+];
+const ROWS_PER_PAGE = 10;
 
 export default function InventoryItemsList() {
+  const { orgRole } = useClientAuthClaims();
+  const isAdmin = orgRole === "org:admin";
+  const router = useRouter();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"table" | "cards">("table");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    void Promise.all([
-      getInventoryItemsAction().then((result) => setItems(result.inventoryItems as InventoryItem[])),
-      getServerAuthClaims().then(({ orgRole }) => setIsAdmin(orgRole === "org:admin")),
-    ]).finally(() => setLoading(false));
+    let cancelled = false;
+    getInventoryItemsAction()
+      .then((result) => {
+        if (!cancelled) setItems(result.inventoryItems as InventoryItem[]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  function toggleSort(key: SortKey) {
+    setCurrentPage(1);
+    if (sortKey === key) setSortDir((direction) => (direction === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir(["stock", "threshold", "price"].includes(key) ? "desc" : "asc");
+    }
+  }
+
+  const filteredSorted = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? items.filter((item) =>
+          [item.name, item.type, item.unit].some((value) => value.toLowerCase().includes(query)),
+        )
+      : items;
+
+    return [...filtered].sort((a, b) => {
+      const result =
+        ["stock", "threshold", "price"].includes(sortKey)
+          ? Number(a[sortKey]) - Number(b[sortKey])
+          : String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""));
+      return sortDir === "asc" ? result : -result;
+    });
+  }, [items, search, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / ROWS_PER_PAGE));
+  const visibleItems = filteredSorted.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   return (
     <div className="mt-8 space-y-6">
@@ -39,59 +97,101 @@ export default function InventoryItemsList() {
         title="Inventory"
         description="View and manage stock items and supplies for your shop."
       />
-      <ViewToggle view={view} onViewChange={setView} />
-      {loading ? (
-        <SkeletonTable />
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={<Package className="h-10 w-10" />}
-          title="No inventory items registered"
-          description="Get started by adding your first inventory item."
-          action={isAdmin ? (<Link href="./inventory/itemSetup"><Button variant="standard" size="sm">Add First Item</Button></Link>) : null}
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Search by name, type, or unit..."
+          aria-label="Search inventory items"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="max-w-sm"
         />
-      ) : view === "table" ? (
-        <div className="overflow-hidden rounded border border-gray-200 bg-card shadow-2xl">
-          <Table>
-            <StandardTableHeader columns={[{ label: "Name" }, { label: "Type" }, { label: "Unit" }, { label: "Stock" }, { label: "Threshold" }, { label: "Price" }]} />
-            <TableBody>
-              {items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className={isAdmin ? "cursor-pointer border-b border-gray-900 hover:bg-muted/30" : "border-b border-gray-900"}
-                  onClick={() => isAdmin && router.push(`./inventory/${item.id}/edit`)}
-                >
-                  <TableCell className="border-b border-gray-300 font-medium">{item.name}</TableCell>
-                  <TableCell className="border-b border-gray-300 capitalize">{item.type}</TableCell>
-                  <TableCell className="border-b border-gray-300">{item.unit}</TableCell>
-                  <TableCell className="border-b border-gray-300">{item.stock}</TableCell>
-                  <TableCell className="border-b border-gray-300">{item.threshold}</TableCell>
-                  <TableCell className="border-b border-gray-300">₱{item.price.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <Card key={item.id} className="border border-gray-200 shadow-md">
-              <CardHeader>
-                <CardTitle>{item.name}</CardTitle>
-                <CardDescription className="capitalize">{item.type}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm text-muted-foreground">
-                <p>Unit: {item.unit}</p>
-                <p>Stock: {item.stock}</p>
-                <p>Low-stock threshold: {item.threshold}</p>
-                <p>Price: ₱{item.price.toFixed(2)}</p>
-              </CardContent>
-              <CardFooter>
-                {isAdmin && <Button variant="outline" size="sm" onClick={() => router.push(`./inventory/${item.id}/edit`)}>Manage</Button>}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+        {loading && (
+          <span className="absolute right-3 top-2">
+            <Spinner />
+          </span>
+        )}
+      </div>
+      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="bg-teal-100 p-4 text-lg font-semibold text-teal-700">Inventory records</h2>
+        {items.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">
+            {loading ? "Loading inventory items..." : "No inventory items registered."}
+          </p>
+        ) : filteredSorted.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">No inventory items match &quot;{search}&quot;.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[42rem] text-left text-sm">
+              <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column.key} className="px-3 py-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(column.key)}
+                        className="flex items-center gap-1 font-semibold uppercase tracking-wide text-gray-500 hover:text-teal-700"
+                      >
+                        {column.label}
+                        <span className="text-teal-600">
+                          {sortKey === column.key ? (sortDir === "asc" ? "↑" : "↓") : ""}
+                        </span>
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => isAdmin && router.push(`./inventory/${item.id}/edit`)}
+                    className={`border-b border-gray-100 last:border-0 ${
+                      isAdmin ? "cursor-pointer hover:bg-teal-50" : "cursor-not-allowed"
+                    }`}
+                  >
+                    <td className="px-3 py-3 font-medium text-gray-800">{item.name}</td>
+                    <td className="px-3 py-3 capitalize text-gray-600">{item.type}</td>
+                    <td className="px-3 py-3 text-gray-600">{item.unit}</td>
+                    <td className="px-3 py-3 text-gray-600">{item.stock}</td>
+                    <td className="px-3 py-3 text-gray-600">{item.threshold}</td>
+                    <td className="px-3 py-3 font-medium text-teal-700">₱{item.price.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="flex flex-col gap-3 border-t border-gray-200 px-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}-
+                  {Math.min(currentPage * ROWS_PER_PAGE, filteredSorted.length)} of {filteredSorted.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((page) => page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="standard_sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((page) => page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
