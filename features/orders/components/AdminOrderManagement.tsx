@@ -21,14 +21,20 @@ function money(value: number) {
   return `₱${value.toFixed(2)}`;
 }
 
+function todayDateKey() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
 const ROWS_PER_PAGE = 10;
 
 export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow[] }) {
   const [currentOrders, setCurrentOrders] = useState(orders);
   const [customerSearch, setCustomerSearch] = useState("");
   const [receiptSearch, setReceiptSearch] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(todayDateKey);
+  const [toDate, setToDate] = useState(todayDateKey);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminOrderRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
