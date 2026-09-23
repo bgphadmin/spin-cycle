@@ -86,18 +86,22 @@ export default function BottomNav() {
                   icon={ArchiveBoxIcon}
                 />
               )}
-              <DropdownNavItem
-                href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
-                label="Inventory Items"
-                icon={Cog6ToothIcon}
-                onSelect={() => setOpen(false)}
-              />
-              <DropdownNavItem
-                href={`/tenants/${orgSlug}/tenantDashboard/services/`}
-                label="Services"
-                icon={UserIcon}
-                onSelect={() => setOpen(false)}
-              />
+              {orgRole === "org:admin" && (
+                <DropdownNavItem
+                  href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
+                  label="Inventory Items"
+                  icon={Cog6ToothIcon}
+                  onSelect={() => setOpen(false)}
+                />
+              )}
+              {orgRole === "org:admin" && (
+                <DropdownNavItem
+                  href={`/tenants/${orgSlug}/tenantDashboard/services/`}
+                  label="Services"
+                  icon={UserIcon}
+                  onSelect={() => setOpen(false)}
+                />
+              )}
               {orgRole === "org:admin" && (
                 <DropdownNavItem
                   href={`/tenants/${orgSlug}/adminDashboard/users`}
@@ -110,12 +114,6 @@ export default function BottomNav() {
                 href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
                 label="Customers"
                 icon={UserIcon}
-                onSelect={() => setOpen(false)}
-              />
-              <DropdownNavItem
-                href={`/dashboard/tenants`}
-                label="Tenants"
-                icon={BuildingOfficeIcon}
                 onSelect={() => setOpen(false)}
               />
               {orgRole === "org:admin" && (
