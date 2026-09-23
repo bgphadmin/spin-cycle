@@ -79,7 +79,7 @@ model Customer {
   email     String?
   createdAt DateTime @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant Tenant         @relation(fields: [tenantId], references: [id])
   orders LaundryOrder[]
 
   @@unique([tenantId, name])
@@ -115,7 +115,25 @@ model LaundryOrder {
   items         OrderItem[]
   payments      Payment[]
   machineUsages MachineUsage[]
+  receiptOrders ReceiptOrder[]
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
+}
+
+model Receipt {
+  id        String         @id @default(uuid())
+  number    String         @unique
+  createdAt DateTime       @default(now())
+  total     Float
+  orders    ReceiptOrder[]
+}
+
+model ReceiptOrder {
+  id        Int    @id @default(autoincrement())
+  receiptId String
+  orderId   String
+
+  receipt Receipt      @relation(fields: [receiptId], references: [id])
+  order   LaundryOrder @relation(fields: [orderId], references: [id])
 }
 
 model OrderItem {

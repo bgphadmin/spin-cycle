@@ -59,6 +59,7 @@ export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
             {sale.orderTypes.map((type) => type.charAt(0).toUpperCase() + type.slice(1)).join(", ")}
           </p>
           <p className="text-sm text-gray-500 mt-1">Handled by: {sale.handledByNames.join(", ")}</p>
+          <p className="mt-1 text-xs font-medium text-gray-500">Receipt: {sale.receiptNumber}</p>
         </div>
         <div className="text-left sm:text-right">
           <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>

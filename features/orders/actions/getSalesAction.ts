@@ -23,6 +23,7 @@ export type CustomerSalesCard = {
   customerId: string;
   customerName: string;
   orderIds: string[];
+  receiptNumber: string;
   isPaid: boolean;
   paymentMethods: string[];
   orderTypes: string[];
@@ -72,6 +73,9 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
       machineUsages: {
         select: { machine: { select: { name: true } } },
       },
+      receiptOrders: {
+        select: { receipt: { select: { number: true } } },
+      },
     },
   });
 
@@ -86,6 +90,8 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
   for (const order of orders) {
     const customerId = order.customer?.id ?? `walk-in-${order.id}`;
     const customerName = order.customer?.name ?? "Walk-in";
+    const linkedReceiptNumber = order.receiptOrders[0]?.receipt.number;
+    const receiptNumber = linkedReceiptNumber ?? `UNASSIGNED-${order.id.slice(0, 8)}`;
     const paymentMethod = order.paymentMethod ?? order.payments[0]?.method ?? "UNPAID";
     const orderType = order.orderType.replace("_", "-");
     const machineName = order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned";
@@ -94,6 +100,7 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
       customerId,
       customerName,
       orderIds: [],
+      receiptNumber,
       isPaid: true,
       paymentMethods: [],
       orderTypes: [],
@@ -103,6 +110,9 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     };
 
     card.orderIds.push(order.id);
+    if (linkedReceiptNumber && card.receiptNumber.startsWith("UNASSIGNED-")) {
+      card.receiptNumber = linkedReceiptNumber;
+    }
     card.isPaid = card.isPaid && order.paid;
     if (!card.paymentMethods.includes(paymentMethod)) card.paymentMethods.push(paymentMethod);
     if (!card.orderTypes.includes(orderType)) card.orderTypes.push(orderType);

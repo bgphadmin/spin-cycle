@@ -6,6 +6,7 @@ import { MachineStatus, MachineType } from "@prisma/client";
 import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
+import { businessDateKey } from "@/utils/businessDate";
 
 const paymentMethods = ["CASH", "CARD", "EWALLET"] as const;
 const orderTypes = ["WALK_IN", "DELIVERY"] as const;
@@ -55,7 +56,7 @@ export async function createOrderAction(
     const order = await db.$transaction(async (tx) => {
       const tenant = await tx.tenant.findUnique({
         where: { clerkOrgId: orgId },
-        select: { id: true },
+        select: { id: true, timeZone: true },
       });
       if (!tenant) throw new Error("Tenant not found for this organization.");
 
@@ -158,6 +159,43 @@ export async function createOrderAction(
             create: { amount: total, method: paymentMethod },
           },
         },
+      });
+
+      const existingReceiptOrder = await tx.receiptOrder.findFirst({
+        where: {
+          order: {
+            tenantId: tenant.id,
+            customerId: customer.id,
+          },
+        },
+        orderBy: { id: "asc" },
+        select: { receiptId: true },
+      });
+
+      let receiptId = existingReceiptOrder?.receiptId;
+      if (receiptId) {
+        await tx.receipt.update({
+          where: { id: receiptId },
+          data: { total: { increment: total } },
+        });
+      } else {
+        await tx.$executeRaw`CREATE SEQUENCE IF NOT EXISTS "Receipt_number_seq"`;
+        const [{ nextValue }] = await tx.$queryRaw<Array<{ nextValue: bigint }>>`
+          SELECT nextval('"Receipt_number_seq"') AS "nextValue"
+        `;
+        const receiptYear = businessDateKey(createdOrder.createdAt, tenant.timeZone).slice(0, 4);
+        const receipt = await tx.receipt.create({
+          data: {
+            number: `${receiptYear}-${String(nextValue).padStart(12, "0")}`,
+            total,
+          },
+          select: { id: true },
+        });
+        receiptId = receipt.id;
+      }
+
+      await tx.receiptOrder.create({
+        data: { receiptId, orderId: createdOrder.id },
       });
 
       await tx.machine.update({
