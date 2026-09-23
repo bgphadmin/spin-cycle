@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   ShoppingCartIcon,
@@ -21,16 +21,17 @@ import {
 import { useState } from "react";
 import DropdownNavItem from "./DropDownNavItem";
 import { useOrganization } from "@clerk/nextjs";
+import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 
 
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { tenantId } = useParams();
   const [open, setOpen] = useState(false);
 
   const { organization } = useOrganization()
   const orgSlug = organization?.slug
+  const { orgRole } = useClientAuthClaims();
 
   const hideBottomNav = pathname === "/registerShop" || pathname === "/"; // 👈 condition
 
@@ -95,12 +96,14 @@ export default function BottomNav() {
                 icon={UserIcon}
                 onSelect={() => setOpen(false)}
               />
-              <DropdownNavItem
-                href={`/dashboard/tenants/${tenantId}/users`}
-                label="Users"
-                icon={UserIcon}
-                onSelect={() => setOpen(false)}
-              />
+              {orgRole === "org:admin" && (
+                <DropdownNavItem
+                  href={`/tenants/${orgSlug}/tenantDashboard/users`}
+                  label="Users"
+                  icon={UserIcon}
+                  onSelect={() => setOpen(false)}
+                />
+              )}
               <DropdownNavItem
                 href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
                 label="Customers"
