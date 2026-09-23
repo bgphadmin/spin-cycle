@@ -6,7 +6,13 @@ import { toggleSalesPaymentAction } from "@/features/orders/actions/toggleSalesP
 import { updateSalesPaymentMethodAction } from "@/features/orders/actions/updateSalesPaymentMethodAction";
 import { useRouter } from "next/navigation";
 
-export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
+export default function SalesCard({
+  sale,
+  onPaymentStatusChange,
+}: {
+  sale: CustomerSalesCard;
+  onPaymentStatusChange?: (paid: boolean) => Promise<void>;
+}) {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState(sale.isPaid);
   const [paymentMethod, setPaymentMethod] = useState(sale.paymentMethods.length === 1 ? sale.paymentMethods[0] : "");
@@ -26,6 +32,7 @@ export default function SalesCard({ sale }: { sale: CustomerSalesCard }) {
       try {
         const result = await toggleSalesPaymentAction(sale.orderIds);
         setIsPaid(result.paid);
+        await onPaymentStatusChange?.(result.paid);
         router.refresh();
       } catch (actionError) {
         setIsPaid(!nextPaid);

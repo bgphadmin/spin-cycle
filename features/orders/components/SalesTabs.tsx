@@ -69,6 +69,14 @@ export default function SalesTabs({
     });
   }
 
+  async function refreshSummary(paid: boolean, customerId: string) {
+    setCurrentSales((sales) =>
+      sales.map((sale) => (sale.customerId === customerId ? { ...sale, isPaid: paid } : sale)),
+    );
+    const nextSummary = await getSalesSummaryAction(selectedDate || undefined);
+    setCurrentSummary(nextSummary);
+  }
+
   const filteredSales = useMemo(() => {
     const query = customerSearch.trim().toLowerCase();
     if (!query) return currentSales;
@@ -148,7 +156,11 @@ export default function SalesTabs({
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
               {filteredSales.map((sale) => (
-                <SalesCard key={sale.customerId} sale={sale} />
+                <SalesCard
+                  key={sale.customerId}
+                  sale={sale}
+                  onPaymentStatusChange={(paid) => refreshSummary(paid, sale.customerId)}
+                />
               ))}
             </div>
           )}
