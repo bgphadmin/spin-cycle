@@ -164,7 +164,7 @@ export default function ExpensesList() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-sm text-gray-600">From</label>
+          {/* <label className="text-sm text-gray-600">From</label> */}
           <Input
             type="date"
             value={startDate}
@@ -172,7 +172,7 @@ export default function ExpensesList() {
             onChange={(event) => setRange((range) => ({ ...range, startDate: event.target.value }))}
             className="w-auto"
           />
-          <label className="text-sm text-gray-600">To</label>
+          {/* <label className="text-sm text-gray-600">To</label> */}
           <Input
             type="date"
             value={endDate}
