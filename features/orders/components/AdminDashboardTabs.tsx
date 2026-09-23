@@ -35,7 +35,7 @@ export default function AdminDashboardTabs({
             activeTab === "orders" ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-teal-600"
           }`}
         >
-          Order management
+          Order Management
         </button>
       </div>
       {activeTab === "analytics" ? (
