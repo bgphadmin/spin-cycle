@@ -23,11 +23,12 @@ const columns: Array<{ key: SortKey; label: string }> = [
 ];
 const ROWS_PER_PAGE = 10;
 
-export default function MachinesList() {
+export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
   const { isLoaded, orgRole } = useClientAuthClaims();
   const isAdmin = orgRole === "org:admin";
   const router = useRouter();
   const [machines, setMachines] = useState<Machine[]>([]);
+  const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -36,9 +37,12 @@ export default function MachinesList() {
 
   useEffect(() => {
     let cancelled = false;
-    getMachinesAction()
+    getMachinesAction(tenantSlug)
       .then((result) => {
-        if (!cancelled) setMachines(result.machines as Machine[]);
+        if (!cancelled) {
+          setMachines(result.machines as Machine[]);
+          setLoadError(result.error ?? "");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -46,7 +50,7 @@ export default function MachinesList() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tenantSlug]);
 
   function toggleSort(key: SortKey) {
     setCurrentPage(1);
@@ -118,7 +122,7 @@ export default function MachinesList() {
         <h2 className="bg-teal-100 p-4 text-lg font-semibold text-teal-700">Machine records</h2>
         {machines.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">
-            {loading ? "Loading machines..." : "No machines registered."}
+            {loading ? "Loading machines..." : loadError || "No machines registered."}
           </p>
         ) : filteredSorted.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">No machines match &quot;{search}&quot;.</p>

@@ -78,14 +78,12 @@ export default function BottomNav() {
               Settings
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
-                  label="Machines"
-                  onSelect={() => setOpen(false)}
-                  icon={ArchiveBoxIcon}
-                />
-              )}
+              <DropdownNavItem
+                href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
+                label="Machines"
+                onSelect={() => setOpen(false)}
+                icon={ArchiveBoxIcon}
+              />
               <DropdownNavItem
                 href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
                 label="Inventory Items"
@@ -118,12 +116,14 @@ export default function BottomNav() {
                 icon={BuildingOfficeIcon}
                 onSelect={() => setOpen(false)}
               />
-              <DropdownNavItem
-                href={`/tenants/${orgSlug}/adminDashboard/`}
-                label="Admin"
-                icon={BuildingOfficeIcon}
-                onSelect={() => setOpen(false)}
-              />
+              {orgRole === "org:admin" && (
+                <DropdownNavItem
+                  href={`/tenants/${orgSlug}/adminDashboard/`}
+                  label="Admin"
+                  icon={BuildingOfficeIcon}
+                  onSelect={() => setOpen(false)}
+                />
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </li>

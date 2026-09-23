@@ -8,17 +8,17 @@ import CardSkeleton from "@/components/utils/cardSkeleton";
 
 type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
 
-export default function MachinesGrid() {
+export default function MachinesGrid({ tenantSlug }: { tenantSlug: string }) {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadMachines = useCallback(async () => {
-    const result = await getMachinesAction();
+    const result = await getMachinesAction(tenantSlug);
     if ("machines" in result) {
       setMachines(result.machines as Machine[]);
     }
     setLoading(false);
-  }, []);
+  }, [tenantSlug]);
 
   useEffect(() => {
     loadMachines();

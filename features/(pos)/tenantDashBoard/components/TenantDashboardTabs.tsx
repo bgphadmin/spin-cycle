@@ -4,7 +4,13 @@ import { useState } from "react";
 import type { InventoryItem } from "@/features/inventory/types/inventoryTypes";
 import MachinesGrid from "./MachineGrid";
 
-export default function TenantDashboardTabs({ inventoryItems }: { inventoryItems: InventoryItem[] }) {
+export default function TenantDashboardTabs({
+  inventoryItems,
+  tenantSlug,
+}: {
+  inventoryItems: InventoryItem[];
+  tenantSlug: string;
+}) {
   const [activeTab, setActiveTab] = useState<"machines" | "inventory">("machines");
   const totalUnits = inventoryItems.reduce((total, item) => total + item.stock, 0);
   const lowStockItems = inventoryItems.filter((item) => item.stock <= item.threshold);
@@ -40,7 +46,7 @@ export default function TenantDashboardTabs({ inventoryItems }: { inventoryItems
       </div>
 
       {activeTab === "machines" ? (
-        <MachinesGrid />
+        <MachinesGrid tenantSlug={tenantSlug} />
       ) : (
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">
