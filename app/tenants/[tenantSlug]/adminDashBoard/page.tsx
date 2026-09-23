@@ -1,9 +1,12 @@
-import AdminSalesAnalytics from "@/features/orders/components/AdminSalesAnalytics";
-import AdminFinancialSummary from "@/features/orders/components/AdminFinancialSummary";
 import { getAdminSalesAnalyticsAction } from "@/features/orders/actions/getAdminSalesAnalyticsAction";
+import { getAdminOrdersAction } from "@/features/orders/actions/adminOrderActions";
+import AdminDashboardTabs from "@/features/orders/components/AdminDashboardTabs";
 
 const OwnerDashBoardPage = async () => {
-  const analytics = await getAdminSalesAnalyticsAction();
+  const [analytics, orders] = await Promise.all([
+    getAdminSalesAnalyticsAction(),
+    getAdminOrdersAction(),
+  ]);
 
   return (
     <main className="mx-auto mb-24 w-full max-w-6xl  px-4 py-8 sm:px-6">
@@ -11,8 +14,7 @@ const OwnerDashBoardPage = async () => {
         <h1 className="text-3xl font-bold text-teal-800">Admin Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">Paid sales analytics for the last year and year to date.</p>
       </div>
-      <AdminFinancialSummary analytics={analytics} />
-      <AdminSalesAnalytics analytics={analytics} />
+      <AdminDashboardTabs analytics={analytics} orders={orders} />
     </main>
   )
 }
