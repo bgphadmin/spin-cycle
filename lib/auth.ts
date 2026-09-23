@@ -10,6 +10,7 @@ export async function getAuthContext() {
       orgId: orgId ?? undefined,
       orgRole: orgRole ?? undefined,
       orgSlug: orgSlug ?? undefined,
+      tenantId: undefined,
     };
   }
 
@@ -37,5 +38,6 @@ export async function getAuthContext() {
     orgRole: orgRole ?? databaseRole,
     // Tenant IDs are the route identifier used by this application.
     orgSlug: orgSlug ?? databaseTenantId,
+    tenantId: databaseTenantId,
   };
 }

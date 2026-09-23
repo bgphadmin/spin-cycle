@@ -1,9 +1,9 @@
 import NotAllowed from '@/app/not-allowed'
 import MachineSetupForm from '@/features/machines/components/MachineSetupForm'
-import { getServerAuthClaims } from '@/utils/hooks/useAuthClaims'
+import { getAuthContext } from "@/lib/auth";
 
 const pages = async () => {
-    const { orgRole } = await getServerAuthClaims()
+    const { orgRole } = await getAuthContext()
     if (orgRole !== "org:admin") {
         return (
             <NotAllowed />
