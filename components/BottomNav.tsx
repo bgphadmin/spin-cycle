@@ -78,12 +78,14 @@ export default function BottomNav() {
               Settings
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
-              <DropdownNavItem
-                href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
-                label="Machines"
-                onSelect={() => setOpen(false)}
-                icon={ArchiveBoxIcon}
-              />
+              {orgRole === "org:admin" && (
+                <DropdownNavItem
+                  href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
+                  label="Machines"
+                  onSelect={() => setOpen(false)}
+                  icon={ArchiveBoxIcon}
+                />
+              )}
               <DropdownNavItem
                 href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
                 label="Inventory Items"

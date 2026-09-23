@@ -2,7 +2,6 @@
 
 import { getAuthContext } from "@/lib/auth";
 import db from "@/utils/db";
-import { auth } from "@clerk/nextjs/server";
 import { MachineStatus, MachineType } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
@@ -26,8 +25,16 @@ export async function updateMachineAction(
     prevState: unknown,
     formData: FormData,
 ): Promise<{ message: string }> {
-    const { sessionClaims } = auth();
-    const tenantId = sessionClaims?.tenantId as string | undefined
+    const { userId, orgRole, orgId } = await getAuthContext();
+    if (!userId || !orgId || orgRole !== "org:admin") {
+        return { message: "Forbidden" };
+    }
+    const tenant = await db.tenant.findUnique({
+        where: { clerkOrgId: orgId },
+        select: { id: true },
+    });
+    if (!tenant) return { message: "Tenant not found" };
+    const tenantId = tenant.id;
     const id = formData.get("id") as string;
     try {
         const machine = await db.machine.update({
@@ -58,8 +65,16 @@ export async function deleteMachineAction(
     prevState: unknown,
     formData: FormData
 ): Promise<{ message: string }> {
-    const { sessionClaims } = auth();
-    const tenantId = sessionClaims?.tenantId as string | undefined
+    const { userId, orgRole, orgId } = await getAuthContext();
+    if (!userId || !orgId || orgRole !== "org:admin") {
+        return { message: "Forbidden" };
+    }
+    const tenant = await db.tenant.findUnique({
+        where: { clerkOrgId: orgId },
+        select: { id: true },
+    });
+    if (!tenant) return { message: "Tenant not found" };
+    const tenantId = tenant.id;
     const id = formData.get("id") as string;
 
     try {
