@@ -98,7 +98,7 @@ export default function BottomNav() {
               />
               {orgRole === "org:admin" && (
                 <DropdownNavItem
-                  href={`/tenants/${orgSlug}/tenantDashboard/users`}
+                  href={`/tenants/${orgSlug}/adminDashboard/users`}
                   label="Users"
                   icon={UserIcon}
                   onSelect={() => setOpen(false)}

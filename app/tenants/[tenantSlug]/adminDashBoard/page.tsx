@@ -1,8 +1,13 @@
 import { getAdminSalesAnalyticsAction } from "@/features/orders/actions/getAdminSalesAnalyticsAction";
 import { getAdminOrdersAction } from "@/features/orders/actions/adminOrderActions";
 import AdminDashboardTabs from "@/features/orders/components/AdminDashboardTabs";
+import { getAuthContext } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 const OwnerDashBoardPage = async () => {
+  const { orgRole } = await getAuthContext();
+  if (orgRole !== "org:admin") redirect("/not-allowed");
+
   const [analytics, orders] = await Promise.all([
     getAdminSalesAnalyticsAction(),
     getAdminOrdersAction(),

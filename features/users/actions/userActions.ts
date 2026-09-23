@@ -110,6 +110,6 @@ export async function updateTenantUserRoleAction(
     data: { role: role === "org:admin" ? "ADMIN" : "STAFF" },
   });
 
-  revalidatePath(`/tenants/${context.orgSlug}/tenantDashboard/users`);
+  revalidatePath(`/tenants/${context.orgSlug}/adminDashboard/users`);
   return { success: true };
 }

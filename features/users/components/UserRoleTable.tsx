@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import toast from "react-hot-toast";
 import { updateTenantUserRoleAction } from "../actions/userActions";
 import type { TenantUser } from "../types";
 
@@ -21,8 +22,11 @@ export default function UserRoleTable({
       try {
         await updateTenantUserRoleAction(tenantSlug, clerkId, role);
         setRows((current) => current.map((user) => user.clerkId === clerkId ? { ...user, role } : user));
+        toast.success(`User role changed to ${role === "org:admin" ? "Admin" : "Member"}.`);
       } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : "Unable to update user role.");
+        const message = actionError instanceof Error ? actionError.message : "Unable to update user role.";
+        setError(message);
+        toast.error(message);
       }
     });
   }
