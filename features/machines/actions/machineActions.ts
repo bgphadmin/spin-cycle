@@ -5,15 +5,29 @@ import db from "@/utils/db";
 import { MachineStatus, MachineType } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
+async function getAdminTenantId() {
+    const { userId, orgRole, orgId, tenantId } = await getAuthContext();
+    if (!userId || orgRole !== "org:admin") {
+        throw new Error("Forbidden");
+    }
+
+    const tenant = await db.tenant.findUnique({
+        where: tenantId
+            ? { id: tenantId }
+            : { clerkOrgId: orgId ?? "" },
+        select: { id: true },
+    });
+    if (!tenant) throw new Error("Tenant not found");
+
+    return tenant.id;
+}
+
 export async function getMachineByIdAction(id: string) {
     try {
         noStore();
-        const { orgRole } = await getAuthContext()
-        if (orgRole !== "org:admin") {
-            throw new Error("Forbidden");
-        }
+        const tenantId = await getAdminTenantId();
         const machineData = await db.machine.findUnique({
-            where: { id },
+            where: { id, tenantId },
         });
         return machineData
     } catch (error) {
@@ -25,20 +39,13 @@ export async function updateMachineAction(
     prevState: unknown,
     formData: FormData,
 ): Promise<{ message: string }> {
-    const { userId, orgRole, orgId } = await getAuthContext();
-    if (!userId || !orgId || orgRole !== "org:admin") {
-        return { message: "Forbidden" };
-    }
-    const tenant = await db.tenant.findUnique({
-        where: { clerkOrgId: orgId },
-        select: { id: true },
-    });
-    if (!tenant) return { message: "Tenant not found" };
-    const tenantId = tenant.id;
     const id = formData.get("id") as string;
     try {
+        const tenantId = await getAdminTenantId();
+        const existingMachine = await db.machine.findFirst({ where: { id, tenantId } });
+        if (!existingMachine) return { message: "Machine not found" };
         const machine = await db.machine.update({
-            where: { id, tenantId },
+            where: { id: existingMachine.id },
             data: {
                 name: formData.get("name") as string,
                 type: formData.get("type") as MachineType,
@@ -65,25 +72,27 @@ export async function deleteMachineAction(
     prevState: unknown,
     formData: FormData
 ): Promise<{ message: string }> {
-    const { userId, orgRole, orgId } = await getAuthContext();
-    if (!userId || !orgId || orgRole !== "org:admin") {
-        return { message: "Forbidden" };
-    }
-    const tenant = await db.tenant.findUnique({
-        where: { clerkOrgId: orgId },
-        select: { id: true },
-    });
-    if (!tenant) return { message: "Tenant not found" };
-    const tenantId = tenant.id;
     const id = formData.get("id") as string;
 
     try {
-        await db.machine.delete({
+        const tenantId = await getAdminTenantId();
+        const machine = await db.machine.findFirst({
             where: { id, tenantId },
+            select: { id: true, status: true },
+        });
+        if (!machine) return { message: "Machine not found" };
+        if (machine.status === MachineStatus.IN_USE) {
+            return { message: "An in-use machine cannot be deleted." };
+        }
+
+        await db.$transaction(async (tx) => {
+            await tx.machineUsage.deleteMany({ where: { machineId: machine.id } });
+            await tx.machine.delete({ where: { id: machine.id } });
         });
 
         return { message: "Machine deleted successfully" };
     } catch (error) {
+        console.error("Failed to delete machine:", error);
         return { message: "Failed to delete machine" };
     }
 }
