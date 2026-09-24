@@ -265,6 +265,8 @@ export async function updateAdminOrderAction(
       for (const receiptOrder of order.receiptOrders) {
         await tx.receipt.update({ where: { id: receiptOrder.receiptId }, data: { total: { increment: total - order.total } } });
       }
+    }, {
+      timeout: 15000,
     });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/adminDashboard`);
