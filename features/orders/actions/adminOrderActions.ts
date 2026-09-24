@@ -327,6 +327,8 @@ export async function deleteAdminOrderAction(
       await tx.orderItem.deleteMany({ where: { orderId: order.id } });
       await tx.machineUsage.deleteMany({ where: { orderId: order.id } });
       await tx.laundryOrder.delete({ where: { id: order.id } });
+    }, {
+      timeout: 15000,
     });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/adminDashboard`);
