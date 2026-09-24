@@ -55,6 +55,13 @@ export default function MachineSetupForm() {
                   { value: "dryer", label: "Dryer" },
                 ]}
               />
+              <StandardInput
+                name="usageCount"
+                type="number"
+                min={0}
+                placeholder="Initial Usage Count"
+                required
+              />
               <StandardInput name="location" placeholder="Location (optional)" />
               <div className="sm:col-span-2">
                 <StandardInput name="comment" placeholder="Place your comment here" as="textarea" required />

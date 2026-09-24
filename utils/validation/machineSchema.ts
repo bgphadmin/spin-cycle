@@ -11,6 +11,11 @@ export const addMachineSchema = z.object({
     message: "Type must be either washer or dryer",
   }),
 
+  usageCount: z.coerce
+    .number()
+    .int({ message: "Initial usage count must be a whole number" })
+    .min(0, { message: "Initial usage count cannot be negative" }),
+
   location: z
     .string()
     .max(100, { message: "Location must not exceed 100 characters" })
