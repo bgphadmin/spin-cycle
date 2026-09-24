@@ -8,11 +8,13 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const authObject = auth();
+
   if (!isPublicRoute(req)) {
-    auth().protect()
+    authObject.protect();
   }
 
-  const { sessionClaims } = auth();
+  const { sessionClaims } = authObject;
   const { orgRole, orgSlug } = (sessionClaims ?? {}) as {
     orgRole?: string;
     orgSlug?: string;
@@ -41,10 +43,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Match all routes except static files and _next internals, but still
-    // run for well-known paths (e.g. Chrome DevTools' automatic request to
-    // /.well-known/appspecific/com.chrome.devtools.json) so ClerkProvider's
-    // server-side auth() call always has middleware context, even on 404s.
+    "/",
     "/((?!_next|.*\\..*).*)",
     "/(api|trpc)(.*)",
     "/.well-known/(.*)",
