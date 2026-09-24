@@ -65,7 +65,14 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
         where: { id: orderId, tenantId: tenant.id },
         include: {
           customer: { select: { name: true } },
-          items: { select: { serviceId: true, inventoryItemId: true, quantity: true } },
+          items: {
+            select: {
+              serviceId: true,
+              inventoryItemId: true,
+              quantity: true,
+              service: { select: { type: true } },
+            },
+          },
           payments: { select: { method: true }, take: 1 },
           machineUsages: { orderBy: { startedAt: "asc" }, take: 1, include: { machine: { select: { id: true, name: true } } } },
         },
@@ -76,8 +83,15 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
       db.customer.findMany({ where: { tenantId: tenant.id }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     ]);
     if (!order) return null;
-    const baseItem = order.items.find((item) => item.serviceId);
     const machineUsage = order.machineUsages[0];
+    const expectedBaseType = machineUsage?.machine
+      ? machines.find((machine) => machine.id === machineUsage.machine.id)?.type === "washer"
+        ? "WASH"
+        : "DRY"
+      : undefined;
+    const baseItem = order.items.find(
+      (item) => item.serviceId && item.service?.type === expectedBaseType,
+    ) ?? order.items.find((item) => item.serviceId && item.service?.type !== "OTHERS");
     return {
       order: {
         id: order.id,
@@ -90,7 +104,9 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
         machineId: machineUsage?.machine.id ?? "",
         machineName: machineUsage?.machine.name ?? "Unassigned",
         baseServiceId: baseItem?.serviceId ?? "",
-        extraServiceIds: order.items.filter((item) => item.serviceId && item.serviceId !== baseItem?.serviceId).map((item) => item.serviceId as string),
+        extraServiceIds: order.items
+          .filter((item) => item.serviceId && item.serviceId !== baseItem?.serviceId && item.service?.type === "OTHERS")
+          .map((item) => item.serviceId as string),
         inventoryQuantities: Object.fromEntries(order.items.filter((item) => item.inventoryItemId).map((item) => [item.inventoryItemId, item.quantity])),
       },
       machines,
