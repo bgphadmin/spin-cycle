@@ -4,7 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import db from "@/utils/db";
 
 export async function syncStaffToTenant() {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) throw new Error("Not signed in");
 
   // Get Clerk user + their org memberships
@@ -14,7 +14,7 @@ export async function syncStaffToTenant() {
   // Loop through memberships (usually just one)
   for (const membership of memberships.data) {
     const orgId = membership.organization.id;
-    const role = membership.role;
+    if (!orgId) continue;
 
     // Find tenant by Clerk orgId
     const tenant = await db.tenant.findFirst({

@@ -45,6 +45,7 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
   const [selectedOrderType, setSelectedOrderType] = useState("WALK_IN");
   const [isPaid, setIsPaid] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,13 +54,14 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
     setSelectedPaymentMethod("");
     setSelectedOrderType("WALK_IN");
     setIsPaid(false);
+    setDataError(null);
 
     async function fetchData() {
       try {
         const [resServices, resInventory, resCustomers, resActiveOrder] = await Promise.all([
-          getServicesAction(),
-          getInventoryAction(),
-          getCustomersAction(),
+          getServicesAction(machineId),
+          getInventoryAction(machineId),
+          getCustomersAction(machineId),
           status === "IN_USE" ? getActiveOrderAction(machineId) : Promise.resolve(null),
         ]);
         if (cancelled) return;
@@ -69,6 +71,13 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
         setActiveOrder(resActiveOrder);
       } catch (error) {
         console.error("Error loading order modal data:", error);
+        if (!cancelled) {
+          setDataError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load order data for this machine.",
+          );
+        }
       } finally {
         if (!cancelled) setDataLoading(false);
       }
@@ -108,6 +117,17 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
       <div className="my-2 max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)] sm:p-6">
         {dataLoading ? (
           <OrderModalSkeleton />
+        ) : dataError ? (
+          <div className="space-y-4 p-4">
+            <p className="text-sm text-red-600">{dataError}</p>
+            <button
+              type="button"
+              className="rounded-md bg-slate-600 px-4 py-2 text-white"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
         ) : (
           <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
             {({ loading }) => (

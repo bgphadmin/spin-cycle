@@ -2,7 +2,7 @@
 
 import db from "@/utils/db"
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 export type Service = {
   id: string;
@@ -25,24 +25,30 @@ export type Customer = {
   name: string;
 };
 
-export async function getServicesAction() {
-  const tenantId = await getTenantId();
+export async function getServicesAction(machineId?: string) {
+  const tenantId = machineId
+    ? await getMachineTenantId(machineId)
+    : await getTenantId();
   return db.service.findMany({
     where: { tenantId },
     select: { id: true, name: true, price: true, type: true },
   });
 }
 
-export async function getInventoryAction() {
-  const tenantId = await getTenantId();
+export async function getInventoryAction(machineId?: string) {
+  const tenantId = machineId
+    ? await getMachineTenantId(machineId)
+    : await getTenantId();
   return db.inventoryItem.findMany({
     where: { tenantId },
     select: { id: true, name: true, price: true, unit: true, stock: true },
   });
 }
 
-export async function getCustomersAction() {
-  const tenantId = await getTenantId();
+export async function getCustomersAction(machineId?: string) {
+  const tenantId = machineId
+    ? await getMachineTenantId(machineId)
+    : await getTenantId();
   return db.customer.findMany({
     where: { tenantId },
     orderBy: { name: "asc" },
@@ -61,4 +67,30 @@ async function getTenantId() {
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
   return tenant.id;
+}
+
+async function getMachineTenantId(machineId: string) {
+  const { userId, orgId } = await auth();
+  if (!userId) throw new Error("Authentication is required.");
+
+  const machine = await db.machine.findUnique({
+    where: { id: machineId },
+    select: { tenantId: true, tenant: { select: { clerkOrgId: true } } },
+  });
+  if (!machine) throw new Error("Machine not found.");
+
+  if (orgId === machine.tenant.clerkOrgId) {
+    return machine.tenantId;
+  }
+
+  const clerk = await clerkClient();
+  const memberships = await clerk.users.getOrganizationMembershipList({ userId });
+  const belongsToMachineTenant = memberships.data.some(
+    (membership) => membership.organization.id === machine.tenant.clerkOrgId,
+  );
+  if (!belongsToMachineTenant) {
+    throw new Error("Machine does not belong to an organization for this user.");
+  }
+
+  return machine.tenantId;
 }
