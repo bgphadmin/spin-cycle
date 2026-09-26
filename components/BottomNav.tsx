@@ -23,12 +23,14 @@ import { useState } from "react";
 import DropdownNavItem from "./DropDownNavItem";
 import { useOrganization } from "@clerk/nextjs";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
+import CalculatorWindow from "@/features/calculator/CalculatorWindow";
 
 
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const { organization } = useOrganization()
   const orgSlug = organization?.slug
@@ -43,98 +45,103 @@ export default function BottomNav() {
   ];
 
 
-  if (hideBottomNav) {
-    return null; // 👈 don't render anything
-  }
-
-
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-teal-100 shadow-2xl">
-      <ul className="flex justify-around items-center h-16">
-        {navItems.map(({ href, label, icon: Icon }) => (
-          <li key={href}>
-            <Link
-              href={href}
-              className={`flex flex-col items-center text-xs font-medium hover:text-teal-700 ${pathname === href ? "text-teal-700" : "text-teal-500"
-                }`}
-            >
-              <Icon className="h-6 w-6 mb-1" />
-              {label}
-            </Link>
-          </li>
-        ))}
-
-        {/* Settings Dropdown */}
-        <li>
-          <DropdownMenu onOpenChange={setOpen}>
-            <DropdownMenuTrigger className="flex flex-col items-center text-xs font-medium hover:text-teal-700 text-teal-500 cursor-pointer">
-              <div className="flex items-center gap-1">
-                <Cog6ToothIcon className="h-6 w-6 mb-1" />
-                <ChevronDownIcon
-                  className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"
+    <>
+      {!hideBottomNav && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-teal-100 shadow-2xl">
+          <ul className="flex justify-around items-center h-16">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className={`flex flex-col items-center text-xs font-medium hover:text-teal-700 ${pathname === href ? "text-teal-700" : "text-teal-500"
                     }`}
-                />
-              </div>
-              Settings
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
-                  label="Machines"
-                  onSelect={() => setOpen(false)}
-                  icon={ArchiveBoxIcon}
-                />
-              )}
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
-                  label="Inventory Items"
-                  icon={Cog6ToothIcon}
-                  onSelect={() => setOpen(false)}
-                />
-              )}
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/tenantDashboard/services/`}
-                  label="Services"
-                  icon={UserIcon}
-                  onSelect={() => setOpen(false)}
-                />
-              )}
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/adminDashboard/users`}
-                  label="Users"
-                  icon={UserIcon}
-                  onSelect={() => setOpen(false)}
-                />
-              )}
-              <DropdownNavItem
-                href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
-                label="Customers"
-                icon={UserIcon}
-                onSelect={() => setOpen(false)}
-              />
-              <DropdownNavItem
-                href="/calculator"
-                label="Calculator"
-                icon={CalculatorIcon}
-                onSelect={() => setOpen(false)}
-              />
-              {orgRole === "org:admin" && (
-                <DropdownNavItem
-                  href={`/tenants/${orgSlug}/adminDashboard/`}
-                  label="Admin"
-                  icon={BuildingOfficeIcon}
-                  onSelect={() => setOpen(false)}
-                />
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </li>
-      </ul>
-    </nav>
+                >
+                  <Icon className="h-6 w-6 mb-1" />
+                  {label}
+                </Link>
+              </li>
+            ))}
+
+            <li>
+              <DropdownMenu onOpenChange={setOpen}>
+                <DropdownMenuTrigger className="flex flex-col items-center text-xs font-medium hover:text-teal-700 text-teal-500 cursor-pointer">
+                  <div className="flex items-center gap-1">
+                    <Cog6ToothIcon className="h-6 w-6 mb-1" />
+                    <ChevronDownIcon
+                      className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"
+                        }`}
+                    />
+                  </div>
+                  Settings
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white shadow-md rounded-md p-2 min-w-35">
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/tenantDashboard/machines/`}
+                      label="Machines"
+                      onSelect={() => setOpen(false)}
+                      icon={ArchiveBoxIcon}
+                    />
+                  )}
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/tenantDashboard/inventory/`}
+                      label="Inventory Items"
+                      icon={Cog6ToothIcon}
+                      onSelect={() => setOpen(false)}
+                    />
+                  )}
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/tenantDashboard/services/`}
+                      label="Services"
+                      icon={UserIcon}
+                      onSelect={() => setOpen(false)}
+                    />
+                  )}
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/adminDashboard/users`}
+                      label="Users"
+                      icon={UserIcon}
+                      onSelect={() => setOpen(false)}
+                    />
+                  )}
+                  <DropdownNavItem
+                    href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
+                    label="Customers"
+                    icon={UserIcon}
+                    onSelect={() => setOpen(false)}
+                  />
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setOpen(false);
+                      setCalculatorOpen(true);
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 text-xl hover:text-teal-700"
+                  >
+                    <CalculatorIcon className="h-5 w-5 text-teal-500" />
+                    Calculator
+                  </DropdownMenuItem>
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/adminDashboard/`}
+                      label="Admin"
+                      icon={BuildingOfficeIcon}
+                      onSelect={() => setOpen(false)}
+                    />
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </li>
+          </ul>
+        </nav>
+      )}
+      <CalculatorWindow
+        open={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+      />
+    </>
   );
 }
