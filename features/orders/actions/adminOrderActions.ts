@@ -6,8 +6,9 @@ import { MachineStatus, MachineType, PaymentMethod } from "@prisma/client";
 import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
+import { businessDateKey } from "@/utils/businessDate";
 
-type AdminTenant = { id: string; orgSlug: string };
+type AdminTenant = { id: string; orgSlug: string; timeZone: string };
 
 async function getAdminTenant(): Promise<AdminTenant> {
   const { userId } = await auth();
@@ -17,10 +18,14 @@ async function getAdminTenant(): Promise<AdminTenant> {
   }
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgId: orgId },
-    select: { id: true, clerkOrgSlug: true },
+    select: { id: true, clerkOrgSlug: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found.");
-  return { id: tenant.id, orgSlug: orgSlug ?? tenant.clerkOrgSlug };
+  return {
+    id: tenant.id,
+    orgSlug: orgSlug ?? tenant.clerkOrgSlug,
+    timeZone: tenant.timeZone,
+  };
 }
 
 export type AdminOrderRow = {
@@ -28,6 +33,8 @@ export type AdminOrderRow = {
   customerName: string;
   receiptNumber: string;
   createdAt: string;
+  createdAtLabel: string;
+  businessDate: string;
   status: string;
   orderType: string;
   total: number;
@@ -146,6 +153,12 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
       customerName: order.customer?.name ?? "Walk-in",
       receiptNumber: order.receiptOrders[0]?.receipt.number ?? `UNASSIGNED-${order.id.slice(0, 8)}`,
       createdAt: order.createdAt.toISOString(),
+      createdAtLabel: new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: tenant.timeZone,
+      }).format(order.createdAt),
+      businessDate: businessDateKey(order.createdAt, tenant.timeZone),
       status: order.status,
       orderType: order.orderType,
       total: order.total,

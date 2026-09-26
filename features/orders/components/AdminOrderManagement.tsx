@@ -13,10 +13,6 @@ import {
   type AdminOrderRow,
 } from "@/features/orders/actions/adminOrderActions";
 
-function dateKey(value: string) {
-  return value.slice(0, 10);
-}
-
 function money(value: number) {
   return `₱${value.toFixed(2)}`;
 }
@@ -69,12 +65,11 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
     const customerQuery = customerSearch.trim().toLowerCase();
     const receiptQuery = receiptSearch.trim().toLowerCase();
     return currentOrders.filter((order) => {
-      const orderDate = dateKey(order.createdAt);
       return (
         (!customerQuery || order.customerName.toLowerCase().includes(customerQuery)) &&
         (!receiptQuery || order.receiptNumber.toLowerCase().includes(receiptQuery)) &&
-        (!fromDate || orderDate >= fromDate) &&
-        (!toDate || orderDate <= toDate)
+        (!fromDate || order.businessDate >= fromDate) &&
+        (!toDate || order.businessDate <= toDate)
       );
     });
   }, [currentOrders, customerSearch, receiptSearch, fromDate, toDate]);
@@ -159,12 +154,7 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                     tabIndex={0}
                     className="cursor-pointer border-b border-gray-100 align-top last:border-0 hover:bg-teal-50 focus:bg-teal-50 focus:outline-none"
                   >
-                    <td className="px-3 py-3 text-gray-600">
-                      {new Date(order.createdAt).toLocaleString("en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </td>
+                    <td className="px-3 py-3 text-gray-600">{order.createdAtLabel}</td>
                     <td className="px-3 py-3 font-medium text-gray-800">{order.customerName}</td>
                     <td className="px-3 py-3 text-gray-600">{order.receiptNumber}</td>
                     <td className="px-3 py-3 text-gray-600">{order.status.replace("_", " ")}</td>

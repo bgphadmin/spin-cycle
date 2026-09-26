@@ -95,9 +95,8 @@ export default function SalesTabs({
               key={value}
               type="button"
               onClick={() => setActiveTab(value as "customers" | "summary")}
-              className={`flex-1 whitespace-nowrap border-b-2 px-2 py-3 text-xs font-semibold sm:flex-none sm:px-4 sm:text-sm ${
-                activeTab === value ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-teal-600"
-              }`}
+              className={`flex-1 whitespace-nowrap border-b-2 px-2 py-3 text-xs font-semibold sm:flex-none sm:px-4 sm:text-sm ${activeTab === value ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-teal-600"
+                }`}
             >
               {label}
             </button>
