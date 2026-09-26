@@ -23,7 +23,7 @@ type Service = {
   id: string;
   name: string;
   price: number;
-  type: "WASH" | "DRY" | "OTHERS";
+  type: "WASH" | "DRY" | "OTHERS" | "FOLDS";
 };
 
 type InventoryItem = {
@@ -89,9 +89,16 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
     };
   }, [machineId, status]);
 
-  const baseServiceType = type === "washer" ? "WASH" : "DRY";
-  const baseServices = services.filter((service) => service.type === baseServiceType);
-  const extraServices = services.filter((service) => service.type === "OTHERS");
+  const machineType = String(type).toLowerCase();
+  const baseServiceType = machineType === "washer" ? "WASH" : "DRY";
+  const baseServices = services.filter(
+    (service) => String(service.type).toUpperCase() === baseServiceType,
+  );
+  const extraServices = services.filter(
+    (service) =>
+      String(service.type).toUpperCase() === "OTHERS" ||
+      (machineType === "dryer" && String(service.type).toUpperCase() === "FOLDS"),
+  );
 
   useEffect(() => {
     setSelectedPaymentMethod(

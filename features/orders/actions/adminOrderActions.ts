@@ -89,6 +89,9 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
         ? "WASH"
         : "DRY"
       : undefined;
+    const allowsFolds = machineUsage?.machine
+      ? machines.find((machine) => machine.id === machineUsage.machine.id)?.type === "dryer"
+      : false;
     const baseItem = order.items.find(
       (item) => item.serviceId && item.service?.type === expectedBaseType,
     ) ?? order.items.find((item) => item.serviceId && item.service?.type !== "OTHERS");
@@ -105,7 +108,12 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
         machineName: machineUsage?.machine.name ?? "Unassigned",
         baseServiceId: baseItem?.serviceId ?? "",
         extraServiceIds: order.items
-          .filter((item) => item.serviceId && item.serviceId !== baseItem?.serviceId && item.service?.type === "OTHERS")
+          .filter(
+            (item) =>
+              item.serviceId &&
+              item.serviceId !== baseItem?.serviceId &&
+              (item.service?.type === "OTHERS" || (allowsFolds && item.service?.type === "FOLDS")),
+          )
           .map((item) => item.serviceId as string),
         inventoryQuantities: Object.fromEntries(order.items.filter((item) => item.inventoryItemId).map((item) => [item.inventoryItemId, item.quantity])),
       },
@@ -195,7 +203,13 @@ export async function updateAdminOrderAction(
       const expectedType = machine.type === MachineType.washer ? "WASH" : "DRY";
       if (baseService.type !== expectedType) throw new Error("The selected service does not match this machine.");
       const selectedExtraIds = extraServiceIds.filter((id) => id !== baseServiceId);
-      const extraServices = await tx.service.findMany({ where: { id: { in: selectedExtraIds }, tenantId: tenant.id, type: "OTHERS" } });
+      const extraServices = await tx.service.findMany({
+        where: {
+          id: { in: selectedExtraIds },
+          tenantId: tenant.id,
+          type: { in: machine.type === MachineType.dryer ? ["OTHERS", "FOLDS"] : ["OTHERS"] },
+        },
+      });
       if (extraServices.length !== selectedExtraIds.length) throw new Error("One or more selected services are invalid.");
       const previousInventory = new Map(order.items.filter((item) => item.inventoryItemId).map((item) => [item.inventoryItemId as string, item.quantity]));
       const inventoryIds = [...new Set([...previousInventory.keys(), ...inventoryQuantities.keys()])];

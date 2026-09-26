@@ -83,6 +83,7 @@ export async function createOrderAction(
         where: {
           id: { in: extraServiceIds.filter((id) => id !== baseService.id) },
           tenantId: tenant.id,
+          type: { in: machine.type === MachineType.dryer ? ["OTHERS", "FOLDS"] : ["OTHERS"] },
         },
       });
       if (extraServices.length !== new Set(extraServiceIds.filter((id) => id !== baseService.id)).size) {

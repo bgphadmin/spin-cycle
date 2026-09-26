@@ -142,7 +142,10 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
         const serviceDates = serviceByName.get(item.service.name) ?? new Map<string, number>();
         serviceDates.set(orderDate, (serviceDates.get(orderDate) ?? 0) + itemTotal);
         serviceByName.set(item.service.name, serviceDates);
-        const category = item.service.type === "OTHERS" ? "Additional Services" : "Base Services";
+        const category =
+          item.service.type === "OTHERS" || item.service.type === "FOLDS"
+            ? "Additional Services"
+            : "Base Services";
         categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + itemTotal);
       } else if (item.inventoryItem) {
         const inventoryDates = inventoryByName.get(item.inventoryItem.name) ?? new Map<string, number>();

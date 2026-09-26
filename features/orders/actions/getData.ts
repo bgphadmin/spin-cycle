@@ -8,7 +8,7 @@ export type Service = {
   id: string;
   name: string;
   price: number;
-  type: "WASH" | "DRY" | "OTHERS";
+  type: "WASH" | "DRY" | "OTHERS" | "FOLDS";
 };
 
 export type InventoryItem = {

@@ -154,6 +154,7 @@ enum ServiceType {
   WASH
   DRY
   OTHERS
+  FOLDS
 }
 
 model Service {

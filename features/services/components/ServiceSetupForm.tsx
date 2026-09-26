@@ -41,6 +41,7 @@ export default function ServiceSetupForm() {
                   { value: "WASH", label: "WASH" },
                   { value: "DRY", label: "DRY" },
                   { value: "OTHERS", label: "OTHERS" },
+                  { value: "FOLDS", label: "FOLDS" },
                 ]}
               />
               <StandardInput

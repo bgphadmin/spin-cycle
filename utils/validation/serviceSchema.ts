@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const addServiceSchema = z.object({
-  type: z.enum(["WASH", "DRY", "OTHERS"], {
-    message: "Type must be WASH, DRY, or OTHERS",
+  type: z.enum(["WASH", "DRY", "OTHERS", "FOLDS"], {
+    message: "Type must be WASH, DRY, OTHERS, or FOLDS",
   }),
   name: z
     .string()

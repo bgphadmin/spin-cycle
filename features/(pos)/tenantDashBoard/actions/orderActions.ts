@@ -100,7 +100,11 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
 
       const selectedExtraIds = [...new Set(extraServiceIds.filter((serviceId) => serviceId !== baseService.id))];
       const extraServices = await tx.service.findMany({
-        where: { id: { in: selectedExtraIds }, tenantId: id, type: "OTHERS" },
+        where: {
+          id: { in: selectedExtraIds },
+          tenantId: id,
+          type: { in: machine.type === MachineType.dryer ? ["OTHERS", "FOLDS"] : ["OTHERS"] },
+        },
       });
       if (extraServices.length !== selectedExtraIds.length) throw new Error("One or more selected services are invalid.");
 

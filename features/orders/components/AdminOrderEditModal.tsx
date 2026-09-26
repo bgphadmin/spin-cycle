@@ -48,8 +48,14 @@ export default function AdminOrderEditModal({
 
   const selectedMachine = data?.machines.find((machine) => machine.id === machineId);
   const baseType = selectedMachine?.type === "washer" ? "WASH" : "DRY";
-  const baseServices = data?.services.filter((service) => service.type === baseType) ?? [];
-  const extraServices = data?.services.filter((service) => service.type === "OTHERS") ?? [];
+  const baseServices = data?.services.filter(
+    (service) => String(service.type).toUpperCase() === baseType,
+  ) ?? [];
+  const extraServices = data?.services.filter(
+    (service) =>
+      String(service.type).toUpperCase() === "OTHERS" ||
+      (selectedMachine?.type === "dryer" && String(service.type).toUpperCase() === "FOLDS"),
+  ) ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-2 sm:items-center sm:p-4" onClick={(event) => event.stopPropagation()}>

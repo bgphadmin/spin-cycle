@@ -52,6 +52,7 @@ export default function EditServiceForm({ userRole, service }: { userRole: strin
                   { value: "WASH", label: "WASH" },
                   { value: "DRY", label: "DRY" },
                   { value: "OTHERS", label: "OTHERS" },
+                  { value: "FOLDS", label: "FOLDS" },
                 ]}
               />
               <StandardInput name="name" placeholder="Service Name" defaultValue={service.name} required />
