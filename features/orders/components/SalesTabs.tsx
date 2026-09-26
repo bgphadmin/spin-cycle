@@ -85,8 +85,8 @@ export default function SalesTabs({
 
   return (
     <>
-      <div className="mb-6 flex items-end justify-between gap-4 border-b border-gray-200">
-        <div className="flex gap-2">
+      <div className="mb-6 flex flex-col gap-3 border-b border-gray-200 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-0">
+        <div className="flex min-w-0 gap-1 sm:gap-2">
           {[
             ["customers", "Customer Sales"],
             ["summary", "Sales Summary"],
@@ -95,7 +95,7 @@ export default function SalesTabs({
               key={value}
               type="button"
               onClick={() => setActiveTab(value as "customers" | "summary")}
-              className={`border-b-2 px-4 py-3 text-sm font-semibold ${
+              className={`flex-1 whitespace-nowrap border-b-2 px-2 py-3 text-xs font-semibold sm:flex-none sm:px-4 sm:text-sm ${
                 activeTab === value ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-teal-600"
               }`}
             >
@@ -104,7 +104,7 @@ export default function SalesTabs({
           ))}
         </div>
         {isAdmin && (
-          <div className="mb-2 flex items-center gap-2" role="group" aria-labelledby="sales-date-label">
+          <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:mb-2 sm:w-auto" role="group" aria-labelledby="sales-date-label">
             <label id="sales-date-label" htmlFor="sales-date" className="whitespace-nowrap text-sm font-medium text-gray-600">
               Sales date
             </label>
@@ -115,7 +115,7 @@ export default function SalesTabs({
               onChange={(event) => handleDateChange(event.target.value)}
               disabled={isPending}
               aria-label="Filter sales by date"
-              className="w-auto"
+              className="min-w-0 w-full sm:w-auto"
             />
             {isPending && (
               <span className="sr-only" role="status" aria-live="polite">
