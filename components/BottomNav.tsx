@@ -11,6 +11,7 @@ import {
   ChevronDownIcon,
   UserIcon,
   BuildingOfficeIcon,
+  CalculatorIcon,
 } from "@heroicons/react/24/solid"; // filled style
 import {
   DropdownMenu,
@@ -114,6 +115,12 @@ export default function BottomNav() {
                 href={`/tenants/${orgSlug}/tenantDashboard/customer/`}
                 label="Customers"
                 icon={UserIcon}
+                onSelect={() => setOpen(false)}
+              />
+              <DropdownNavItem
+                href="/calculator"
+                label="Calculator"
+                icon={CalculatorIcon}
                 onSelect={() => setOpen(false)}
               />
               {orgRole === "org:admin" && (
