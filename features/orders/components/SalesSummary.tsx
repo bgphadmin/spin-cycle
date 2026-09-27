@@ -14,21 +14,21 @@ export default function SalesSummary({ summary }: { summary: SalesSummaryData })
     <div className="space-y-6">
       <section className="grid gap-5 rounded-lg border border-teal-100 bg-teal-100 p-5 sm:grid-cols-3">
         <div>
-          <p className="text-sm font-medium text-teal-700">Paid sales for selected range</p>
+          <p className="text-sm font-medium text-teal-700">Paid Sales</p>
           <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.total)}</p>
         </div>
         <div>
-          <p className="text-sm font-medium text-orange-700">Expenses for selected range</p>
+          <p className="text-sm font-medium text-orange-700">Expenses</p>
           <p className="mt-1 text-2xl font-bold text-orange-800">{money(summary.expensesTotal)}</p>
         </div>
         <div>
-          <p className="text-sm font-medium text-teal-700">Net profit for selected range</p>
+          <p className="text-sm font-medium text-teal-700">Net Profit</p>
           <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.netProfit)}</p>
         </div>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold bg-teal-100 p-4 text-teal-800">Services and items for selected range</h2>
+        <h2 className="text-lg font-semibold bg-teal-100 p-4 text-teal-800">Services and Items</h2>
         {summary.lines.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">No paid services or items recorded today.</p>
         ) : (

@@ -135,7 +135,7 @@ export default function ExpensesList() {
       />
 
       <section className="rounded-lg border border-teal-100 bg-teal-100 p-5">
-        <p className="text-sm font-medium text-teal-700">Total expenses for selected range</p>
+        <p className="text-sm font-medium text-teal-700">Total Expenses</p>
         <p className="mt-1 text-3xl font-bold text-teal-800">{money(total)}</p>
       </section>
 
