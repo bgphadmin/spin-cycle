@@ -24,8 +24,15 @@ export type SalesSummary = {
   total: number;
   expensesTotal: number;
   netProfit: number;
+  startDate: string;
+  endDate: string;
   lines: SalesSummaryLine[];
   unpaid: UnpaidSalesRow[];
+};
+
+export type SalesSummaryUser = {
+  id: string;
+  name: string;
 };
 
 async function getSalesContext() {
@@ -51,6 +58,17 @@ async function getSalesContext() {
   };
 }
 
+export async function getSalesSummaryUsersAction(): Promise<SalesSummaryUser[]> {
+  const tenant = await getSalesContext();
+  if (!tenant.isAdmin) return [];
+
+  return db.user.findMany({
+    where: { tenantId: tenant.id },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 function addLine(
   lines: SalesSummaryLine[],
   item: { service: { name: string } | null; inventoryItem: { name: string } | null; quantity: number; price: number },
@@ -66,19 +84,65 @@ function addLine(
   }
 }
 
-export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSummary> {
+export async function getSalesSummaryAction(filters?: {
+  startDate?: string;
+  endDate?: string;
+  userId?: string;
+}): Promise<SalesSummary> {
   const tenant = await getSalesContext();
-  const { start: startOfDay, end: endOfDay } = dateKey
-    ? businessDayRangeFromKey(dateKey, tenant.timeZone)
-    : getBusinessDayRange(new Date(), tenant.timeZone);
+  const today = businessDateKey(new Date(), tenant.timeZone);
+  let startDate = today;
+  let endDate = today;
+
+  if (tenant.isAdmin && (filters?.startDate || filters?.endDate)) {
+    startDate = filters.startDate || filters.endDate || today;
+    endDate = filters.endDate || filters.startDate || today;
+    if (!isDateKey(startDate) || !isDateKey(endDate)) {
+      throw new Error("Enter a valid date range.");
+    }
+    if (startDate > endDate) [startDate, endDate] = [endDate, startDate];
+  }
+
+  const { start: startOfDay } = businessDayRangeFromKey(startDate, tenant.timeZone);
+  const { end: endOfDay } = businessDayRangeFromKey(endDate, tenant.timeZone);
+
+  let selectedUsers: { id: string; clerkId: string }[] | null = null;
+  const userId = tenant.isAdmin ? filters?.userId?.trim() : "";
+  if (userId && userId !== "all") {
+    const selectedUser = await db.user.findFirst({
+      where: {
+        id: userId,
+        tenantId: tenant.id,
+      },
+      select: { id: true, clerkId: true },
+    });
+    selectedUsers = selectedUser ? [selectedUser] : [];
+  }
 
   const orders = await db.laundryOrder.findMany({
     where: {
       tenantId: tenant.id,
       status: { in: ["COMPLETED", "IN_PROGRESS"] },
       OR: [
-        { paid: true, createdAt: { gte: startOfDay, lt: endOfDay } },
-        { paid: false },
+        {
+          paid: true,
+          createdAt: { gte: startOfDay, lt: endOfDay },
+          ...(tenant.isAdmin && selectedUsers
+            ? { userId: { in: selectedUsers.map((user) => user.clerkId) } }
+            : {}),
+          ...(!tenant.isAdmin ? { userId: tenant.userId } : {}),
+        },
+        {
+          paid: false,
+          ...(tenant.isAdmin
+            ? {
+                createdAt: { gte: startOfDay, lt: endOfDay },
+                ...(selectedUsers
+                  ? { userId: { in: selectedUsers.map((user) => user.clerkId) } }
+                  : {}),
+              }
+            : {}),
+        },
       ],
     },
     orderBy: { createdAt: "desc" },
@@ -103,7 +167,11 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
     where: {
       tenantId: tenant.id,
       createdAt: { gte: startOfDay, lt: endOfDay },
-      ...(tenant.isAdmin ? {} : { userId: tenant.userRecordId }),
+      ...(tenant.isAdmin
+        ? selectedUsers
+          ? { userId: { in: selectedUsers.map((user) => user.id) } }
+          : {}
+        : { userId: tenant.userRecordId }),
     },
     _sum: { amount: true },
   });
@@ -118,7 +186,9 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
       order.paid &&
       order.createdAt >= startOfDay &&
       order.createdAt < endOfDay &&
-      (tenant.isAdmin || order.userId === tenant.userId)
+      (tenant.isAdmin
+        ? !selectedUsers || selectedUsers.some((user) => user.clerkId === order.userId)
+        : order.userId === tenant.userId)
     ) {
       total += order.total;
       for (const item of order.items) addLine(lines, item);
@@ -145,7 +215,20 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
     total,
     expensesTotal,
     netProfit: total - expensesTotal,
+    startDate,
+    endDate,
     lines,
     unpaid: [...unpaidGroups.values()],
   };
+}
+
+function isDateKey(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }

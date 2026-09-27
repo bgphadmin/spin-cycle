@@ -1,13 +1,24 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import type { FormEvent } from "react";
 import type { CustomerSalesCard } from "@/features/orders/actions/getSalesAction";
-import type { SalesSummary as SalesSummaryData } from "@/features/orders/actions/getSalesSummaryAction";
+import type {
+  SalesSummary as SalesSummaryData,
+  SalesSummaryUser,
+} from "@/features/orders/actions/getSalesSummaryAction";
 import { getTodaySalesAction } from "@/features/orders/actions/getSalesAction";
 import { getSalesSummaryAction } from "@/features/orders/actions/getSalesSummaryAction";
 import SalesCard from "@/features/orders/components/SalesCard";
 import SalesSummary from "@/features/orders/components/SalesSummary";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 
 function SalesCardSkeleton() {
@@ -43,28 +54,32 @@ function SalesCardSkeleton() {
 export default function SalesTabs({
   sales,
   summary,
+  summaryUsers,
 }: {
   sales: CustomerSalesCard[];
   summary: SalesSummaryData;
+  summaryUsers: SalesSummaryUser[];
 }) {
   const { orgRole } = useClientAuthClaims();
   const isAdmin = orgRole === "org:admin";
   const [activeTab, setActiveTab] = useState<"customers" | "summary">("customers");
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [summaryStartDate, setSummaryStartDate] = useState(summary.startDate);
+  const [summaryEndDate, setSummaryEndDate] = useState(summary.endDate);
+  const [summaryUserId, setSummaryUserId] = useState("all");
+  const [appliedSummaryUserId, setAppliedSummaryUserId] = useState("all");
+  const [summaryFilterError, setSummaryFilterError] = useState("");
   const [currentSales, setCurrentSales] = useState(sales);
   const [currentSummary, setCurrentSummary] = useState(summary);
   const [isPending, startTransition] = useTransition();
 
   function handleDateChange(dateKey: string) {
     setSelectedDate(dateKey);
+    setSummaryFilterError("");
     startTransition(async () => {
-      const [nextSales, nextSummary] = await Promise.all([
-        getTodaySalesAction(dateKey || undefined),
-        getSalesSummaryAction(dateKey || undefined),
-      ]);
+      const nextSales = await getTodaySalesAction(dateKey || undefined);
       setCurrentSales(nextSales);
-      setCurrentSummary(nextSummary);
       setCustomerSearch("");
     });
   }
@@ -73,8 +88,52 @@ export default function SalesTabs({
     setCurrentSales((sales) =>
       sales.map((sale) => (sale.customerId === customerId ? { ...sale, isPaid: paid } : sale)),
     );
-    const nextSummary = await getSalesSummaryAction(selectedDate || undefined);
-    setCurrentSummary(nextSummary);
+    try {
+      const nextSummary = await getSalesSummaryAction({
+        startDate: currentSummary.startDate,
+        endDate: currentSummary.endDate,
+        userId: appliedSummaryUserId,
+      });
+      setCurrentSummary(nextSummary);
+    } catch (error) {
+      setSummaryFilterError(error instanceof Error ? error.message : "Unable to refresh the sales summary.");
+    }
+  }
+
+  function applySummaryFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSummaryFilterError("");
+    startTransition(async () => {
+      try {
+        const nextSummary = await getSalesSummaryAction({
+          startDate: summaryStartDate,
+          endDate: summaryEndDate,
+          userId: summaryUserId,
+        });
+        setSummaryStartDate(nextSummary.startDate);
+        setSummaryEndDate(nextSummary.endDate);
+        setAppliedSummaryUserId(summaryUserId);
+        setCurrentSummary(nextSummary);
+      } catch (error) {
+        setSummaryFilterError(error instanceof Error ? error.message : "Unable to apply the summary filters.");
+      }
+    });
+  }
+
+  function clearSummaryFilters() {
+    setSummaryFilterError("");
+    startTransition(async () => {
+      try {
+        const nextSummary = await getSalesSummaryAction();
+        setSummaryStartDate(nextSummary.startDate);
+        setSummaryEndDate(nextSummary.endDate);
+        setSummaryUserId("all");
+        setAppliedSummaryUserId("all");
+        setCurrentSummary(nextSummary);
+      } catch (error) {
+        setSummaryFilterError(error instanceof Error ? error.message : "Unable to reset the summary filters.");
+      }
+    });
   }
 
   const filteredSales = useMemo(() => {
@@ -102,7 +161,7 @@ export default function SalesTabs({
             </button>
           ))}
         </div>
-        {isAdmin && (
+        {isAdmin && activeTab === "customers" && (
           <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:mb-2 sm:w-auto" role="group" aria-labelledby="sales-date-label">
             <label id="sales-date-label" htmlFor="sales-date" className="whitespace-nowrap text-sm font-medium text-gray-600">
               Sales date
@@ -126,7 +185,88 @@ export default function SalesTabs({
       </div>
 
       {activeTab === "summary" ? (
-        <SalesSummary summary={currentSummary} />
+        <div className="space-y-5">
+          {isAdmin && (
+            <form
+              onSubmit={applySummaryFilters}
+              className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto_auto] lg:items-end"
+            >
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
+                From date
+                <Input
+                  type="date"
+                  value={summaryStartDate}
+                  max={summaryEndDate}
+                  onChange={(event) => setSummaryStartDate(event.target.value)}
+                  disabled={isPending}
+                  aria-label="Sales summary start date"
+                  required
+                />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
+                To date
+                <Input
+                  type="date"
+                  value={summaryEndDate}
+                  min={summaryStartDate}
+                  onChange={(event) => setSummaryEndDate(event.target.value)}
+                  disabled={isPending}
+                  aria-label="Sales summary end date"
+                  required
+                />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
+                Filter by user
+                <Select
+                  value={summaryUserId}
+                  onValueChange={setSummaryUserId}
+                  disabled={isPending}
+                >
+                  <SelectTrigger
+                    className="w-full bg-white"
+                    aria-label="Filter sales summary by user"
+                  >
+                    <SelectValue placeholder="All users" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="all">All users</SelectItem>
+                    {summaryUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Apply
+              </button>
+              <button
+                type="button"
+                onClick={clearSummaryFilters}
+                disabled={isPending}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Reset
+              </button>
+            </form>
+          )}
+          {summaryFilterError && (
+            <p role="alert" className="text-sm text-red-600">
+              {summaryFilterError}
+            </p>
+          )}
+          {isPending && (
+            <p role="status" aria-live="polite" className="text-sm text-gray-500">
+              Updating sales summary...
+            </p>
+          )}
+          <SalesSummary summary={currentSummary} />
+        </div>
       ) : (
         <>
           <div className="mb-4">
