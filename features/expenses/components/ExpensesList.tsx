@@ -30,7 +30,8 @@ export default function ExpensesList({
 }: {
   initialRange: { startDate: string; endDate: string; timeZone: string };
 }) {
-  const { isLoaded } = useClientAuthClaims();
+  const { isLoaded, orgRole } = useClientAuthClaims();
+  const isAdmin = isLoaded && orgRole === "org:admin";
   // Any signed-in staff member can add/edit/delete expenses; the server
   // scopes non-admins to only their own records, so no role check is needed here.
   const canManage = isLoaded;
@@ -79,7 +80,7 @@ export default function ExpensesList({
   }
 
   const filteredSorted = useMemo(() => {
-    const userQuery = userSearch.trim().toLowerCase();
+    const userQuery = isAdmin ? userSearch.trim().toLowerCase() : "";
     const categoryQuery = categorySearch.trim().toLowerCase();
     const filtered = userQuery || categoryQuery
       ? expenses.filter(
@@ -104,7 +105,7 @@ export default function ExpensesList({
     });
 
     return sorted;
-  }, [expenses, userSearch, categorySearch, sortKey, sortDir]);
+  }, [expenses, isAdmin, userSearch, categorySearch, sortKey, sortDir]);
 
   const total = filteredSorted.reduce((sum, expense) => sum + expense.amount, 0);
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / ROWS_PER_PAGE));
@@ -138,14 +139,16 @@ export default function ExpensesList({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Input
-            type="text"
-            placeholder="Search by user..."
-            aria-label="Search expenses by user"
-            value={userSearch}
-            onChange={(event) => setUserSearch(event.target.value)}
-            className="max-w-sm"
-          />
+          {isAdmin && (
+            <Input
+              type="text"
+              placeholder="Search by user..."
+              aria-label="Search expenses by user"
+              value={userSearch}
+              onChange={(event) => setUserSearch(event.target.value)}
+              className="max-w-sm"
+            />
+          )}
           <Input
             type="text"
             placeholder="Search by category..."
