@@ -26,9 +26,9 @@ export type SalesSummary = {
   unpaid: UnpaidSalesRow[];
 };
 
-async function getTenantId() {
+async function getSalesContext() {
   const { userId } = await auth();
-  const { orgId } = await getServerAuthClaims();
+  const { orgId, orgRole } = await getServerAuthClaims();
   if (!userId || !orgId) throw new Error("Organization context is required.");
 
   const tenant = await db.tenant.findUnique({
@@ -36,7 +36,7 @@ async function getTenantId() {
     select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return tenant;
+  return { ...tenant, userId, isAdmin: orgRole === "org:admin" };
 }
 
 function addLine(
@@ -55,7 +55,7 @@ function addLine(
 }
 
 export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSummary> {
-  const tenant = await getTenantId();
+  const tenant = await getSalesContext();
   const { start: startOfDay, end: endOfDay } = dateKey
     ? businessDayRangeFromKey(dateKey, tenant.timeZone)
     : getBusinessDayRange(new Date(), tenant.timeZone);
@@ -72,6 +72,7 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      userId: true,
       total: true,
       paid: true,
       createdAt: true,
@@ -92,7 +93,12 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
   let total = 0;
 
   for (const order of orders) {
-    if (order.paid && order.createdAt >= startOfDay && order.createdAt < endOfDay) {
+    if (
+      order.paid &&
+      order.createdAt >= startOfDay &&
+      order.createdAt < endOfDay &&
+      (tenant.isAdmin || order.userId === tenant.userId)
+    ) {
       total += order.total;
       for (const item of order.items) addLine(lines, item);
     }
