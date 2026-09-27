@@ -12,9 +12,19 @@ export default function SalesSummary({ summary }: { summary: SalesSummaryData })
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-teal-100 bg-teal-100 p-5 ">
-        <p className="text-sm font-medium text-teal-700">Paid total for today</p>
-        <p className="mt-1 text-3xl font-bold text-teal-800">{money(summary.total)}</p>
+      <section className="grid gap-5 rounded-lg border border-teal-100 bg-teal-100 p-5 sm:grid-cols-3">
+        <div>
+          <p className="text-sm font-medium text-teal-700">Paid total for today</p>
+          <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.total)}</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-orange-700">Expenses for today</p>
+          <p className="mt-1 text-2xl font-bold text-orange-800">{money(summary.expensesTotal)}</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-teal-700">Net profit for today</p>
+          <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.netProfit)}</p>
+        </div>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">

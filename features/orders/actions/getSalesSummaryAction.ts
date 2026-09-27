@@ -22,6 +22,8 @@ export type UnpaidSalesRow = {
 
 export type SalesSummary = {
   total: number;
+  expensesTotal: number;
+  netProfit: number;
   lines: SalesSummaryLine[];
   unpaid: UnpaidSalesRow[];
 };
@@ -36,7 +38,17 @@ async function getSalesContext() {
     select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return { ...tenant, userId, isAdmin: orgRole === "org:admin" };
+  const currentUser = await db.user.findFirst({
+    where: { clerkId: userId, tenantId: tenant.id },
+    select: { id: true },
+  });
+  if (!currentUser) throw new Error("Your staff profile was not found for this shop.");
+  return {
+    ...tenant,
+    userId,
+    userRecordId: currentUser.id,
+    isAdmin: orgRole === "org:admin",
+  };
 }
 
 function addLine(
@@ -87,10 +99,19 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
       },
     },
   });
+  const expenses = await db.expense.aggregate({
+    where: {
+      tenantId: tenant.id,
+      createdAt: { gte: startOfDay, lt: endOfDay },
+      ...(tenant.isAdmin ? {} : { userId: tenant.userRecordId }),
+    },
+    _sum: { amount: true },
+  });
 
   const lines: SalesSummaryLine[] = [];
   const unpaidGroups = new Map<string, UnpaidSalesRow>();
   let total = 0;
+  const expensesTotal = expenses._sum.amount ?? 0;
 
   for (const order of orders) {
     if (
@@ -120,5 +141,11 @@ export async function getSalesSummaryAction(dateKey?: string): Promise<SalesSumm
     }
   }
 
-  return { total, lines, unpaid: [...unpaidGroups.values()] };
+  return {
+    total,
+    expensesTotal,
+    netProfit: total - expensesTotal,
+    lines,
+    unpaid: [...unpaidGroups.values()],
+  };
 }
