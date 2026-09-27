@@ -1,7 +1,9 @@
 export const EXPENSE_CATEGORIES = [
   { value: "UTILITIES", label: "Utilities" },
   { value: "SALARY", label: "Salary" },
+  { value: "INCENTIVES", label: "Incentives" },
   { value: "RENT", label: "Rent" },
+  { value: "GAS_LPG", label: "Gas (LPG)" },
   { value: "MAINTENANCE", label: "Maintenance" },
   { value: "SUPPLIES", label: "Supplies" },
   { value: "OTHER", label: "Other" },

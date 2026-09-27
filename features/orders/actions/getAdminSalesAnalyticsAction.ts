@@ -3,6 +3,7 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { expenseCategoryLabel } from "@/features/expenses/types/expenseTypes";
 import {
   businessDateKey,
   businessDateLabel,
@@ -45,6 +46,7 @@ export type AdminSalesAnalytics = {
   serviceSeries: AnalyticsSeries[];
   inventorySeries: AnalyticsSeries[];
   categoryTotals: Array<{ name: string; total: number }>;
+  expenseCategoryTotals: Array<{ name: string; total: number }>;
   topCustomers: Array<{ name: string; total: number }>;
 };
 
@@ -112,6 +114,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     },
     select: {
       amount: true,
+      category: true,
       createdAt: true,
     },
   });
@@ -121,6 +124,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
   const dailyExpensesByDate = new Map<string, number>();
   const serviceByName = new Map<string, Map<string, number>>();
   const inventoryByName = new Map<string, Map<string, number>>();
+  const expenseCategoryTotals = new Map<string, number>();
   const categoryTotals = new Map([
     ["Base Services", 0],
     ["Additional Services", 0],
@@ -159,6 +163,8 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
   for (const expense of expenses) {
     const expenseDate = dateKey(expense.createdAt, tenant.timeZone);
     dailyExpensesByDate.set(expenseDate, (dailyExpensesByDate.get(expenseDate) ?? 0) - Math.abs(expense.amount));
+    const category = expenseCategoryLabel(expense.category);
+    expenseCategoryTotals.set(category, (expenseCategoryTotals.get(category) ?? 0) + expense.amount);
   }
 
   const toSeries = (source: Map<string, Map<string, number>>): AnalyticsSeries[] =>
@@ -204,6 +210,9 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     serviceSeries: toSeries(serviceByName),
     inventorySeries: toSeries(inventoryByName),
     categoryTotals: [...categoryTotals.entries()].map(([name, total]) => ({ name, total })),
+    expenseCategoryTotals: [...expenseCategoryTotals.entries()]
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total),
     topCustomers: [...customerTotals.entries()]
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)

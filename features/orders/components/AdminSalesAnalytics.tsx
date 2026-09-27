@@ -164,6 +164,35 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-teal-800">Expense by category</h2>
+          {analytics.expenseCategoryTotals.length === 0 ? (
+            <p className="py-12 text-center text-sm text-gray-500">No expense data available.</p>
+          ) : (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={analytics.expenseCategoryTotals}
+                    dataKey="total"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(1)}%`}
+                  >
+                    {analytics.expenseCategoryTotals.map((entry, index) => (
+                      <Cell key={entry.name} fill={colors[index % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => money(Number(value ?? 0))} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-teal-800">Top 25 customers this year</h2>
           {analytics.topCustomers.length === 0 ? (
             <p className="py-12 text-center text-sm text-gray-500">No paid customer sales available.</p>
