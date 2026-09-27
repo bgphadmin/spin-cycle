@@ -80,8 +80,7 @@ const SignedInLandingPage = async () => {
           <Link href={`/tenants/${resolvedSlug}/tenantDashboard`}>
             <Button
               variant="standard"
-              className="mb-3"
-
+              className="mb-3 min-h-14 sm:min-h-0"
             >
               Go to Dashboard
             </Button>
@@ -89,6 +88,7 @@ const SignedInLandingPage = async () => {
           <Link href="/inviteStaff">
             <Button
               variant="standard"
+              className="min-h-14 sm:min-h-0"
             >
               Invite Staff Members
             </Button>
@@ -106,6 +106,7 @@ const SignedInLandingPage = async () => {
         <Link href={`/tenants/${resolvedSlug}/tenantDashboard`}>
           <Button
             variant="standard"
+            className="min-h-14 sm:min-h-0"
           >
             Go to Dashboard
           </Button>

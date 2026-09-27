@@ -14,16 +14,6 @@ function money(value: number) {
   return `₱${value.toFixed(2)}`;
 }
 
-function toDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function defaultRange() {
-  const now = new Date();
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  return { startDate: toDateKey(firstOfMonth), endDate: toDateKey(now) };
-}
-
 type SortKey = "userName" | "category" | "amount" | "createdAt";
 type SortDir = "asc" | "desc";
 
@@ -35,14 +25,21 @@ const columns: Array<{ key: SortKey; label: string }> = [
 ];
 const ROWS_PER_PAGE = 10;
 
-export default function ExpensesList() {
+export default function ExpensesList({
+  initialRange,
+}: {
+  initialRange: { startDate: string; endDate: string; timeZone: string };
+}) {
   const { isLoaded } = useClientAuthClaims();
   // Any signed-in staff member can add/edit/delete expenses; the server
   // scopes non-admins to only their own records, so no role check is needed here.
   const canManage = isLoaded;
   const router = useRouter();
 
-  const [{ startDate, endDate }, setRange] = useState(defaultRange);
+  const [{ startDate, endDate }, setRange] = useState({
+    startDate: initialRange.startDate,
+    endDate: initialRange.endDate,
+  });
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [userSearch, setUserSearch] = useState("");
@@ -231,6 +228,7 @@ export default function ExpensesList() {
                       {new Date(expense.createdAt).toLocaleString("en-US", {
                         dateStyle: "medium",
                         timeStyle: "short",
+                        timeZone: initialRange.timeZone,
                       })}
                     </td>
                   </tr>

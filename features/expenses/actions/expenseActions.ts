@@ -35,6 +35,17 @@ async function getCurrentUser(tenant: { id: string; userId: string }) {
   return { id: user.id, isAdmin: orgRole === "org:admin" };
 }
 
+export async function getExpenseListDefaultsAction() {
+  const tenant = await getTenantContext();
+  const now = new Date();
+
+  return {
+    startDate: businessDateKey(getBusinessMonthStart(now, tenant.timeZone), tenant.timeZone),
+    endDate: businessDateKey(now, tenant.timeZone),
+    timeZone: tenant.timeZone,
+  };
+}
+
 // Resolves the final category text: either a preset value or the free-text
 // "customCategory" field when the user picked the CUSTOM sentinel option.
 function resolveCategory(formData: FormData): string {
