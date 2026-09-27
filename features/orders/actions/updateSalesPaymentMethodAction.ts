@@ -41,19 +41,22 @@ export async function updateSalesPaymentMethodAction(orderIds: string[], method:
       data: { paymentMethod },
     });
 
-    for (const order of orders) {
-      if (order.payments[0]) {
-        await tx.payment.update({
-          where: { id: order.payments[0].id },
-          data: { method: paymentMethod, amount: order.total },
-        });
-      } else {
-        await tx.payment.create({
-          data: { orderId: order.id, amount: order.total, method: paymentMethod },
-        });
-      }
+    await tx.payment.updateMany({
+      where: { orderId: { in: uniqueOrderIds } },
+      data: { method: paymentMethod },
+    });
+
+    const paymentsToCreate = orders
+      .filter((order) => order.payments.length === 0)
+      .map((order) => ({
+        orderId: order.id,
+        amount: order.total,
+        method: paymentMethod,
+      }));
+    if (paymentsToCreate.length > 0) {
+      await tx.payment.createMany({ data: paymentsToCreate });
     }
 
     return { method: paymentMethod };
-  });
+  }, { maxWait: 10000, timeout: 15000 });
 }
