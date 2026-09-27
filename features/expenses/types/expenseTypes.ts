@@ -6,6 +6,7 @@ export const EXPENSE_CATEGORIES = [
   { value: "GAS_LPG", label: "Gas (LPG)" },
   { value: "MAINTENANCE", label: "Maintenance" },
   { value: "SUPPLIES", label: "Supplies" },
+  { value: "PROMOTIONS", label: "Promotions" },
   { value: "OTHER", label: "Other" },
 ] as const;
 
