@@ -136,7 +136,6 @@ export async function getSalesSummaryAction(filters?: {
           paid: false,
           ...(tenant.isAdmin
             ? {
-                createdAt: { gte: startOfDay, lt: endOfDay },
                 ...(selectedUsers
                   ? { userId: { in: selectedUsers.map((user) => user.clerkId) } }
                   : {}),
