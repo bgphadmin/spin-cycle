@@ -66,7 +66,7 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
           id: true,
           quantity: true,
           price: true,
-          service: { select: { name: true } },
+          service: { select: { name: true, type: true } },
           inventoryItem: { select: { name: true } },
         },
       },
@@ -94,7 +94,8 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     const receiptNumber = linkedReceiptNumber ?? `UNASSIGNED-${order.id.slice(0, 8)}`;
     const paymentMethod = order.paymentMethod ?? order.payments[0]?.method ?? "UNPAID";
     const orderType = order.orderType.replace("_", "-");
-    const machineName = order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned";
+    const machineName = order.machineUsages.map((usage) => usage.machine.name).join(", ") ||
+      (order.items.some((item) => item.service?.type === "OTHERS") ? "Other Services" : "Unassigned");
     const handledByName = staffNameByClerkId.get(order.userId) ?? "Unknown";
     const card = grouped.get(customerId) ?? {
       customerId,
