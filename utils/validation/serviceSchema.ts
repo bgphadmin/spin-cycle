@@ -12,6 +12,7 @@ export const addServiceSchema = z.object({
     .number({ message: "Price must be a valid number" })
     .finite()
     .nonnegative({ message: "Price cannot be negative" }),
+  pricingUnit: z.string().trim().max(100, { message: "Pricing unit must not exceed 100 characters" }).optional(),
   duration: z
     .union([z.literal(""), z.coerce.number().int().positive()])
     .optional(),

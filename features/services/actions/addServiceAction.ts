@@ -44,6 +44,7 @@ export async function addServiceAction(
           type: fields.type,
           name: fields.name,
           price: fields.price,
+          pricingUnit: fields.pricingUnit || null,
           duration: fields.duration === "" ? null : fields.duration,
         },
       });

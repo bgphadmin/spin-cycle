@@ -27,7 +27,7 @@ export async function getServicesAction() {
     const tenantId = await getTenantId();
     const services = await db.service.findMany({
       where: { tenantId },
-      select: { id: true, type: true, name: true, price: true, duration: true },
+      select: { id: true, type: true, name: true, price: true, pricingUnit: true, duration: true },
       orderBy: { createdAt: "desc" },
     });
     return { services };
@@ -65,6 +65,7 @@ export async function updateServiceAction(
         type: fields.type,
         name: fields.name,
         price: fields.price,
+        pricingUnit: fields.pricingUnit || null,
         duration: fields.duration === "" ? null : fields.duration,
       },
     });

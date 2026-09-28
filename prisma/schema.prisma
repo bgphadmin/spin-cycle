@@ -158,14 +158,15 @@ enum ServiceType {
 }
 
 model Service {
-  id        String      @id @default(uuid())
-  tenantId  String
-  type      ServiceType
-  name      String // e.g. "Wash", "Dry", "Fold"
-  price     Float
-  duration  Int? // optional: minutes per cycle
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id          String      @id @default(uuid())
+  tenantId    String
+  type        ServiceType
+  name        String // e.g. "Wash", "Dry", "Fold"
+  price       Float
+  pricingUnit String?
+  duration    Int?        // optional: minutes per cycle
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   tenant     Tenant      @relation(fields: [tenantId], references: [id])
   orderItems OrderItem[]

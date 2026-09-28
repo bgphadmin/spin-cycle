@@ -57,6 +57,7 @@ export default function EditServiceForm({ userRole, service }: { userRole: strin
               />
               <StandardInput name="name" placeholder="Service Name" defaultValue={service.name} required />
               <StandardInput name="price" type="number" min="0" step="0.01" placeholder="Price" defaultValue={service.price} required />
+              <StandardInput name="pricingUnit" placeholder="Pricing Unit (e.g. per load, per piece, per liter)" defaultValue={service.pricingUnit ?? ""} />
               <StandardInput name="duration" type="number" min="1" step="1" placeholder="Duration in minutes (optional)" defaultValue={service.duration ?? ""} />
             </div>
           </div>

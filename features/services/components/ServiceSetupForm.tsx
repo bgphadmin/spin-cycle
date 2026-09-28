@@ -58,6 +58,10 @@ export default function ServiceSetupForm() {
                 required
               />
               <StandardInput
+                name="pricingUnit"
+                placeholder="Pricing Unit (e.g. per load, per piece, per liter)"
+              />
+              <StandardInput
                 name="duration"
                 type="number"
                 min="1"

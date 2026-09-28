@@ -10,13 +10,14 @@ import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { getServicesAction } from "../actions/serviceActions";
 import type { Service } from "../types/serviceTypes";
 
-type SortKey = "type" | "name" | "price" | "duration";
+type SortKey = "type" | "name" | "price" | "pricingUnit" | "duration";
 type SortDir = "asc" | "desc";
 
 const columns: Array<{ key: SortKey; label: string }> = [
   { key: "type", label: "Type" },
   { key: "name", label: "Name" },
   { key: "price", label: "Price" },
+  { key: "pricingUnit", label: "Pricing Unit" },
   { key: "duration", label: "Duration" },
 ];
 const ROWS_PER_PAGE = 10;
@@ -59,7 +60,7 @@ export default function ServicesList() {
     const query = search.trim().toLowerCase();
     const filtered = query
       ? services.filter((service) =>
-          [service.type, service.name, String(service.price), service.duration === null ? "" : String(service.duration)].some(
+          [service.type, service.name, String(service.price), service.pricingUnit ?? "", service.duration === null ? "" : String(service.duration)].some(
             (value) => value.toLowerCase().includes(query),
           ),
         )
@@ -100,7 +101,7 @@ export default function ServicesList() {
       <div className="relative">
         <Input
           type="text"
-          placeholder="Search by type, name, price, or duration..."
+          placeholder="Search by type, name, price, pricing unit, or duration..."
           aria-label="Search services"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -122,7 +123,7 @@ export default function ServicesList() {
           <p className="mt-4 text-sm text-gray-500">No services match &quot;{search}&quot;.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[42rem] text-left text-sm">
+            <table className="w-full min-w-[50rem] text-left text-sm">
               <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   {columns.map((column) => (
@@ -153,6 +154,7 @@ export default function ServicesList() {
                     <td className="px-3 py-3 capitalize text-gray-600">{service.type}</td>
                     <td className="px-3 py-3 font-medium text-gray-800">{service.name}</td>
                     <td className="px-3 py-3 font-medium text-teal-700">₱{service.price.toFixed(2)}</td>
+                    <td className="px-3 py-3 text-gray-600">{service.pricingUnit || "—"}</td>
                     <td className="px-3 py-3 text-gray-600">
                       {service.duration ? `${service.duration} min` : "—"}
                     </td>
