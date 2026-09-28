@@ -98,20 +98,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
         </div>
       )}
 
-      {/* Machine image with shake animation, flanked by Cancel/Complete when in use */}
-      <div className="mb-3 flex w-full items-center justify-center gap-3">
-        {isInUse && activeOrderId && (
-          <LoadingDeleteButton
-            loading={cancelling}
-            disabled={completing}
-            type="button"
-            onClick={handleCancelOrder}
-            className="shrink-0 rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 disabled:opacity-50 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0"
-          >
-            Cancel
-          </LoadingDeleteButton>
-        )}
-
+      <div className="mb-3 flex w-full items-center justify-center">
         <Image
           src={imageSrc}
           alt={name}
@@ -120,8 +107,26 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
           className={isInUse ? "animate-shake" : ""}
           priority
         />
+      </div>
 
-        {isInUse && activeOrderId && (
+      {/* Machine info */}
+      <h3 className="font-semibold">{name}</h3>
+      <p className="text-sm text-muted-foreground capitalize">{type}</p>
+      <p className="text-sm">Status: {status === "AVAILABLE" ? "Available" : status === "IN_USE" ? "In Use" : "Unavailable"}</p>
+      <p className="text-sm">Usage Count: {usageCount}</p>
+
+      {isInUse && activeOrderId && (
+        <div className="mt-2 flex w-full justify-center gap-3">
+          <LoadingDeleteButton
+            loading={cancelling}
+            disabled={completing}
+            type="button"
+            onClick={handleCancelOrder}
+            className="h-10 min-w-0 flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0"
+          >
+            Cancel
+          </LoadingDeleteButton>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <LoadingDeleteButton
@@ -129,7 +134,7 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
                 disabled={cancelling}
                 type="button"
                 onClick={(event) => event.stopPropagation()}
-                className="shrink-0 rounded bg-teal-500 px-3 py-2 text-xs text-white hover:bg-teal-600 disabled:opacity-50 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0"
+                className="h-10 min-w-0 flex-1 rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:opacity-50 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0"
               >
                 Complete
               </LoadingDeleteButton>
@@ -162,14 +167,8 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
-      </div>
-
-      {/* Machine info */}
-      <h3 className="font-semibold">{name}</h3>
-      <p className="text-sm text-muted-foreground capitalize">{type}</p>
-      <p className="text-sm">Status: {status === "AVAILABLE" ? "Available" : status === "IN_USE" ? "In Use" : "Unavailable"}</p>
-      <p className="text-sm">Usage Count: {usageCount}</p>
+        </div>
+      )}
 
       {open && (
         <OrderModal
