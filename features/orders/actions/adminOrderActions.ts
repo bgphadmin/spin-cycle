@@ -349,7 +349,7 @@ export async function deleteAdminOrderAction(
         await tx.machine.update({
           where: { id: usage.machineId },
           data: {
-            usageCount: { increment: 1 },
+            usageCount: { decrement: 1 },
             ...(!usage.endedAt ? { status: MachineStatus.AVAILABLE } : {}),
           },
         });
