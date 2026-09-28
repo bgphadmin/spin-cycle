@@ -8,6 +8,7 @@ import { businessDateKey, businessDayRangeFromKey, getBusinessDayRange } from "@
 export type SalesSummaryLine = {
   name: string;
   kind: "Service" | "Item";
+  category: string;
   quantity: number;
   total: number;
 };
@@ -24,6 +25,7 @@ export type SalesSummary = {
   total: number;
   expensesTotal: number;
   netProfit: number;
+  categoryOptions: string[];
   startDate: string;
   endDate: string;
   lines: SalesSummaryLine[];
@@ -71,16 +73,22 @@ export async function getSalesSummaryUsersAction(): Promise<SalesSummaryUser[]> 
 
 function addLine(
   lines: SalesSummaryLine[],
-  item: { service: { name: string } | null; inventoryItem: { name: string } | null; quantity: number; price: number },
+  item: {
+    service: { name: string; type: string } | null;
+    inventoryItem: { name: string; type: string } | null;
+    quantity: number;
+    price: number;
+  },
 ) {
   const name = item.service?.name ?? item.inventoryItem?.name ?? "Order item";
   const kind = item.service ? "Service" : "Item";
-  const existing = lines.find((line) => line.name === name && line.kind === kind);
+  const category = item.service?.type ?? item.inventoryItem?.type ?? "Other";
+  const existing = lines.find((line) => line.name === name && line.kind === kind && line.category === category);
   if (existing) {
     existing.quantity += item.quantity;
     existing.total += item.price * item.quantity;
   } else {
-    lines.push({ name, kind, quantity: item.quantity, total: item.price * item.quantity });
+    lines.push({ name, kind, category, quantity: item.quantity, total: item.price * item.quantity });
   }
 }
 
@@ -156,8 +164,8 @@ export async function getSalesSummaryAction(filters?: {
         select: {
           quantity: true,
           price: true,
-          service: { select: { name: true } },
-          inventoryItem: { select: { name: true } },
+          service: { select: { name: true, type: true } },
+          inventoryItem: { select: { name: true, type: true } },
         },
       },
     },
@@ -174,6 +182,16 @@ export async function getSalesSummaryAction(filters?: {
     },
     _sum: { amount: true },
   });
+  const [services, inventoryItems] = await Promise.all([
+    db.service.findMany({
+      where: { tenantId: tenant.id },
+      select: { type: true },
+    }),
+    db.inventoryItem.findMany({
+      where: { tenantId: tenant.id },
+      select: { type: true },
+    }),
+  ]);
 
   const lines: SalesSummaryLine[] = [];
   const unpaidGroups = new Map<string, UnpaidSalesRow>();
@@ -214,6 +232,10 @@ export async function getSalesSummaryAction(filters?: {
     total,
     expensesTotal,
     netProfit: total - expensesTotal,
+    categoryOptions: [...new Set([
+      ...services.map((service) => service.type),
+      ...inventoryItems.map((item) => item.type),
+    ])].sort((a, b) => a.localeCompare(b)),
     startDate,
     endDate,
     lines,

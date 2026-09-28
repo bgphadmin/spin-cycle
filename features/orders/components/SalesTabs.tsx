@@ -68,6 +68,7 @@ export default function SalesTabs({
   const [summaryStartDate, setSummaryStartDate] = useState(summary.startDate);
   const [summaryEndDate, setSummaryEndDate] = useState(summary.endDate);
   const [summaryUserId, setSummaryUserId] = useState("all");
+  const [summaryCategory, setSummaryCategory] = useState("all");
   const [appliedSummaryUserId, setAppliedSummaryUserId] = useState("all");
   const [summaryFilterError, setSummaryFilterError] = useState("");
   const [currentSales, setCurrentSales] = useState(sales);
@@ -128,6 +129,7 @@ export default function SalesTabs({
         setSummaryStartDate(nextSummary.startDate);
         setSummaryEndDate(nextSummary.endDate);
         setSummaryUserId("all");
+        setSummaryCategory("all");
         setAppliedSummaryUserId("all");
         setCurrentSummary(nextSummary);
       } catch (error) {
@@ -189,7 +191,7 @@ export default function SalesTabs({
           {isAdmin && (
             <form
               onSubmit={applySummaryFilters}
-              className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto_auto] lg:items-end"
+              className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1.25fr)_auto_auto] lg:items-end"
             >
               <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
                 From date
@@ -214,6 +216,29 @@ export default function SalesTabs({
                   aria-label="Sales summary end date"
                   required
                 />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
+                Filter by category
+                <Select
+                  value={summaryCategory}
+                  onValueChange={setSummaryCategory}
+                  disabled={isPending}
+                >
+                  <SelectTrigger
+                    className="w-full bg-white"
+                    aria-label="Filter sales summary by service or item category"
+                  >
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="all">All categories</SelectItem>
+                    {currentSummary.categoryOptions.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               <label className="flex min-w-0 flex-col gap-1 text-sm font-medium text-gray-600">
                 Filter by user
@@ -265,7 +290,7 @@ export default function SalesTabs({
               Updating sales summary...
             </p>
           )}
-          <SalesSummary summary={currentSummary} />
+          <SalesSummary summary={currentSummary} categoryFilter={summaryCategory} />
         </div>
       ) : (
         <>

@@ -7,34 +7,55 @@ function money(value: number) {
   return `₱${value.toFixed(2)}`;
 }
 
-export default function SalesSummary({ summary }: { summary: SalesSummaryData }) {
+export default function SalesSummary({
+  summary,
+  categoryFilter,
+}: {
+  summary: SalesSummaryData;
+  categoryFilter: string;
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const filteredLines = categoryFilter !== "all"
+    ? summary.lines.filter((line) => line.category === categoryFilter)
+    : summary.lines;
+  const paidSales = categoryFilter === "all"
+    ? summary.total
+    : filteredLines.reduce((total, line) => total + line.total, 0);
+  const showFinancialTotals = categoryFilter === "all";
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-5 rounded-lg border border-teal-100 bg-teal-100 p-5 sm:grid-cols-3">
+      <section className={`grid gap-5 rounded-lg border border-teal-100 bg-teal-100 p-5 ${showFinancialTotals ? "sm:grid-cols-3" : "sm:grid-cols-1"}`}>
         <div>
           <p className="text-sm font-medium text-teal-700">Paid Sales</p>
-          <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.total)}</p>
+          <p className="mt-1 text-2xl font-bold text-teal-800">{money(paidSales)}</p>
         </div>
-        <div>
-          <p className="text-sm font-medium text-orange-700">Expenses</p>
-          <p className="mt-1 text-2xl font-bold text-orange-800">{money(summary.expensesTotal)}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-teal-700">Net Profit</p>
-          <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.netProfit)}</p>
-        </div>
+        {showFinancialTotals && (
+          <>
+            <div>
+              <p className="text-sm font-medium text-orange-700">Expenses</p>
+              <p className="mt-1 text-2xl font-bold text-orange-800">{money(summary.expensesTotal)}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-teal-700">Net Profit</p>
+              <p className="mt-1 text-2xl font-bold text-teal-800">{money(summary.netProfit)}</p>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold bg-teal-100 p-4 text-teal-800">Services and Items</h2>
-        {summary.lines.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">No paid services or items recorded today.</p>
+        {filteredLines.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">
+            {summary.lines.length === 0
+              ? "No paid services or items recorded today."
+              : "No services or items match this category."}
+          </p>
         ) : (
           <div className="mt-4 divide-y divide-gray-100">
-            {summary.lines.map((line) => (
-              <div key={`${line.kind}-${line.name}`} className="flex items-center justify-between gap-3 py-3 text-sm">
+            {filteredLines.map((line) => (
+              <div key={`${line.kind}-${line.category}-${line.name}`} className="flex items-center justify-between gap-3 py-3 text-sm">
                 <div>
                   <p className="font-medium text-gray-800">{line.name}</p>
                   <p className="text-xs text-gray-500">{line.kind} · {line.quantity} sold</p>
@@ -82,7 +103,7 @@ export default function SalesSummary({ summary }: { summary: SalesSummaryData })
                         {isExpanded && (
                           <div className="border-t border-gray-100 bg-gray-50 px-3 py-3">
                             {row.lines.map((line) => (
-                              <div key={`${row.id}-${line.kind}-${line.name}`} className="flex justify-between gap-3 py-1 text-xs text-gray-600">
+                              <div key={`${row.id}-${line.kind}-${line.category}-${line.name}`} className="flex justify-between gap-3 py-1 text-xs text-gray-600">
                                 <span>{line.name} ({line.kind}) · {line.quantity} × {money(line.total / line.quantity)}</span>
                                 <span className="font-medium text-gray-700">{money(line.total)}</span>
                               </div>

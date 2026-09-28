@@ -346,12 +346,13 @@ export async function deleteAdminOrderAction(
         }
       }
       for (const usage of order.machineUsages) {
-        if (!usage.endedAt) {
-          await tx.machine.update({
-            where: { id: usage.machineId },
-            data: { status: MachineStatus.AVAILABLE },
-          });
-        }
+        await tx.machine.update({
+          where: { id: usage.machineId },
+          data: {
+            usageCount: { increment: 1 },
+            ...(!usage.endedAt ? { status: MachineStatus.AVAILABLE } : {}),
+          },
+        });
       }
       await tx.receiptOrder.deleteMany({ where: { orderId: order.id } });
       for (const receiptOrder of order.receiptOrders) {
