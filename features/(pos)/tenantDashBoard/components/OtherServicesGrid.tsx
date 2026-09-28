@@ -67,7 +67,7 @@ function OtherServiceSaleEditor({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="my-3 w-full max-w-2xl rounded-lg bg-white p-5 shadow-2xl sm:my-0 sm:p-8">
+      <div className="my-3 w-full max-w-2xl rounded-lg bg-white p-5 shadow-2xl sm:my-0 sm:p-8" style={{ marginTop: "200px" }}>
         <FormContainer action={updateOtherServiceSaleAction} onSuccess={onSaved}>
           {({ loading }) => (
             <div className="space-y-4">
@@ -87,8 +87,11 @@ function OtherServiceSaleEditor({
                   >
                     Cancel
                   </Button>
-                  <DeleteButton onClick={onDelete} loading={loading} />
-                  <Button type="submit" disabled={loading} variant="standard">
+                  <DeleteButton 
+                  className="bg-red-200 hover:bg-red-300"
+                  onClick={onDelete} disabled={loading} />
+                  <Button type="submit" disabled={loading} 
+                  variant="standard">
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Update"}
                   </Button>
                 </div>
