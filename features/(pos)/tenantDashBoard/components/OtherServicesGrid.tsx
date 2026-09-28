@@ -11,6 +11,7 @@ import FormContainer from "@/components/utils/FormContainer";
 import CustomerInput from "@/components/utils/CustomerInput";
 import Spinner from "@/components/utils/Spinner";
 import toast from "react-hot-toast";
+import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import type { Customer } from "@/features/orders/actions/getData";
 import {
   deleteOtherServiceSaleAction,
@@ -219,6 +220,8 @@ export default function OtherServicesGrid({
   loadingServices: boolean;
   onAddSale: () => void;
 }) {
+  const { orgRole, isLoaded } = useClientAuthClaims();
+  const isAdmin = isLoaded && orgRole === "org:admin";
   const [startDate, setStartDate] = useState(initialRange.startDate);
   const [endDate, setEndDate] = useState(initialRange.endDate);
   const [search, setSearch] = useState("");
@@ -250,7 +253,7 @@ export default function OtherServicesGrid({
     return () => {
       cancelled = true;
     };
-  }, [startDate, endDate, refreshKey, localRefreshKey]);
+  }, [isAdmin, startDate, endDate, refreshKey, localRefreshKey]);
 
   const filteredSales = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -258,6 +261,7 @@ export default function OtherServicesGrid({
     return sales.filter((sale) =>
       sale.customerName.toLowerCase().includes(query) ||
       sale.serviceName.toLowerCase().includes(query) ||
+      sale.createdByName.toLowerCase().includes(query) ||
       "others".includes(query),
     );
   }, [sales, search]);
@@ -314,29 +318,33 @@ export default function OtherServicesGrid({
           Add Sale
         </Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={`grid gap-3 ${isAdmin ? "sm:grid-cols-2 lg:grid-cols-3" : ""}`}>
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search customer or service..."
-          aria-label="Search Other Service sales by customer or service"
+          placeholder="Search customer, service, or user..."
+          aria-label="Search Other Service sales by customer, service, or user"
         />
-        <Input
-          type="date"
-          value={startDate}
-          max={endDate}
-          required
-          onChange={(event) => setStartDate(event.target.value)}
-          aria-label="Other Service sales from date"
-        />
-        <Input
-          type="date"
-          value={endDate}
-          min={startDate}
-          required
-          onChange={(event) => setEndDate(event.target.value)}
-          aria-label="Other Service sales to date"
-        />
+        {isAdmin && (
+          <>
+            <Input
+              type="date"
+              value={startDate}
+              max={endDate}
+              required
+              onChange={(event) => setStartDate(event.target.value)}
+              aria-label="Other Service sales from date"
+            />
+            <Input
+              type="date"
+              value={endDate}
+              min={startDate}
+              required
+              onChange={(event) => setEndDate(event.target.value)}
+              aria-label="Other Service sales to date"
+            />
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
@@ -361,6 +369,7 @@ export default function OtherServicesGrid({
                 <tr>
                   <th className="px-3 py-3">Date</th>
                   <th className="px-3 py-3">Customer</th>
+                  <th className="px-3 py-3">Created By</th>
                   <th className="px-3 py-3">Other Service</th>
                   <th className="px-3 py-3 text-right">Quantity</th>
                   <th className="px-3 py-3 text-right">Total</th>
@@ -386,6 +395,7 @@ export default function OtherServicesGrid({
                   >
                     <td className="px-3 py-3 text-gray-600">{sale.createdAtLabel}</td>
                     <td className="px-3 py-3 font-medium text-gray-800">{sale.customerName}</td>
+                    <td className="px-3 py-3 text-gray-600">{sale.createdByName}</td>
                     <td className="px-3 py-3 text-gray-700">
                       {sale.serviceName}
                       {sale.pricingUnit ? <span className="ml-1 text-gray-500">({sale.pricingUnit})</span> : null}

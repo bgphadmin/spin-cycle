@@ -17,6 +17,7 @@ export type OtherServiceSaleRow = {
   createdAtLabel: string;
   businessDate: string;
   customerName: string;
+  createdByName: string;
   serviceId: string;
   serviceName: string;
   pricingUnit: string | null;
@@ -31,7 +32,7 @@ export type OtherServiceSaleRow = {
 
 async function getTenantContext() {
   const { userId } = await auth();
-  const { orgId, orgSlug } = await getServerAuthClaims();
+  const { orgId, orgSlug, orgRole } = await getServerAuthClaims();
   if (!userId || !orgId) throw new Error("Organization context is required.");
 
   const tenant = await db.tenant.findUnique({
@@ -39,7 +40,7 @@ async function getTenantContext() {
     select: { id: true, timeZone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
-  return { ...tenant, userId, orgId, orgSlug };
+  return { ...tenant, userId, orgId, orgSlug, isAdmin: orgRole === "org:admin" };
 }
 
 function validDateKey(value: string) {
@@ -100,26 +101,32 @@ export async function getOtherServiceSalesDefaultsAction() {
   return { startDate: today, endDate: today, timeZone: tenant.timeZone };
 }
 
-export async function getOtherServiceSalesAction(startDate: string, endDate: string): Promise<OtherServiceSaleRow[]> {
+export async function getOtherServiceSalesAction(startDate?: string, endDate?: string): Promise<OtherServiceSaleRow[]> {
   const tenant = await getTenantContext();
-  if (!validDateKey(startDate) || !validDateKey(endDate)) {
-    throw new Error("Enter a valid date range.");
+  let createdAt: { gte: Date; lt: Date } | undefined;
+  if (tenant.isAdmin) {
+    if (!startDate || !endDate || !validDateKey(startDate) || !validDateKey(endDate)) {
+      throw new Error("Enter a valid date range.");
+    }
+    if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
+    createdAt = {
+      gte: businessDayRangeFromKey(startDate, tenant.timeZone).start,
+      lt: businessDayRangeFromKey(endDate, tenant.timeZone).end,
+    };
   }
-  if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
-
-  const { start } = businessDayRangeFromKey(startDate, tenant.timeZone);
-  const { end } = businessDayRangeFromKey(endDate, tenant.timeZone);
   const orders = await db.laundryOrder.findMany({
     where: {
       tenantId: tenant.id,
       status: "COMPLETED",
-      createdAt: { gte: start, lt: end },
+      ...(createdAt ? { createdAt } : {}),
+      ...(!tenant.isAdmin ? { userId: tenant.userId } : {}),
       machineUsages: { none: {} },
       items: { some: { service: { type: "OTHERS" } } },
     },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      userId: true,
       createdAt: true,
       total: true,
       orderType: true,
@@ -140,6 +147,15 @@ export async function getOtherServiceSalesAction(startDate: string, endDate: str
     },
   });
 
+  const staffUsers = await db.user.findMany({
+    where: {
+      tenantId: tenant.id,
+      clerkId: { in: [...new Set(orders.map((order) => order.userId))] },
+    },
+    select: { clerkId: true, name: true },
+  });
+  const staffNameByClerkId = new Map(staffUsers.map((user) => [user.clerkId, user.name]));
+
   return orders.flatMap((order) => {
     if (order.items.length !== 1) return [];
     const item = order.items[0];
@@ -156,6 +172,7 @@ export async function getOtherServiceSalesAction(startDate: string, endDate: str
       }).format(order.createdAt),
       businessDate: businessDateKey(order.createdAt, tenant.timeZone),
       customerName: order.customer.name,
+      createdByName: staffNameByClerkId.get(order.userId) ?? "Unknown",
       serviceId,
       serviceName: service.name,
       pricingUnit: service.pricingUnit,
@@ -308,6 +325,7 @@ export async function updateOtherServiceSaleAction(
         where: {
           id: orderId,
           tenantId: tenant.id,
+          ...(!tenant.isAdmin ? { userId: tenant.userId } : {}),
           status: "COMPLETED",
           machineUsages: { none: {} },
           items: { some: { service: { type: "OTHERS" } } },
@@ -414,6 +432,7 @@ export async function deleteOtherServiceSaleAction(
         where: {
           id: orderId,
           tenantId: tenant.id,
+          ...(!tenant.isAdmin ? { userId: tenant.userId } : {}),
           status: "COMPLETED",
           machineUsages: { none: {} },
           items: { some: { service: { type: "OTHERS" } } },
