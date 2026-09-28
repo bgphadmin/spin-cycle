@@ -3,15 +3,18 @@
 import { useState } from "react";
 import type { InventoryItem } from "@/features/inventory/types/inventoryTypes";
 import MachinesGrid from "./MachineGrid";
+import OtherServicesForm from "./OtherServicesForm";
 
 export default function TenantDashboardTabs({
   inventoryItems,
   tenantSlug,
+  otherServicesDateRange,
 }: {
   inventoryItems: InventoryItem[];
   tenantSlug: string;
+  otherServicesDateRange: { startDate: string; endDate: string; timeZone: string };
 }) {
-  const [activeTab, setActiveTab] = useState<"machines" | "inventory">("machines");
+  const [activeTab, setActiveTab] = useState<"machines" | "inventory" | "other-services">("machines");
   const totalUnits = inventoryItems.reduce((total, item) => total + item.stock, 0);
   const lowStockItems = inventoryItems.filter((item) => item.stock <= item.threshold);
 
@@ -21,11 +24,12 @@ export default function TenantDashboardTabs({
         {[
           ["machines", "Machine Cards"],
           ["inventory", "Inventory Stock"],
+          ["other-services", "Other Services"],
         ].map(([value, label]) => (
           <button
             key={value}
             type="button"
-            onClick={() => setActiveTab(value as "machines" | "inventory")}
+            onClick={() => setActiveTab(value as "machines" | "inventory" | "other-services")}
             className={`relative border-b-2 px-4 py-3 text-sm font-semibold ${
               activeTab === value ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-teal-600"
             }`}
@@ -47,6 +51,8 @@ export default function TenantDashboardTabs({
 
       {activeTab === "machines" ? (
         <MachinesGrid tenantSlug={tenantSlug} />
+      ) : activeTab === "other-services" ? (
+        <OtherServicesForm initialRange={otherServicesDateRange} />
       ) : (
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">

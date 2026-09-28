@@ -1,6 +1,7 @@
 import { getMachines } from '@/features/(pos)/tenantDashBoard/actions/getMachines';
 import TenantDashboardTabs from '@/features/(pos)/tenantDashBoard/components/TenantDashboardTabs';
 import { getInventoryItemsAction } from '@/features/inventory/actions/inventoryActions';
+import { getOtherServiceSalesDefaultsAction } from '@/features/(pos)/tenantDashBoard/actions/createOtherServiceSaleAction';
 import accessTenantIdServer from '@/lib/accessTenantIdServer';
 import React from 'react'
 import { string } from 'zod';
@@ -10,9 +11,10 @@ const TenantDashboardPage = async ({ params }: { params: { tenantSlug: string } 
 
   const tenantId = await accessTenantIdServer()
 
-  const [machines, inventoryResult] = await Promise.all([
+  const [machines, inventoryResult, otherServicesDateRange] = await Promise.all([
     getMachines(tenantId as string),
     getInventoryItemsAction(),
+    getOtherServiceSalesDefaultsAction(),
   ]);
 
   // Map to props expected by MachineGrid
@@ -23,11 +25,13 @@ const TenantDashboardPage = async ({ params }: { params: { tenantSlug: string } 
   }));
 
   return (
-    <main className="mx-auto w-full max-w-1xl px-20 mt-10 mb-25" >
-        <TenantDashboardTabs
-          inventoryItems={inventoryResult.inventoryItems}
-          tenantSlug={params.tenantSlug}
-        />
+    // <main className="mx-auto w-full max-w-1xl px-20 mt-10 mb-25" >
+    <main className="mx-auto w-full max-w-5xl px-16 mt-10 mb-25">
+      <TenantDashboardTabs
+        inventoryItems={inventoryResult.inventoryItems}
+        tenantSlug={params.tenantSlug}
+        otherServicesDateRange={otherServicesDateRange}
+      />
     </main>
   )
 }

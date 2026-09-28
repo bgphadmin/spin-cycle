@@ -31,7 +31,7 @@ export async function getServicesAction(machineId?: string) {
     : await getTenantId();
   return db.service.findMany({
     where: { tenantId },
-    select: { id: true, name: true, price: true, type: true },
+    select: { id: true, name: true, price: true, pricingUnit: true, type: true },
   });
 }
 
