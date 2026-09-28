@@ -52,9 +52,7 @@ export default function AdminOrderEditModal({
     (service) => String(service.type).toUpperCase() === baseType,
   ) ?? [];
   const extraServices = data?.services.filter(
-    (service) =>
-      String(service.type).toUpperCase() === "OTHERS" ||
-      (selectedMachine?.type === "dryer" && String(service.type).toUpperCase() === "FOLDS"),
+    (service) => selectedMachine?.type === "dryer" && String(service.type).toUpperCase() === "FOLDS",
   ) ?? [];
 
   return (

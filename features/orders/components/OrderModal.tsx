@@ -95,9 +95,7 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
     (service) => String(service.type).toUpperCase() === baseServiceType,
   );
   const extraServices = services.filter(
-    (service) =>
-      String(service.type).toUpperCase() === "OTHERS" ||
-      (machineType === "dryer" && String(service.type).toUpperCase() === "FOLDS"),
+    (service) => machineType === "dryer" && String(service.type).toUpperCase() === "FOLDS",
   );
 
   useEffect(() => {

@@ -32,6 +32,7 @@ export type AdminOrderRow = {
   id: string;
   customerName: string;
   receiptNumber: string;
+  machineName: string;
   createdAt: string;
   createdAtLabel: string;
   businessDate: string;
@@ -119,7 +120,7 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
             (item) =>
               item.serviceId &&
               item.serviceId !== baseItem?.serviceId &&
-              (item.service?.type === "OTHERS" || (allowsFolds && item.service?.type === "FOLDS")),
+              allowsFolds && item.service?.type === "FOLDS",
           )
           .map((item) => item.serviceId as string),
         inventoryQuantities: Object.fromEntries(order.items.filter((item) => item.inventoryItemId).map((item) => [item.inventoryItemId, item.quantity])),
@@ -145,6 +146,9 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
         customer: { select: { name: true } },
         receiptOrders: { select: { receipt: { select: { number: true } } } },
         payments: { select: { method: true }, take: 1 },
+        machineUsages: {
+          select: { machine: { select: { name: true } } },
+        },
       },
     });
 
@@ -152,6 +156,7 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
       id: order.id,
       customerName: order.customer?.name ?? "Walk-in",
       receiptNumber: order.receiptOrders[0]?.receipt.number ?? `UNASSIGNED-${order.id.slice(0, 8)}`,
+      machineName: order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned",
       createdAt: order.createdAt.toISOString(),
       createdAtLabel: new Intl.DateTimeFormat("en-US", {
         dateStyle: "medium",
@@ -220,7 +225,7 @@ export async function updateAdminOrderAction(
         where: {
           id: { in: selectedExtraIds },
           tenantId: tenant.id,
-          type: { in: machine.type === MachineType.dryer ? ["OTHERS", "FOLDS"] : ["OTHERS"] },
+          type: { in: machine.type === MachineType.dryer ? ["FOLDS"] : [] },
         },
       });
       if (extraServices.length !== selectedExtraIds.length) throw new Error("One or more selected services are invalid.");

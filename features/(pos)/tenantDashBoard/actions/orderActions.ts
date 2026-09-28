@@ -103,7 +103,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
         where: {
           id: { in: selectedExtraIds },
           tenantId: id,
-          type: { in: machine.type === MachineType.dryer ? ["OTHERS", "FOLDS"] : ["OTHERS"] },
+          type: { in: machine.type === MachineType.dryer ? ["FOLDS"] : [] },
         },
       });
       if (extraServices.length !== selectedExtraIds.length) throw new Error("One or more selected services are invalid.");
