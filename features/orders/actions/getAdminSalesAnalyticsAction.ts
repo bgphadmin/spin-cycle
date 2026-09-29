@@ -51,6 +51,7 @@ export type AdminSalesAnalytics = {
   categoryStartDate: string;
   categoryEndDate: string;
   topCustomers: Array<{ name: string; total: number }>;
+  weekdayAverageSales: Array<{ day: string; average: number }>;
 };
 
 export type CategoryAnalytics = Pick<
@@ -191,6 +192,27 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       profit: point.total + expense,
     };
   });
+  const weekdays = [
+    { day: "Monday", weekday: 1, total: 0, days: 0 },
+    { day: "Tuesday", weekday: 2, total: 0, days: 0 },
+    { day: "Wednesday", weekday: 3, total: 0, days: 0 },
+    { day: "Thursday", weekday: 4, total: 0, days: 0 },
+    { day: "Friday", weekday: 5, total: 0, days: 0 },
+    { day: "Saturday", weekday: 6, total: 0, days: 0 },
+    { day: "Sunday", weekday: 0, total: 0, days: 0 },
+  ];
+  for (const point of dailySales) {
+    const weekday = new Date(`${point.date}T00:00:00.000Z`).getUTCDay();
+    const aggregate = weekdays.find((item) => item.weekday === weekday);
+    if (aggregate) {
+      aggregate.total += point.total;
+      aggregate.days += 1;
+    }
+  }
+  const weekdayAverageSales = weekdays
+    .map(({ day, total, days }) => ({ day, average: days === 0 ? 0 : total / days }))
+    .sort((a, b) => b.average - a.average);
+
   const monthStartKey = businessDateKey(getBusinessMonthStart(new Date(), tenant.timeZone), tenant.timeZone);
   const monthToDate = dailyFinancials
     .filter((point) => point.date >= monthStartKey)
@@ -227,6 +249,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 25),
+    weekdayAverageSales,
   };
 }
 
