@@ -21,8 +21,10 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   getAdminCategoryAnalyticsAction,
+  getAdminWeekdayAverageSalesAction,
   type AdminSalesAnalytics,
   type AnalyticsSeries,
+  type WeekdayAverageSalesPoint,
 } from "@/features/orders/actions/getAdminSalesAnalyticsAction";
 
 const colors = ["#0f766e", "#f97316", "#2563eb", "#9333ea", "#dc2626", "#0891b2", "#ca8a04", "#4f46e5"];
@@ -130,6 +132,11 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
   const [expenseCategoryTotals, setExpenseCategoryTotals] = useState(analytics.expenseCategoryTotals);
   const [categoryFilterError, setCategoryFilterError] = useState("");
   const [isCategoryPending, startCategoryTransition] = useTransition();
+  const [weekdayStartDate, setWeekdayStartDate] = useState(analytics.weekdayStartDate);
+  const [weekdayEndDate, setWeekdayEndDate] = useState(analytics.weekdayEndDate);
+  const [weekdayAverageSales, setWeekdayAverageSales] = useState(analytics.weekdayAverageSales);
+  const [weekdayFilterError, setWeekdayFilterError] = useState("");
+  const [isWeekdayPending, startWeekdayTransition] = useTransition();
 
   function applyCategoryDateRange(startDate: string, endDate: string) {
     setCategoryFilterError("");
@@ -143,6 +150,22 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
       } catch (error) {
         setCategoryFilterError(
           error instanceof Error ? error.message : "Unable to load category analytics.",
+        );
+      }
+    });
+  }
+
+  function applyWeekdayDateRange(startDate: string, endDate: string) {
+    setWeekdayFilterError("");
+    startWeekdayTransition(async () => {
+      try {
+        const result = await getAdminWeekdayAverageSalesAction(startDate, endDate);
+        setWeekdayStartDate(result.weekdayStartDate);
+        setWeekdayEndDate(result.weekdayEndDate);
+        setWeekdayAverageSales(result.weekdayAverageSales);
+      } catch (error) {
+        setWeekdayFilterError(
+          error instanceof Error ? error.message : "Unable to load weekday sales averages.",
         );
       }
     });
@@ -299,11 +322,62 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-teal-800">Average Daily Sales by Weekday (YTD)</h2>
+        <h2 className="mb-1 text-lg font-semibold text-teal-800">Average Daily Sales by Weekday</h2>
+        <p className="mb-4 text-sm text-gray-500">{weekdayStartDate} – {weekdayEndDate}</p>
+        <form
+          className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end"
+          onSubmit={(event) => {
+            event.preventDefault();
+            applyWeekdayDateRange(weekdayStartDate, weekdayEndDate);
+          }}
+        >
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+            From date
+            <Input
+              type="date"
+              value={weekdayStartDate}
+              max={weekdayEndDate}
+              required
+              disabled={isWeekdayPending}
+              onChange={(event) => setWeekdayStartDate(event.target.value)}
+              aria-label="Weekday sales start date"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+            To date
+            <Input
+              type="date"
+              value={weekdayEndDate}
+              min={weekdayStartDate}
+              required
+              disabled={isWeekdayPending}
+              onChange={(event) => setWeekdayEndDate(event.target.value)}
+              aria-label="Weekday sales end date"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={isWeekdayPending}
+            className="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isWeekdayPending ? "Loading..." : "Apply"}
+          </button>
+          <button
+            type="button"
+            disabled={isWeekdayPending}
+            onClick={() => applyWeekdayDateRange(analytics.weekdayStartDate, analytics.weekdayEndDate)}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Reset to YTD
+          </button>
+        </form>
+        {weekdayFilterError && (
+          <p role="alert" className="mb-4 text-sm text-red-600">{weekdayFilterError}</p>
+        )}
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={analytics.weekdayAverageSales}
+              data={weekdayAverageSales}
               layout="vertical"
               barCategoryGap="18%"
               margin={{ top: 5, right: 24, left: 12, bottom: 5 }}
@@ -316,7 +390,7 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
               />
               <YAxis type="category" dataKey="day" width={100} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value) => money(Number(value ?? 0))} />
-              <Bar dataKey="average" name="Average daily sales" fill="#0f766e" barSize={26} />
+              <Bar dataKey="average" name="Average daily sales" fill="#5eead4" barSize={26} />
             </BarChart>
           </ResponsiveContainer>
         </div>

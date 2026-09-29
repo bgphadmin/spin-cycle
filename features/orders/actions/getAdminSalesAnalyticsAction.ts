@@ -19,6 +19,11 @@ type DailyPoint = {
   total: number;
 };
 
+export type WeekdayAverageSalesPoint = {
+  day: string;
+  average: number;
+};
+
 export type DailyFinancialPoint = {
   date: string;
   label: string;
@@ -51,7 +56,9 @@ export type AdminSalesAnalytics = {
   categoryStartDate: string;
   categoryEndDate: string;
   topCustomers: Array<{ name: string; total: number }>;
-  weekdayAverageSales: Array<{ day: string; average: number }>;
+  weekdayAverageSales: WeekdayAverageSalesPoint[];
+  weekdayStartDate: string;
+  weekdayEndDate: string;
 };
 
 export type CategoryAnalytics = Pick<
@@ -88,6 +95,29 @@ function createDateRange(start: Date, end: Date, timeZone: string) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
+}
+
+function calculateWeekdayAverageSales(dailyPoints: DailyPoint[]): WeekdayAverageSalesPoint[] {
+  const weekdays = [
+    { day: "Monday", weekday: 1, total: 0, days: 0 },
+    { day: "Tuesday", weekday: 2, total: 0, days: 0 },
+    { day: "Wednesday", weekday: 3, total: 0, days: 0 },
+    { day: "Thursday", weekday: 4, total: 0, days: 0 },
+    { day: "Friday", weekday: 5, total: 0, days: 0 },
+    { day: "Saturday", weekday: 6, total: 0, days: 0 },
+    { day: "Sunday", weekday: 0, total: 0, days: 0 },
+  ];
+  for (const point of dailyPoints) {
+    const weekday = new Date(`${point.date}T00:00:00.000Z`).getUTCDay();
+    const aggregate = weekdays.find((item) => item.weekday === weekday);
+    if (aggregate) {
+      aggregate.total += point.total;
+      aggregate.days += 1;
+    }
+  }
+  return weekdays
+    .map(({ day, total, days }) => ({ day, average: days === 0 ? 0 : total / days }))
+    .sort((a, b) => b.average - a.average);
 }
 
 export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytics> {
@@ -192,26 +222,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       profit: point.total + expense,
     };
   });
-  const weekdays = [
-    { day: "Monday", weekday: 1, total: 0, days: 0 },
-    { day: "Tuesday", weekday: 2, total: 0, days: 0 },
-    { day: "Wednesday", weekday: 3, total: 0, days: 0 },
-    { day: "Thursday", weekday: 4, total: 0, days: 0 },
-    { day: "Friday", weekday: 5, total: 0, days: 0 },
-    { day: "Saturday", weekday: 6, total: 0, days: 0 },
-    { day: "Sunday", weekday: 0, total: 0, days: 0 },
-  ];
-  for (const point of dailySales) {
-    const weekday = new Date(`${point.date}T00:00:00.000Z`).getUTCDay();
-    const aggregate = weekdays.find((item) => item.weekday === weekday);
-    if (aggregate) {
-      aggregate.total += point.total;
-      aggregate.days += 1;
-    }
-  }
-  const weekdayAverageSales = weekdays
-    .map(({ day, total, days }) => ({ day, average: days === 0 ? 0 : total / days }))
-    .sort((a, b) => b.average - a.average);
+  const weekdayAverageSales = calculateWeekdayAverageSales(dailySales);
 
   const monthStartKey = businessDateKey(getBusinessMonthStart(new Date(), tenant.timeZone), tenant.timeZone);
   const monthToDate = dailyFinancials
@@ -250,6 +261,65 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       .sort((a, b) => b.total - a.total)
       .slice(0, 25),
     weekdayAverageSales,
+    weekdayStartDate: businessDateKey(startOfYear, tenant.timeZone),
+    weekdayEndDate: businessDateKey(today, tenant.timeZone),
+  };
+}
+
+export async function getAdminWeekdayAverageSalesAction(
+  startDate: string,
+  endDate: string,
+): Promise<{
+  weekdayAverageSales: WeekdayAverageSalesPoint[];
+  weekdayStartDate: string;
+  weekdayEndDate: string;
+}> {
+  const { userId } = await auth();
+  const { orgId, orgRole } = await getServerAuthClaims();
+  if (!userId || !orgId || orgRole !== "org:admin") {
+    throw new Error("Only administrators can view sales analytics.");
+  }
+  if (!isDateKey(startDate) || !isDateKey(endDate) || startDate > endDate) {
+    throw new Error("Enter a valid date range.");
+  }
+
+  const tenant = await db.tenant.findUnique({
+    where: { clerkOrgId: orgId },
+    select: { id: true, timeZone: true },
+  });
+  if (!tenant) throw new Error("Tenant not found.");
+
+  const { start } = businessDayRangeFromKey(startDate, tenant.timeZone);
+  const { end } = businessDayRangeFromKey(endDate, tenant.timeZone);
+  const orders = await db.laundryOrder.findMany({
+    where: {
+      tenantId: tenant.id,
+      paid: true,
+      status: { in: ["COMPLETED", "IN_PROGRESS"] },
+      createdAt: { gte: start, lt: end },
+    },
+    select: { total: true, createdAt: true },
+  });
+
+  const dailySalesByDate = new Map<string, number>();
+  for (const order of orders) {
+    const orderDate = businessDateKey(order.createdAt, tenant.timeZone);
+    dailySalesByDate.set(orderDate, (dailySalesByDate.get(orderDate) ?? 0) + order.total);
+  }
+
+  const dailyPoints: DailyPoint[] = [];
+  const cursor = new Date(`${startDate}T00:00:00.000Z`);
+  const lastDay = new Date(`${endDate}T00:00:00.000Z`);
+  while (cursor <= lastDay) {
+    const date = cursor.toISOString().slice(0, 10);
+    dailyPoints.push({ date, label: date, total: dailySalesByDate.get(date) ?? 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return {
+    weekdayAverageSales: calculateWeekdayAverageSales(dailyPoints),
+    weekdayStartDate: startDate,
+    weekdayEndDate: endDate,
   };
 }
 
