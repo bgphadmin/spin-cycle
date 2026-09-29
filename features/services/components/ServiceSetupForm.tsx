@@ -69,6 +69,9 @@ export default function ServiceSetupForm() {
                 placeholder="Duration in minutes (optional)"
               />
             </div>
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+              Note: Service named "Wash" and "Dry" are required.
+            </p>
           </div>
         )}
       </FormContainer>

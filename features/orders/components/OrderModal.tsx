@@ -211,7 +211,7 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
                             value={service.id}
                             defaultChecked={activeOrder
                               ? activeOrder.items?.some((item: any) => item.serviceId === service.id)
-                              : service.id === baseServices[0]?.id}
+                              : service.name.toLowerCase() === "wash" || service.name.toLowerCase() === "dry"}
                             required
                           />
                           {service.name} (₱{service.price.toFixed(2)})
