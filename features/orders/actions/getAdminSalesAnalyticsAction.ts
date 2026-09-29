@@ -7,6 +7,7 @@ import { expenseCategoryLabel } from "@/features/expenses/types/expenseTypes";
 import {
   businessDateKey,
   businessDateLabel,
+  businessDayRangeFromKey,
   getBusinessDayRange,
   getBusinessMonthStart,
   getBusinessYearStart,
@@ -47,8 +48,15 @@ export type AdminSalesAnalytics = {
   inventorySeries: AnalyticsSeries[];
   categoryTotals: Array<{ name: string; total: number }>;
   expenseCategoryTotals: Array<{ name: string; total: number }>;
+  categoryStartDate: string;
+  categoryEndDate: string;
   topCustomers: Array<{ name: string; total: number }>;
 };
+
+export type CategoryAnalytics = Pick<
+  AdminSalesAnalytics,
+  "categoryTotals" | "expenseCategoryTotals" | "categoryStartDate" | "categoryEndDate"
+>;
 
 async function getTenantId() {
   const { userId } = await auth();
@@ -213,9 +221,106 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     expenseCategoryTotals: [...expenseCategoryTotals.entries()]
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total),
+    categoryStartDate: businessDateKey(startOfYear, tenant.timeZone),
+    categoryEndDate: businessDateKey(today, tenant.timeZone),
     topCustomers: [...customerTotals.entries()]
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 25),
   };
+}
+
+export async function getAdminCategoryAnalyticsAction(
+  startDate: string,
+  endDate: string,
+): Promise<CategoryAnalytics> {
+  const { userId } = await auth();
+  const { orgId, orgRole } = await getServerAuthClaims();
+  if (!userId || !orgId || orgRole !== "org:admin") {
+    throw new Error("Only administrators can view sales analytics.");
+  }
+
+  if (!isDateKey(startDate) || !isDateKey(endDate) || startDate > endDate) {
+    throw new Error("Enter a valid date range.");
+  }
+
+  const tenant = await db.tenant.findUnique({
+    where: { clerkOrgId: orgId },
+    select: { id: true, timeZone: true },
+  });
+  if (!tenant) throw new Error("Tenant not found.");
+
+  const start = businessDayRangeFromKey(startDate, tenant.timeZone).start;
+  const end = businessDayRangeFromKey(endDate, tenant.timeZone).end;
+  const [orders, expenses] = await Promise.all([
+    db.laundryOrder.findMany({
+      where: {
+        tenantId: tenant.id,
+        paid: true,
+        status: { in: ["COMPLETED", "IN_PROGRESS"] },
+        createdAt: { gte: start, lt: end },
+      },
+      select: {
+        items: {
+          select: {
+            quantity: true,
+            price: true,
+            service: { select: { type: true } },
+            inventoryItem: { select: { name: true } },
+          },
+        },
+      },
+    }),
+    db.expense.findMany({
+      where: {
+        tenantId: tenant.id,
+        createdAt: { gte: start, lt: end },
+      },
+      select: { amount: true, category: true },
+    }),
+  ]);
+
+  const categoryTotals = new Map([
+    ["Base Services", 0],
+    ["Additional Services", 0],
+    ["Inventory Items", 0],
+  ]);
+  for (const order of orders) {
+    for (const item of order.items) {
+      const category = item.service
+        ? item.service.type === "OTHERS" || item.service.type === "FOLDS"
+          ? "Additional Services"
+          : "Base Services"
+        : item.inventoryItem
+          ? "Inventory Items"
+          : null;
+      if (category) {
+        categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + item.price * item.quantity);
+      }
+    }
+  }
+
+  const expenseCategoryTotals = new Map<string, number>();
+  for (const expense of expenses) {
+    const category = expenseCategoryLabel(expense.category);
+    expenseCategoryTotals.set(category, (expenseCategoryTotals.get(category) ?? 0) + expense.amount);
+  }
+
+  return {
+    categoryTotals: [...categoryTotals.entries()].map(([name, total]) => ({ name, total })),
+    expenseCategoryTotals: [...expenseCategoryTotals.entries()]
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total),
+    categoryStartDate: startDate,
+    categoryEndDate: endDate,
+  };
+}
+
+function isDateKey(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
 }

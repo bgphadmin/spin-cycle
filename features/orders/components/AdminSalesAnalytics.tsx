@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import {
   Bar,
   BarChart,
@@ -17,7 +18,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { AdminSalesAnalytics, AnalyticsSeries } from "@/features/orders/actions/getAdminSalesAnalyticsAction";
+import { Input } from "@/components/ui/input";
+import {
+  getAdminCategoryAnalyticsAction,
+  type AdminSalesAnalytics,
+  type AnalyticsSeries,
+} from "@/features/orders/actions/getAdminSalesAnalyticsAction";
 
 const colors = ["#0f766e", "#f97316", "#2563eb", "#9333ea", "#dc2626", "#0891b2", "#ca8a04", "#4f46e5"];
 const INITIAL_WINDOW_DAYS = 30;
@@ -71,7 +77,77 @@ function MultiSeriesChart({ title, series }: { title: string; series: AnalyticsS
   );
 }
 
+function CategoryPieChart({
+  title,
+  data,
+  emptyMessage,
+}: {
+  title: string;
+  data: Array<{ name: string; total: number }>;
+  emptyMessage: string;
+}) {
+  if (data.length === 0 || data.every((entry) => entry.total === 0)) {
+    return (
+      <div>
+        <h3 className="mb-4 text-base font-semibold text-teal-800">{title}</h3>
+        <p className="py-12 text-center text-sm text-gray-500">{emptyMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h3 className="mb-4 text-base font-semibold text-teal-800">{title}</h3>
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="total"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(1)}%`}
+            >
+              {data.map((entry, index) => (
+                <Cell key={entry.name} fill={colors[index % colors.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => money(Number(value ?? 0))} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSalesAnalytics }) {
+  const [categoryStartDate, setCategoryStartDate] = useState(analytics.categoryStartDate);
+  const [categoryEndDate, setCategoryEndDate] = useState(analytics.categoryEndDate);
+  const [categoryTotals, setCategoryTotals] = useState(analytics.categoryTotals);
+  const [expenseCategoryTotals, setExpenseCategoryTotals] = useState(analytics.expenseCategoryTotals);
+  const [categoryFilterError, setCategoryFilterError] = useState("");
+  const [isCategoryPending, startCategoryTransition] = useTransition();
+
+  function applyCategoryDateRange(startDate: string, endDate: string) {
+    setCategoryFilterError("");
+    startCategoryTransition(async () => {
+      try {
+        const result = await getAdminCategoryAnalyticsAction(startDate, endDate);
+        setCategoryStartDate(result.categoryStartDate);
+        setCategoryEndDate(result.categoryEndDate);
+        setCategoryTotals(result.categoryTotals);
+        setExpenseCategoryTotals(result.expenseCategoryTotals);
+      } catch (error) {
+        setCategoryFilterError(
+          error instanceof Error ? error.message : "Unable to load category analytics.",
+        );
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       {/* <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
@@ -137,80 +213,90 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
       <MultiSeriesChart title="Daily services" series={analytics.serviceSeries} />
       <MultiSeriesChart title="Daily inventory items" series={analytics.inventorySeries} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-teal-800">Sales by category</h2>
+      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-teal-800">Category Analytics</h2>
+        <form
+          className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end"
+          onSubmit={(event) => {
+            event.preventDefault();
+            applyCategoryDateRange(categoryStartDate, categoryEndDate);
+          }}
+        >
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+            From date
+            <Input
+              type="date"
+              value={categoryStartDate}
+              max={categoryEndDate}
+              required
+              disabled={isCategoryPending}
+              onChange={(event) => setCategoryStartDate(event.target.value)}
+              aria-label="Category analytics start date"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-600">
+            To date
+            <Input
+              type="date"
+              value={categoryEndDate}
+              min={categoryStartDate}
+              required
+              disabled={isCategoryPending}
+              onChange={(event) => setCategoryEndDate(event.target.value)}
+              aria-label="Category analytics end date"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={isCategoryPending}
+            className="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCategoryPending ? "Loading..." : "Apply"}
+          </button>
+          <button
+            type="button"
+            disabled={isCategoryPending}
+            onClick={() => applyCategoryDateRange(analytics.categoryStartDate, analytics.categoryEndDate)}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Reset to YTD
+          </button>
+        </form>
+        {categoryFilterError && (
+          <p role="alert" className="mb-4 text-sm text-red-600">{categoryFilterError}</p>
+        )}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CategoryPieChart
+            title="Sales by category"
+            data={categoryTotals}
+            emptyMessage="No paid sales data available for this date range."
+          />
+          <CategoryPieChart
+            title="Expense by category"
+            data={expenseCategoryTotals}
+            emptyMessage="No expense data available for this date range."
+          />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-teal-800">Top 25 customers this year</h2>
+        {analytics.topCustomers.length === 0 ? (
+          <p className="py-12 text-center text-sm text-gray-500">No paid customer sales available.</p>
+        ) : (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.categoryTotals}
-                  dataKey="total"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(1)}%`}
-                >
-                  {analytics.categoryTotals.map((entry, index) => (
-                    <Cell key={entry.name} fill={colors[index]} />
-                  ))}
-                </Pie>
+              <BarChart data={analytics.topCustomers} layout="vertical" barCategoryGap="18%" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tickFormatter={(value) => `₱${Number(value).toLocaleString()}`} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value) => money(Number(value ?? 0))} />
-                <Legend />
-              </PieChart>
+                <Bar dataKey="total" name="Sales" fill="#f97316" barSize={26} minPointSize={3} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-        </section>
-
-        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-teal-800">Expense by category</h2>
-          {analytics.expenseCategoryTotals.length === 0 ? (
-            <p className="py-12 text-center text-sm text-gray-500">No expense data available.</p>
-          ) : (
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={analytics.expenseCategoryTotals}
-                    dataKey="total"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(1)}%`}
-                  >
-                    {analytics.expenseCategoryTotals.map((entry, index) => (
-                      <Cell key={entry.name} fill={colors[index % colors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => money(Number(value ?? 0))} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-teal-800">Top 25 customers this year</h2>
-          {analytics.topCustomers.length === 0 ? (
-            <p className="py-12 text-center text-sm text-gray-500">No paid customer sales available.</p>
-          ) : (
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.topCustomers} layout="vertical" barCategoryGap="18%" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={(value) => `₱${Number(value).toLocaleString()}`} />
-                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value) => money(Number(value ?? 0))} />
-                  <Bar dataKey="total" name="Sales" fill="#f97316" barSize={26} minPointSize={3} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
