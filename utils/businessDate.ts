@@ -94,6 +94,17 @@ export function businessDateKey(date: Date, timeZone = BUSINESS_TIME_ZONE) {
   return dateKeyFromParts(getDateParts(date, timeZone));
 }
 
+export function businessDateKeyToUtcDate(dateKey: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    throw new Error("Enter a valid date.");
+  }
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== dateKey) {
+    throw new Error("Enter a valid date.");
+  }
+  return date;
+}
+
 export function businessDateLabel(date: Date, timeZone = BUSINESS_TIME_ZONE) {
   return new Intl.DateTimeFormat("en-US", {
     timeZone,

@@ -5,7 +5,11 @@ import { auth } from "@clerk/nextjs/server";
 import db from "@/utils/db";
 import { renderError } from "@/utils/error";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { businessDayRangeFromKey, businessDateKey, getBusinessMonthStart } from "@/utils/businessDate";
+import {
+  businessDateKey,
+  businessDateKeyToUtcDate,
+  getBusinessMonthStart,
+} from "@/utils/businessDate";
 import { addExpenseSchema } from "@/utils/validation/expenseSchema";
 import type { ExpenseDetail, ExpenseRow } from "@/features/expenses/types/expenseTypes";
 import { CUSTOM_CATEGORY_VALUE } from "@/features/expenses/types/expenseTypes";
@@ -67,13 +71,13 @@ export async function getExpensesAction({
     const startKey = startDate || businessDateKey(getBusinessMonthStart(now, tenant.timeZone), tenant.timeZone);
     const endKey = endDate || businessDateKey(now, tenant.timeZone);
 
-    const { start } = businessDayRangeFromKey(startKey, tenant.timeZone);
-    const { end } = businessDayRangeFromKey(endKey, tenant.timeZone);
-
     const expenses = await db.expense.findMany({
       where: {
         tenantId: tenant.id,
-        createdAt: { gte: start, lt: end },
+        expenseDate: {
+          gte: businessDateKeyToUtcDate(startKey),
+          lte: businessDateKeyToUtcDate(endKey),
+        },
         // Staff only ever see expenses they personally recorded; admins see everyone's.
         ...(currentUser.isAdmin ? {} : { userId: currentUser.id }),
       },
@@ -88,6 +92,11 @@ export async function getExpensesAction({
         amount: expense.amount,
         notes: expense.notes,
         createdAt: expense.createdAt.toISOString(),
+        createdAtLabel: new Intl.DateTimeFormat("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: tenant.timeZone,
+        }).format(expense.createdAt),
         userName: expense.user?.name ?? "Unknown",
       })),
     };
@@ -127,8 +136,9 @@ export async function addExpenseAction(
       amount: formData.get("amount"),
       notes: formData.get("notes"),
     });
+    const createdAt = new Date();
     const expenseDate = String(formData.get("expenseDate") ?? "").trim();
-    let createdAt: Date | undefined;
+    let expenseDateKey = businessDateKey(createdAt, tenant.timeZone);
     if (expenseDate) {
       if (!currentUser.isAdmin) throw new Error("Only admins can set an expense date.");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) throw new Error("Expense date must be valid.");
@@ -141,7 +151,7 @@ export async function addExpenseAction(
       ) {
         throw new Error("Expense date must be valid.");
       }
-      createdAt = businessDayRangeFromKey(expenseDate, tenant.timeZone).start;
+      expenseDateKey = expenseDate;
     }
 
     const expense = await db.expense.create({
@@ -151,7 +161,8 @@ export async function addExpenseAction(
         category: fields.category,
         amount: fields.amount,
         notes: fields.notes === "" ? null : fields.notes,
-        ...(createdAt ? { createdAt } : {}),
+        createdAt,
+        expenseDate: businessDateKeyToUtcDate(expenseDateKey),
       },
     });
 

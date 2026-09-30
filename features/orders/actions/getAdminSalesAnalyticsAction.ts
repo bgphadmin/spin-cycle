@@ -6,6 +6,7 @@ import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { expenseCategoryLabel } from "@/features/expenses/types/expenseTypes";
 import {
   businessDateKey,
+  businessDateKeyToUtcDate,
   businessDateLabel,
   businessDayRangeFromKey,
   getBusinessDayRange,
@@ -149,12 +150,15 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
   const expenses = await db.expense.findMany({
     where: {
       tenantId: tenant.id,
-      createdAt: { gte: startOfYear, lt: tomorrow },
+      expenseDate: {
+        gte: businessDateKeyToUtcDate(businessDateKey(startOfYear, tenant.timeZone)),
+        lte: businessDateKeyToUtcDate(businessDateKey(today, tenant.timeZone)),
+      },
     },
     select: {
       amount: true,
       category: true,
-      createdAt: true,
+      expenseDate: true,
     },
   });
 
@@ -200,7 +204,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
   }
 
   for (const expense of expenses) {
-    const expenseDate = dateKey(expense.createdAt, tenant.timeZone);
+    const expenseDate = expense.expenseDate.toISOString().slice(0, 10);
     dailyExpensesByDate.set(expenseDate, (dailyExpensesByDate.get(expenseDate) ?? 0) - Math.abs(expense.amount));
     const category = expenseCategoryLabel(expense.category);
     expenseCategoryTotals.set(category, (expenseCategoryTotals.get(category) ?? 0) + expense.amount);
@@ -367,7 +371,10 @@ export async function getAdminCategoryAnalyticsAction(
     db.expense.findMany({
       where: {
         tenantId: tenant.id,
-        createdAt: { gte: start, lt: end },
+        expenseDate: {
+          gte: businessDateKeyToUtcDate(startDate),
+          lte: businessDateKeyToUtcDate(endDate),
+        },
       },
       select: { amount: true, category: true },
     }),

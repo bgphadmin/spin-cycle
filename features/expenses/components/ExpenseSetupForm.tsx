@@ -9,21 +9,12 @@ import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { addExpenseAction } from "../actions/expenseActions";
 import ExpenseCategoryField from "./ExpenseCategoryField";
 
-function todayDateKey() {
-  const today = new Date();
-  return [today.getFullYear(), today.getMonth() + 1, today.getDate()]
-    .map((value, index) => (index === 0 ? String(value) : String(value).padStart(2, "0")))
-    .join("-");
-}
-
-export default function ExpenseSetupForm() {
+export default function ExpenseSetupForm({ initialExpenseDate }: { initialExpenseDate: string }) {
   const formRef = useRef<HTMLFormElement>(null);
   const { isLoaded, orgRole } = useClientAuthClaims();
   const isAdmin = orgRole === "org:admin";
   const router = useRouter();
   const [formKey, setFormKey] = useState(0);
-  const [expenseDate] = useState(todayDateKey);
-
   const handleSuccess = () => {
     formRef.current?.reset();
     setFormKey((key) => key + 1);
@@ -49,7 +40,7 @@ export default function ExpenseSetupForm() {
                   name="expenseDate"
                   type="date"
                   label="Expense date"
-                  defaultValue={expenseDate}
+                  defaultValue={initialExpenseDate}
                   required
                 />
               )}

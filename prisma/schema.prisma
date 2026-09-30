@@ -256,13 +256,14 @@ model MachineUsage {
 }
 
 model Expense {
-  id        String   @id @default(uuid())
-  tenantId  String
-  userId    String
-  category  String // utilities, rent, maintenance, supplies, other
-  amount    Float
-  notes     String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  category    String // utilities, rent, maintenance, supplies, other
+  amount      Float
+  notes       String?
+  createdAt   DateTime @default(now())
+  expenseDate DateTime @db.Date
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [userId], references: [id])

@@ -228,11 +228,7 @@ export default function ExpensesList({
                     <td className="px-3 py-3 text-gray-600">{expenseCategoryLabel(expense.category)}</td>
                     <td className="px-3 py-3 font-medium text-teal-700">{money(expense.amount)}</td>
                     <td className="px-3 py-3 text-gray-600">
-                      {new Date(expense.createdAt).toLocaleString("en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                        timeZone: initialRange.timeZone,
-                      })}
+                      {expense.createdAtLabel}
                     </td>
                   </tr>
                 ))}

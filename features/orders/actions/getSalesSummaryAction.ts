@@ -3,7 +3,12 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
-import { businessDateKey, businessDayRangeFromKey, getBusinessDayRange } from "@/utils/businessDate";
+import {
+  businessDateKey,
+  businessDateKeyToUtcDate,
+  businessDayRangeFromKey,
+  getBusinessDayRange,
+} from "@/utils/businessDate";
 
 export type SalesSummaryLine = {
   name: string;
@@ -173,7 +178,10 @@ export async function getSalesSummaryAction(filters?: {
   const expenses = await db.expense.aggregate({
     where: {
       tenantId: tenant.id,
-      createdAt: { gte: startOfDay, lt: endOfDay },
+      expenseDate: {
+        gte: businessDateKeyToUtcDate(startDate),
+        lte: businessDateKeyToUtcDate(endDate),
+      },
       ...(tenant.isAdmin
         ? selectedUsers
           ? { userId: { in: selectedUsers.map((user) => user.id) } }

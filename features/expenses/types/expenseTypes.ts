@@ -34,6 +34,7 @@ export type ExpenseRow = {
   amount: number;
   notes: string | null;
   createdAt: string;
+  createdAtLabel: string;
   userName: string;
 };
 
