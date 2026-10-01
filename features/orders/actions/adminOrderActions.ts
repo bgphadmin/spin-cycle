@@ -177,6 +177,33 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
   }
 }
 
+export async function setAdminOrdersPaidAction(orderIds: string[], paid: boolean): Promise<void> {
+  const tenant = await getAdminTenant();
+  if (typeof paid !== "boolean") throw new Error("A valid payment status is required.");
+  if (!Array.isArray(orderIds) || !orderIds.every((id) => typeof id === "string")) {
+    throw new Error("Valid order ids are required.");
+  }
+  const uniqueOrderIds = [...new Set(orderIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueOrderIds.length === 0) throw new Error("At least one order is required.");
+
+  await db.$transaction(async (tx) => {
+    const orders = await tx.laundryOrder.findMany({
+      where: { id: { in: uniqueOrderIds }, tenantId: tenant.id },
+      select: { id: true },
+    });
+    if (orders.length !== uniqueOrderIds.length) {
+      throw new Error("One or more orders could not be found.");
+    }
+
+    await tx.laundryOrder.updateMany({
+      where: { id: { in: uniqueOrderIds }, tenantId: tenant.id, paid: { not: paid } },
+      data: { paid, paidAt: paid ? new Date() : null },
+    });
+  });
+
+  revalidatePath(`/tenants/${tenant.orgSlug}/adminDashboard`);
+}
+
 export async function updateAdminOrderAction(
   _prevState: unknown,
   formData: FormData

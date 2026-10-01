@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DeleteButton } from "@/components/ui/custom/DeleteButton";
@@ -10,6 +10,7 @@ import AdminOrderEditModal from "@/features/orders/components/AdminOrderEditModa
 import {
   deleteAdminOrderAction,
   getAdminOrdersAction,
+  setAdminOrdersPaidAction,
   type AdminOrderRow,
 } from "@/features/orders/actions/adminOrderActions";
 
@@ -34,8 +35,10 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminOrderRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingPayments, setIsUpdatingPayments] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isRefreshing, startRefresh] = useTransition();
+  const selectAllPaidRef = useRef<HTMLInputElement>(null);
 
   function refresh() {
     startRefresh(async () => setCurrentOrders(await getAdminOrdersAction()));
@@ -78,10 +81,39 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
     (currentPage - 1) * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE,
   );
+  const allVisibleOrdersPaid =
+    visibleOrders.length > 0 && visibleOrders.every((order) => order.paid);
+  const someVisibleOrdersPaid = visibleOrders.some((order) => order.paid);
+
+  useEffect(() => {
+    if (selectAllPaidRef.current) {
+      selectAllPaidRef.current.indeterminate =
+        someVisibleOrdersPaid && !allVisibleOrdersPaid;
+    }
+  }, [allVisibleOrdersPaid, someVisibleOrdersPaid]);
 
   function changeFilter(setter: (value: string) => void, value: string) {
     setCurrentPage(1);
     setter(value);
+  }
+
+  async function updatePaymentStatus(orderIds: string[], paid: boolean) {
+    if (isUpdatingPayments || orderIds.length === 0) return;
+    setIsUpdatingPayments(true);
+    try {
+      await setAdminOrdersPaidAction(orderIds, paid);
+      const updatedOrderIds = new Set(orderIds);
+      setCurrentOrders((current) =>
+        current.map((order) =>
+          updatedOrderIds.has(order.id) ? { ...order, paid } : order,
+        ),
+      );
+      toast.success("Payment status updated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update payment status.");
+    } finally {
+      setIsUpdatingPayments(false);
+    }
   }
 
   useEffect(() => {
@@ -136,6 +168,29 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                   <th className="px-3 py-3">Machine Name</th>
                   <th className="px-3 py-3">Total</th>
                   <th className="px-3 py-3">Payment</th>
+                  <th className="px-3 py-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        ref={selectAllPaidRef}
+                        type="checkbox"
+                        checked={allVisibleOrdersPaid}
+                        disabled={isUpdatingPayments}
+                        onChange={(event) =>
+                          void updatePaymentStatus(
+                            visibleOrders.map((order) => order.id),
+                            event.currentTarget.checked,
+                          )
+                        }
+                        aria-label={
+                          allVisibleOrdersPaid
+                            ? "Mark all shown orders as unpaid"
+                            : "Mark all shown orders as paid"
+                        }
+                        className="h-4 w-4 accent-teal-600"
+                      />
+                      <span>PAID</span>
+                    </label>
+                  </th>
                   <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -145,6 +200,7 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                     key={order.id}
                     onClick={() => openOrderEditor(order.id)}
                     onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         openOrderEditor(order.id);
@@ -161,6 +217,20 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                     <td className="px-3 py-3 font-medium text-teal-700">{money(order.total)}</td>
                     <td className="px-3 py-3 text-gray-600">
                       {order.paid ? `Paid${order.paymentMethod ? ` (${order.paymentMethod})` : ""}` : "Unpaid"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={order.paid}
+                        disabled={isUpdatingPayments}
+                        onChange={(event) =>
+                          void updatePaymentStatus([order.id], event.currentTarget.checked)
+                        }
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        aria-label={`Paid for ${order.customerName}'s order`}
+                        className="h-4 w-4 accent-teal-600"
+                      />
                     </td>
                     <td className="px-3 py-3 text-right">
                       <DeleteButton
