@@ -104,6 +104,8 @@ export async function getPettyCashAction({
         }).format(entry.cashDate),
         createdAt: entry.createdAt.toISOString(),
         userName: entry.user.name,
+        isExpenseLinked: entry.expenseId !== null,
+        sourceExpenseId: entry.expenseId,
       };
     }),
   };
@@ -112,12 +114,26 @@ export async function getPettyCashAction({
 export async function getPettyCashByIdAction(id: string): Promise<PettyCashDetail | null> {
   const tenant = await getTenantContext();
   const currentUser = await getCurrentUser(tenant);
+  if (!currentUser.isAdmin) return null;
   const entry = await db.pettyCash.findFirst({
     where: { id, tenantId: tenant.id },
-    select: { id: true, name: true, amount: true, notes: true, userId: true },
+    select: {
+      id: true,
+      name: true,
+      amount: true,
+      notes: true,
+      userId: true,
+      expenseId: true,
+    },
   });
-  if (!entry || (!currentUser.isAdmin && entry.userId !== currentUser.id)) return null;
-  return { id: entry.id, name: entry.name, amount: entry.amount, notes: entry.notes };
+  if (!entry) return null;
+  return {
+    id: entry.id,
+    name: entry.name,
+    amount: entry.amount,
+    notes: entry.notes,
+    sourceExpenseId: entry.expenseId,
+  };
 }
 
 export async function addPettyCashAction(
@@ -173,18 +189,18 @@ export async function updatePettyCashAction(
   try {
     const tenant = await getTenantContext();
     const currentUser = await getCurrentUser(tenant);
+    if (!currentUser.isAdmin) throw new Error("Only administrators can edit petty cash entries.");
     const id = String(formData.get("id") ?? "").trim();
     if (!id) throw new Error("Petty cash entry id is required.");
 
     const existing = await db.pettyCash.findFirst({
       where: { id, tenantId: tenant.id },
-      select: { userId: true },
+      select: { userId: true, expenseId: true },
     });
     if (!existing) throw new Error("Petty cash entry not found.");
-    if (!currentUser.isAdmin && existing.userId !== currentUser.id) {
-      throw new Error("You can only edit petty cash entries you added yourself.");
+    if (existing.expenseId) {
+      throw new Error("Edit this linked entry from its expense record.");
     }
-
     const fields = pettyCashSchema.parse({
       name: formData.get("name"),
       amount: formData.get("amount"),
@@ -219,18 +235,18 @@ export async function deletePettyCashAction(
   try {
     const tenant = await getTenantContext();
     const currentUser = await getCurrentUser(tenant);
+    if (!currentUser.isAdmin) throw new Error("Only administrators can delete petty cash entries.");
     const id = String(formData.get("id") ?? "").trim();
     if (!id) throw new Error("Petty cash entry id is required.");
 
     const existing = await db.pettyCash.findFirst({
       where: { id, tenantId: tenant.id },
-      select: { userId: true },
+      select: { userId: true, expenseId: true },
     });
     if (!existing) throw new Error("Petty cash entry not found.");
-    if (!currentUser.isAdmin && existing.userId !== currentUser.id) {
-      throw new Error("You can only delete petty cash entries you added yourself.");
+    if (existing.expenseId) {
+      throw new Error("Delete this linked entry by deleting its expense record.");
     }
-
     await db.pettyCash.delete({ where: { id, tenantId: tenant.id } });
     revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/pettyCash`);
     return { message: "Petty cash entry deleted successfully" };

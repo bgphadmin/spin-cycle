@@ -7,6 +7,8 @@ export type PettyCashRow = {
   cashDateLabel: string;
   createdAt: string;
   userName: string;
+  isExpenseLinked: boolean;
+  sourceExpenseId: string | null;
 };
 
 export type PettyCashDetail = {
@@ -14,4 +16,5 @@ export type PettyCashDetail = {
   name: string;
   amount: number;
   notes: string | null;
+  sourceExpenseId: string | null;
 };

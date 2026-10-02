@@ -12,14 +12,15 @@ import { getPettyCashAction } from "@/features/pettyCash/actions/pettyCashAction
 import type { PettyCashRow } from "@/features/pettyCash/types/pettyCashTypes";
 
 function money(value: number) {
-  return `₱${value.toFixed(2)}`;
+  return value < 0 ? `-₱${Math.abs(value).toFixed(2)}` : `₱${value.toFixed(2)}`;
 }
 
 type SortKey = "userName" | "name" | "amount" | "cashDate";
 type SortDir = "asc" | "desc";
 
-const columns: Array<{ key: SortKey; label: string }> = [
+const columns: Array<{ key: SortKey; label: string } | { label: string }> = [
   { key: "userName", label: "User" },
+  { label: "Transaction" },
   { key: "name", label: "Name" },
   { key: "amount", label: "Amount" },
   { key: "cashDate", label: "Date" },
@@ -33,7 +34,7 @@ export default function PettyCashList({
 }) {
   const { isLoaded, orgRole } = useClientAuthClaims();
   const isAdmin = isLoaded && orgRole === "org:admin";
-  const canManage = isLoaded;
+  const canAdd = isLoaded;
   const router = useRouter();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const basePath = `/tenants/${tenantSlug}/tenantDashboard/pettyCash`;
@@ -127,7 +128,7 @@ export default function PettyCashList({
   return (
     <div className="mt-8 space-y-6">
       <StandardHeaderHref
-        withButton={canManage}
+        withButton={canAdd}
         buttonName="Add Petty Cash"
         href={`${basePath}/pettyCashSetup`}
         title="Petty Cash"
@@ -183,8 +184,10 @@ export default function PettyCashList({
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="bg-teal-100 p-4 text-lg font-semibold text-teal-700">Petty cash records</h2>
-        {canManage && entries.length > 0 && (
-          <p className="mt-3 text-xs text-gray-500">Click a row to edit or delete a petty cash entry.</p>
+        {isAdmin && entries.length > 0 && (
+          <p className="mt-3 text-xs text-gray-500">
+            Click a row to edit or delete a petty cash entry. Entries linked to an expense are managed from that expense.
+          </p>
         )}
         {entries.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">
@@ -198,17 +201,21 @@ export default function PettyCashList({
               <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   {columns.map((column) => (
-                    <th key={column.key} className="px-3 py-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(column.key)}
-                        className="flex items-center gap-1 font-semibold uppercase tracking-wide text-gray-500 hover:text-teal-700"
-                      >
-                        {column.label}
-                        <span className="text-teal-600">
-                          {sortKey === column.key ? (sortDir === "asc" ? "↑" : "↓") : ""}
-                        </span>
-                      </button>
+                    <th key={column.label} className="px-3 py-3">
+                      {"key" in column ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(column.key)}
+                          className="flex items-center gap-1 font-semibold uppercase tracking-wide text-gray-500 hover:text-teal-700"
+                        >
+                          {column.label}
+                          <span className="text-teal-600">
+                            {sortKey === column.key ? (sortDir === "asc" ? "↑" : "↓") : ""}
+                          </span>
+                        </button>
+                      ) : (
+                        column.label
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -218,14 +225,25 @@ export default function PettyCashList({
                   <tr
                     key={entry.id}
                     onClick={() => {
-                      if (canManage) router.push(`${basePath}/${entry.id}/edit`);
+                      if (isAdmin && entry.sourceExpenseId) {
+                        router.push(
+                          `/tenants/${tenantSlug}/tenantDashboard/expense/${entry.sourceExpenseId}/edit`,
+                        );
+                      } else if (isAdmin) {
+                        router.push(`${basePath}/${entry.id}/edit`);
+                      }
                     }}
                     className={`border-b border-gray-100 last:border-0 ${
-                      canManage ? "cursor-pointer hover:bg-teal-50" : "hover:cursor-not-allowed"
+                      isAdmin ? "cursor-pointer hover:bg-teal-50" : ""
                     }`}
                   >
                     <td className="px-3 py-3 font-medium text-gray-800">{entry.userName}</td>
-                    <td className="px-3 py-3 text-gray-600">{entry.name}</td>
+                    <td className="px-3 py-3 text-gray-600">
+                      {entry.isExpenseLinked ? "Expense deduction" : "Petty Cash addition"}
+                    </td>
+                    <td className="px-3 py-3 text-gray-600">
+                      {entry.name}
+                    </td>
                     <td className="px-3 py-3 font-medium text-teal-700">{money(entry.amount)}</td>
                     <td className="px-3 py-3 text-gray-600">{entry.cashDateLabel}</td>
                   </tr>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormContainer from "@/components/utils/FormContainer";
@@ -35,6 +36,21 @@ export default function EditPettyCashForm({ entry }: { entry: PettyCashDetail | 
   });
 
   if (!entry) return <div>Petty cash entry not found.</div>;
+  if (entry.sourceExpenseId) {
+    return (
+      <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <p className="font-medium text-gray-800">
+          This entry is linked to an expense and is managed from that expense record.
+        </p>
+        <Link
+          href={`/tenants/${tenantSlug}/tenantDashboard/expense/${entry.sourceExpenseId}/edit`}
+          className="text-sm font-medium text-teal-700 hover:underline"
+        >
+          Edit linked expense
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-h-[94vh] flex items-start justify-center rounded-lg bg-white px-4 pt-12 pb-34 shadow-2xl sm:px-6 lg:px-8 mt-8 mb-4">

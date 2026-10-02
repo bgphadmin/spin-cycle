@@ -267,8 +267,9 @@ model Expense {
   createdAt   DateTime @default(now())
   expenseDate DateTime @db.Date
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  tenant         Tenant     @relation(fields: [tenantId], references: [id])
+  user           User       @relation(fields: [userId], references: [id])
+  pettyCashEntry PettyCash?
 }
 
 model PettyCash {
@@ -280,9 +281,11 @@ model PettyCash {
   notes     String?
   createdAt DateTime @default(now())
   cashDate  DateTime @db.Date
+  expenseId String?  @unique
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, cashDate])
   @@index([userId])

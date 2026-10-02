@@ -12,7 +12,10 @@ import {
 } from "@/utils/businessDate";
 import { addExpenseSchema } from "@/utils/validation/expenseSchema";
 import type { ExpenseDetail, ExpenseRow } from "@/features/expenses/types/expenseTypes";
-import { CUSTOM_CATEGORY_VALUE } from "@/features/expenses/types/expenseTypes";
+import {
+  CUSTOM_CATEGORY_VALUE,
+  expenseCategoryLabel,
+} from "@/features/expenses/types/expenseTypes";
 
 async function getTenantContext() {
   const { userId } = await auth();
@@ -112,12 +115,25 @@ export async function getExpenseByIdAction(id: string): Promise<ExpenseDetail | 
     const currentUser = await getCurrentUser(tenant);
     const expense = await db.expense.findUnique({
       where: { id, tenantId: tenant.id },
-      select: { id: true, category: true, amount: true, notes: true, userId: true },
+      select: {
+        id: true,
+        category: true,
+        amount: true,
+        notes: true,
+        userId: true,
+        pettyCashEntry: { select: { id: true } },
+      },
     });
     if (!expense) return null;
     // Staff can only look up their own expense records.
     if (!currentUser.isAdmin && expense.userId !== currentUser.id) return null;
-    return expense;
+    return {
+      id: expense.id,
+      category: expense.category,
+      amount: expense.amount,
+      notes: expense.notes,
+      deductFromPettyCash: expense.pettyCashEntry !== null,
+    };
   } catch (error: unknown) {
     console.error("Error fetching expense:", error);
     return null;
@@ -154,19 +170,40 @@ export async function addExpenseAction(
       expenseDateKey = expenseDate;
     }
 
-    const expense = await db.expense.create({
-      data: {
-        tenantId: tenant.id,
-        userId: currentUser.id,
-        category: fields.category,
-        amount: fields.amount,
-        notes: fields.notes === "" ? null : fields.notes,
-        createdAt,
-        expenseDate: businessDateKeyToUtcDate(expenseDateKey),
-      },
+    const expenseDateValue = businessDateKeyToUtcDate(expenseDateKey);
+    const deductFromPettyCash = formData.get("deductFromPettyCash") === "on";
+
+    const expense = await db.$transaction(async (tx) => {
+      const createdExpense = await tx.expense.create({
+        data: {
+          tenantId: tenant.id,
+          userId: currentUser.id,
+          category: fields.category,
+          amount: fields.amount,
+          notes: fields.notes === "" ? null : fields.notes,
+          createdAt,
+          expenseDate: expenseDateValue,
+        },
+      });
+      if (deductFromPettyCash) {
+        await tx.pettyCash.create({
+          data: {
+            tenantId: tenant.id,
+            userId: currentUser.id,
+            name: expenseCategoryLabel(fields.category),
+            amount: -fields.amount,
+            notes: fields.notes === "" ? null : fields.notes,
+            createdAt,
+            cashDate: expenseDateValue,
+            expenseId: createdExpense.id,
+          },
+        });
+      }
+      return createdExpense;
     });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/expense`);
+    revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/pettyCash`);
     return {
       message: JSON.stringify([
         { message: "Expense added successfully.", result: "success" },
@@ -191,7 +228,7 @@ export async function updateExpenseAction(
 
     const existing = await db.expense.findUnique({
       where: { id, tenantId: tenant.id },
-      select: { userId: true },
+      select: { userId: true, expenseDate: true },
     });
     if (!existing) throw new Error("Expense not found.");
     if (!currentUser.isAdmin && existing.userId !== currentUser.id) {
@@ -204,16 +241,55 @@ export async function updateExpenseAction(
       notes: formData.get("notes"),
     });
 
-    const expense = await db.expense.update({
-      where: { id, tenantId: tenant.id },
-      data: {
-        category: fields.category,
-        amount: fields.amount,
-        notes: fields.notes === "" ? null : fields.notes,
-      },
+    const deductFromPettyCash = formData.get("deductFromPettyCash") === "on";
+    const notes = fields.notes === "" ? null : fields.notes;
+    const expense = await db.$transaction(async (tx) => {
+      const updatedExpense = await tx.expense.update({
+        where: { id, tenantId: tenant.id },
+        data: {
+          category: fields.category,
+          amount: fields.amount,
+          notes,
+        },
+      });
+      if (deductFromPettyCash) {
+        const linkedEntry = await tx.pettyCash.findFirst({
+          where: { expenseId: id, tenantId: tenant.id },
+          select: { id: true },
+        });
+        if (linkedEntry) {
+          await tx.pettyCash.update({
+            where: { id: linkedEntry.id, tenantId: tenant.id },
+            data: {
+              name: expenseCategoryLabel(fields.category),
+              amount: -fields.amount,
+              notes,
+              cashDate: existing.expenseDate,
+            },
+          });
+        } else {
+          await tx.pettyCash.create({
+            data: {
+              tenantId: tenant.id,
+              userId: existing.userId,
+              name: expenseCategoryLabel(fields.category),
+              amount: -fields.amount,
+              notes,
+              cashDate: existing.expenseDate,
+              expenseId: id,
+            },
+          });
+        }
+      } else {
+        await tx.pettyCash.deleteMany({
+          where: { expenseId: id, tenantId: tenant.id },
+        });
+      }
+      return updatedExpense;
     });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/expense`);
+    revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/pettyCash`);
     return {
       message: JSON.stringify([
         { message: "Expense updated successfully.", result: "success" },
@@ -248,6 +324,7 @@ export async function deleteExpenseAction(
     await db.expense.delete({ where: { id, tenantId: tenant.id } });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/expense`);
+    revalidatePath(`/tenants/${tenant.orgSlug}/tenantDashboard/pettyCash`);
     return { message: "Expense deleted successfully" };
   } catch (error: unknown) {
     console.error("Error deleting expense:", error);

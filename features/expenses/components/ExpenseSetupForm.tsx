@@ -8,6 +8,7 @@ import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { addExpenseAction } from "../actions/expenseActions";
 import ExpenseCategoryField from "./ExpenseCategoryField";
+import PettyCashSwitch from "./PettyCashSwitch";
 
 export default function ExpenseSetupForm({ initialExpenseDate }: { initialExpenseDate: string }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -15,8 +16,10 @@ export default function ExpenseSetupForm({ initialExpenseDate }: { initialExpens
   const isAdmin = orgRole === "org:admin";
   const router = useRouter();
   const [formKey, setFormKey] = useState(0);
+  const [deductFromPettyCash, setDeductFromPettyCash] = useState(false);
   const handleSuccess = () => {
     formRef.current?.reset();
+    setDeductFromPettyCash(false);
     setFormKey((key) => key + 1);
   };
 
@@ -57,6 +60,10 @@ export default function ExpenseSetupForm({ initialExpenseDate }: { initialExpens
                 as="textarea"
                 placeholder="Notes (optional)"
                 className="rounded bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-lg ring-1 sm:col-span-2"
+              />
+              <PettyCashSwitch
+                checked={deductFromPettyCash}
+                onChange={setDeductFromPettyCash}
               />
             </div>
           </div>

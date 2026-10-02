@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormContainer from "@/components/utils/FormContainer";
@@ -11,6 +12,7 @@ import { DeleteButton } from "@/components/ui/custom/DeleteButton";
 import { DeleteConfirmationDialog } from "@/components/ui/custom/DeleteConfirmationDialog";
 import { updateExpenseAction, deleteExpenseAction } from "../actions/expenseActions";
 import ExpenseCategoryField from "./ExpenseCategoryField";
+import PettyCashSwitch from "./PettyCashSwitch";
 import { expenseCategoryLabel, type ExpenseDetail } from "../types/expenseTypes";
 
 type Props = {
@@ -19,6 +21,9 @@ type Props = {
 
 export default function EditExpenseForm({ expense }: Props) {
   const router = useRouter();
+  const [deductFromPettyCash, setDeductFromPettyCash] = useState(
+    expense?.deductFromPettyCash ?? false,
+  );
 
   const {
     onDelete,
@@ -83,6 +88,10 @@ export default function EditExpenseForm({ expense }: Props) {
                 placeholder="Notes (optional)"
                 defaultValue={expense.notes ?? ""}
                 className="rounded bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-lg ring-1 sm:col-span-2"
+              />
+              <PettyCashSwitch
+                checked={deductFromPettyCash}
+                onChange={setDeductFromPettyCash}
               />
             </div>
           </div>
