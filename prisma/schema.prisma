@@ -46,15 +46,16 @@ model Tenant {
   subscriptionStatus SubscriptionStatus @default(REGULAR)
   createdAt          DateTime           @default(now())
 
-  users          User[]
-  machines       Machine[]
-  inventoryItems InventoryItem[]
-  inventoryTxns  InventoryTransaction[]
-  orders         LaundryOrder[]
-  expenses       Expense[]
-  customers      Customer[]
-  MachineUsage   MachineUsage[]
-  services       Service[]
+  users            User[]
+  machines         Machine[]
+  inventoryItems   InventoryItem[]
+  inventoryTxns    InventoryTransaction[]
+  orders           LaundryOrder[]
+  expenses         Expense[]
+  customers        Customer[]
+  MachineUsage     MachineUsage[]
+  services         Service[]
+  pettyCashEntries PettyCash[]
 }
 
 model User {
@@ -67,8 +68,9 @@ model User {
   role      String // admin, staff
   createdAt DateTime @default(now())
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id])
-  expenses Expense[]
+  tenant           Tenant      @relation(fields: [tenantId], references: [id])
+  expenses         Expense[]
+  pettyCashEntries PettyCash[]
 }
 
 model Customer {
@@ -267,4 +269,21 @@ model Expense {
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
+}
+
+model PettyCash {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  name      String
+  amount    Float
+  notes     String?
+  createdAt DateTime @default(now())
+  cashDate  DateTime @db.Date
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, cashDate])
+  @@index([userId])
 }
