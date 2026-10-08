@@ -6,6 +6,18 @@ import { renderError } from "@/utils/error";
 import { registerShopSchema } from "@/utils/validation/tenantSchema";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 
+function addOneCalendarMonth(date: Date) {
+  const result = new Date(date);
+  const dayOfMonth = result.getUTCDate();
+  result.setUTCDate(1);
+  result.setUTCMonth(result.getUTCMonth() + 1);
+  const lastDayOfMonth = new Date(
+    Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  result.setUTCDate(Math.min(dayOfMonth, lastDayOfMonth));
+  return result;
+}
+
 export async function registerShopAction(
   _prevState: unknown,
   formData: FormData
@@ -26,6 +38,7 @@ export async function registerShopAction(
       throw new Error("Email is required to register a shop.");
     }
 
+    const createdAt = new Date();
     const tenant = await db.$transaction(async (tx) => {
       const existingUser = await tx.user.findUnique({
         where: { clerkId: userId },
@@ -42,7 +55,9 @@ export async function registerShopAction(
           clerkOrgId: orgId as string,
           clerkOrgSlug: orgSlug as string,
           email: fields.email || "",
-          subscriptionStatus: "PREMIUM",
+          subscriptionStatus: "TRIAL",
+          createdAt,
+          trialEndsAt: addOneCalendarMonth(createdAt),
           timeZone: fields.timeZone,
         },
       });

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { SortingState } from "@tanstack/react-table"
 import Spinner from "@/components/utils/Spinner"
 import { useEffectRunCounter } from "@/utils/hooks/customHooks"
-import { SubscriptionStatus, Tenant } from "@prisma/client"
+import { SubscriptionStatus } from "@prisma/client"
 import { addTenantAction, getTenantsPerPage } from "@/utils/actions/tenant/tenantAction"
 import TenantButton from "./TenantButton"
 import TenantGrid, { type TenantRow } from "./TenantGrid"
@@ -24,7 +24,7 @@ import { EditTenantItem } from "./EditTenantItem"
 import { COMMON_TIME_ZONES, DEFAULT_TIME_ZONE } from "@/utils/timeZones"
 
 interface TenantManagerProps {
-    initialRows: Tenant[]
+    initialRows: TenantRow[]
     total: number
 }
 
@@ -40,7 +40,7 @@ const defaultFormState = {
     timeZone: DEFAULT_TIME_ZONE,
 }
 
-const mapTenantToRow = (tenant: Partial<Tenant> & {
+const mapTenantToRow = (tenant: Partial<TenantRow> & {
     orgId?: string | null
     orgSlug?: string | null
     clerkOrgId?: string | null
@@ -57,6 +57,8 @@ const mapTenantToRow = (tenant: Partial<Tenant> & {
     email: tenant.email?.toString() ?? "",
     subscriptionStatus: tenant.subscriptionStatus ?? SubscriptionStatus.REGULAR,
     createdAt: tenant.createdAt ? new Date(tenant.createdAt) : new Date(),
+    trialEndsAt: tenant.trialEndsAt ? new Date(tenant.trialEndsAt) : null,
+    machineMonthlyRate: tenant.machineMonthlyRate ?? null,
     timeZone: tenant.timeZone ?? DEFAULT_TIME_ZONE,
 })
 
@@ -100,6 +102,8 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
                         email: r.email,
                         subscriptionStatus: r.subscriptionStatus,
                         createdAt: new Date(r.createdAt),
+                        trialEndsAt: r.trialEndsAt ? new Date(r.trialEndsAt) : null,
+                        machineMonthlyRate: r.machineMonthlyRate,
                         timeZone: r.timeZone ?? DEFAULT_TIME_ZONE,
                     })))
                     setTotalCount(total)
@@ -126,9 +130,9 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
 
     const handleAddSuccess = (state: { message: string }) => {
         const parsed = JSON.parse(state.message)
-        const tenant = parsed[2]?.tenant as Tenant | undefined
+        const tenant = parsed[2]?.tenant as Partial<TenantRow> | undefined
         if (tenant) {
-            setRows((prev) => [tenant, ...prev])
+            setRows((prev) => [mapTenantToRow(tenant), ...prev])
             setFormValues(defaultFormState)
         }
     }
@@ -240,6 +244,7 @@ export default function TenantManager({ initialRows, total }: TenantManagerProps
                                                 <option value="REGULAR">REGULAR</option>
                                                 <option value="PREMIUM">PREMIUM</option>
                                                 <option value="INACTIVE">INACTIVE</option>
+                                                <option value="TRIAL">TRIAL</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2 sm:col-span-2">

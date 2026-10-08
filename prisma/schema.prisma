@@ -18,6 +18,7 @@ enum SubscriptionStatus {
   REGULAR
   PREMIUM
   INACTIVE
+  TRIAL
 }
 
 enum Role {
@@ -44,6 +45,8 @@ model Tenant {
   email              String
   timeZone           String             @default("Asia/Manila")
   subscriptionStatus SubscriptionStatus @default(REGULAR)
+  trialEndsAt        DateTime?
+  machineMonthlyRate Decimal?           @db.Decimal(10, 2)
   createdAt          DateTime           @default(now())
 
   users            User[]
@@ -56,6 +59,12 @@ model Tenant {
   MachineUsage     MachineUsage[]
   services         Service[]
   pettyCashEntries PettyCash[]
+}
+
+model SystemSetting {
+  id                 String   @id @default("global")
+  machineMonthlyRate Decimal  @default(50.00) @db.Decimal(10, 2)
+  updatedAt          DateTime @updatedAt
 }
 
 model User {

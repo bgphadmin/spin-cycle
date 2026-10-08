@@ -27,7 +27,7 @@ import CalculatorWindow from "@/features/calculator/CalculatorWindow";
 
 
 
-export default function BottomNav() {
+export default function BottomNav({ isSuperuser = false }: { isSuperuser?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
@@ -134,6 +134,14 @@ export default function BottomNav() {
                     <DropdownNavItem
                       href={`/tenants/${orgSlug}/adminDashboard/`}
                       label="Admin"
+                      icon={BuildingOfficeIcon}
+                      onSelect={() => setOpen(false)}
+                    />
+                  )}
+                  {isSuperuser && (
+                    <DropdownNavItem
+                      href="/super-admin"
+                      label="Tenants"
                       icon={BuildingOfficeIcon}
                       onSelect={() => setOpen(false)}
                     />

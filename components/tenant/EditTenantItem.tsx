@@ -41,6 +41,8 @@ export function EditTenantItem({
         email: string | null;
         subscriptionStatus: string;
         createdAt: Date;
+        trialEndsAt: Date | null;
+        machineMonthlyRate: number | null;
         timeZone: string;
     },
     open: boolean,
@@ -71,6 +73,7 @@ export function EditTenantItem({
                 email: formData.get("email") as string,
                 subscriptionStatus: formData.get("subscriptionStatus") as Tenant["subscriptionStatus"],
                 createdAt: new Date(item.createdAt),
+                trialEndsAt: item.trialEndsAt,
                 timeZone: formData.get("timeZone") as string,
             };
             onOpenChange(false);
@@ -183,6 +186,7 @@ export function EditTenantItem({
                                     <option value="REGULAR">REGULAR</option>
                                     <option value="PREMIUM">PREMIUM</option>
                                     <option value="INACTIVE">INACTIVE</option>
+                                    <option value="TRIAL">TRIAL</option>
                                 </select>
                             </div>
                             <div className="space-y-2 pb-4 sm:col-span-2">

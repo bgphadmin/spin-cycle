@@ -74,6 +74,18 @@ const SignedInLandingPage = async () => {
     resolvedRole === "org:member" ||
     (tenant !== null && user?.role === "STAFF")
 
+  if (user?.role === "SUPERUSER") {
+    return (
+      <SignedIn>
+        <Link href="/super-admin">
+          <Button variant="standard" className="mb-3 min-h-14 sm:min-h-0">
+            Super Admin Dashboard
+          </Button>
+        </Link>
+      </SignedIn>
+    )
+  }
+
   if (isAdmin && resolvedSlug) {
     return (
       <SignedIn>

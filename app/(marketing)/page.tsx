@@ -34,7 +34,7 @@ export default async function LandingPage() {
             <SignUpButton
               forceRedirectUrl="/registerShop"
               mode="modal">
-              Sign Up
+              Start your 30-day free trial
             </SignUpButton>
           </Button>
           {/* // TODO Add marketing materials to this section... */}

@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
 import { ClerkProvider, SignedIn } from '@clerk/nextjs';
+import { getSuperAdminUserId } from "@/features/superAdmin/server";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,7 +26,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const isSuperuser = Boolean(await getSuperAdminUserId());
+
   return (
     <html
       lang="en"
@@ -38,7 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Header />
           <main className="flex-1 bg-teal-50">{children}</main>
           <SignedIn>
-            <BottomNav />
+            <BottomNav isSuperuser={isSuperuser} />
           </SignedIn>
           <Toaster position="top-right" />
         </ClerkProvider>

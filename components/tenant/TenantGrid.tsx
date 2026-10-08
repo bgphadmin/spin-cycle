@@ -23,7 +23,9 @@ import {
 import { cn } from "@/lib/utils"
 import type { Tenant } from "@prisma/client"
 
-export type TenantRow = Tenant
+export type TenantRow = Omit<Tenant, "machineMonthlyRate"> & {
+    machineMonthlyRate: number | null
+}
 
 
 const columnHelper = createColumnHelper<TenantRow>()

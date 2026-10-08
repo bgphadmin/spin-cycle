@@ -12,7 +12,7 @@ export const tenantSchema = z.object({
   phone: z.string().trim().min(1, "Phone number is required"),
   email: z.string().trim().email("Enter a valid email address").optional().or(z.literal("")),
   timeZone: timeZoneSchema.default(DEFAULT_TIME_ZONE),
-  subscriptionStatus: z.enum(["REGULAR", "PREMIUM", "INACTIVE"]),
+  subscriptionStatus: z.enum(["REGULAR", "PREMIUM", "INACTIVE", "TRIAL"]),
 });
 
 export const registerShopSchema = tenantSchema.omit({ subscriptionStatus: true });

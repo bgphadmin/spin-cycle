@@ -6,6 +6,7 @@ import db from "@/utils/db"
 import { tenantSchema } from "@/utils/validation/tenantSchema"
 import { revalidatePath } from "next/cache"
 import { renderError } from "@/utils/error"
+import { requireSuperAdmin } from "@/features/superAdmin/server"
 
 interface TenantQuery {
   pageIndex: number
@@ -41,6 +42,8 @@ export async function getTenantsPerPage({
   endDate,
   sort,
 }: TenantQuery) {
+  await requireSuperAdmin()
+
   const where: Prisma.TenantWhereInput = {}
   const createdAt: Prisma.DateTimeFilter = {}
 
@@ -87,16 +90,17 @@ export async function getTenantsPerPage({
     db.tenant.count({ where }),
   ])
 
-  const safeRows = rows.map((tenant) => ({
+  const safeRows = rows.map(({ machineMonthlyRate, ...tenant }) => ({
     ...tenant,
     createdAt: tenant.createdAt.toISOString(),
+    machineMonthlyRate: machineMonthlyRate?.toNumber() ?? null,
   }))
 
   return { safeRows, total }
 }
 
 export async function editTenantAction(id: string, formData: FormData): Promise<{ message: string }> {
-  //   const { userId } = auth();
+  await requireSuperAdmin()
   try {
     const rawData = Object.fromEntries(formData);
     const validatedFields = tenantSchema.parse(rawData);
@@ -125,7 +129,7 @@ export async function editTenantAction(id: string, formData: FormData): Promise<
       return updated;
     });
 
-    revalidatePath("/dashboard/tenants");
+    revalidatePath("/super-admin/tenants");
     return {
       message: JSON.stringify([
         { message: "Tenant updated successfully" },
@@ -140,6 +144,7 @@ export async function editTenantAction(id: string, formData: FormData): Promise<
 }
 
 export async function deleteTenantItemAction(id: string): Promise<{ message: string }> {
+  await requireSuperAdmin()
   try {
     const result = await db.$transaction(async (tx) => {
       const existing = await tx.tenant.findUnique({
@@ -152,7 +157,7 @@ export async function deleteTenantItemAction(id: string): Promise<{ message: str
 
       return existing;
     });
-    revalidatePath("/dashboard/tenants");
+    revalidatePath("/super-admin/tenants");
     return {
       message: JSON.stringify([
         { message: "Tenant deleted successfully" },
@@ -169,7 +174,7 @@ export async function addTenantAction(
   prevState: unknown,
   formData: FormData
 ): Promise<{ message: string }> {
-  //   const { userId } = auth();
+  await requireSuperAdmin()
 
   try {
     const rawData = Object.fromEntries(formData);
@@ -193,7 +198,7 @@ export async function addTenantAction(
       return tenant;
     });
 
-    revalidatePath("/dashboard/tenants");
+    revalidatePath("/super-admin/tenants");
     return {
       message: JSON.stringify([
         { message: "Tenant added successfully" },
