@@ -70,6 +70,12 @@ export default function SalesCard({
         </div>
         <div className="text-left sm:text-right">
           <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>
+          {sale.discountAmount > 0 && (
+            <p className="text-xs text-gray-600">
+              Discount: −₱{sale.discountAmount.toFixed(2)}
+              {sale.discountNote ? ` · ${sale.discountNote}` : ""}
+            </p>
+          )}
           <p className="text-xl font-bold text-teal-700">₱{sale.total.toFixed(2)}</p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 import { revalidatePath } from "next/cache";
+import { getDiscountFromForm } from "@/features/orders/utils/discount";
 
 async function tenantId() {
   const { userId } = await auth();
@@ -94,7 +95,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
     await db.$transaction(async (tx) => {
       const order = await tx.laundryOrder.findFirst({
         where: { id: orderId, tenantId: id, status: "IN_PROGRESS" },
-        include: { items: true, payments: true },
+        include: { items: true, payments: true, receiptOrders: true },
       });
       if (!order) throw new Error("Active order not found.");
       const machine = await tx.machine.findFirst({
@@ -168,9 +169,18 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
           price: item.price,
           quantity: inventoryQuantities.get(item.id) as number,
         }));
-      const total =
+      const subtotal =
         serviceItems.reduce((sum, item) => sum + item.price * item.quantity, 0) +
         inventoryOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const {
+        discountApplied,
+        discountType,
+        discountValue,
+        discountAmount,
+        discountNote,
+        total,
+      } =
+        getDiscountFromForm(formData, subtotal);
       const customer = await tx.customer.findFirst({ where: { tenantId: id, name: customerName } })
         ?? await tx.customer.create({ data: { tenantId: id, name: customerName } });
 
@@ -193,12 +203,30 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       });
       await tx.laundryOrder.update({
         where: { id: order.id },
-        data: { customerId: customer.id, orderType: orderType as "WALK_IN" | "DELIVERY", paymentMethod, total, paid: isPaid, comment },
+        data: {
+          customerId: customer.id,
+          orderType: orderType as "WALK_IN" | "DELIVERY",
+          discountApplied,
+          discountType,
+          discountValue,
+          discountAmount,
+          discountNote,
+          paymentMethod,
+          total,
+          paid: isPaid,
+          comment,
+        },
       });
       if (order.payments[0]) {
         await tx.payment.update({ where: { id: order.payments[0].id }, data: { amount: total, method: paymentMethod } });
       } else {
         await tx.payment.create({ data: { orderId: order.id, amount: total, method: paymentMethod } });
+      }
+      for (const receiptOrder of order.receiptOrders) {
+        await tx.receipt.update({
+          where: { id: receiptOrder.receiptId },
+          data: { total: { increment: total - order.total } },
+        });
       }
     }, { maxWait: 10000, timeout: 15000 });
     revalidatePath(`/tenants/orgSlug/tenantDashboard/sales`);

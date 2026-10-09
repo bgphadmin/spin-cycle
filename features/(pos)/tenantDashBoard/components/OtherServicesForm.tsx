@@ -11,6 +11,9 @@ import {
 } from "@/features/orders/actions/getData";
 import { createOtherServiceSaleAction } from "../actions/createOtherServiceSaleAction";
 import OtherServicesGrid from "./OtherServicesGrid";
+import DiscountFields from "@/features/orders/components/DiscountFields";
+import type { DiscountType } from "@/features/orders/utils/discount";
+import { calculateDiscountAmount } from "@/features/orders/utils/discount";
 
 type DateRange = { startDate: string; endDate: string; timeZone: string };
 
@@ -29,6 +32,10 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
   const [quantity, setQuantity] = useState("1");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paid, setPaid] = useState(false);
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountType, setDiscountType] = useState<DiscountType>("FIXED_AMOUNT");
+  const [discountValue, setDiscountValue] = useState("0");
+  const [discountNote, setDiscountNote] = useState("");
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [formVersion, setFormVersion] = useState(0);
@@ -65,12 +72,28 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
   }, []);
 
   const selectedService = services.find((service) => service.id === selectedServiceId);
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     const count = Number(quantity);
     return selectedService && Number.isSafeInteger(count) && count > 0
       ? selectedService.price * count
       : null;
   }, [quantity, selectedService]);
+  const numericDiscount = Number(discountValue);
+  const isDiscountValid = !discountApplied ||
+    subtotal !== null &&
+    Number.isFinite(numericDiscount) &&
+    numericDiscount >= 0 &&
+    (discountType === "FIXED_AMOUNT"
+      ? numericDiscount <= subtotal
+      : numericDiscount <= 100);
+  const discountAmount = !discountApplied
+    ? 0
+    : isDiscountValid && subtotal !== null
+    ? calculateDiscountAmount(subtotal, discountType, numericDiscount)
+    : null;
+  const total = subtotal !== null && discountAmount !== null
+    ? subtotal - discountAmount
+    : subtotal;
 
   function resetForm() {
     setFormVersion((version) => version + 1);
@@ -79,6 +102,10 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
     setQuantity("1");
     setPaymentMethod("");
     setPaid(false);
+    setDiscountApplied(false);
+    setDiscountType("FIXED_AMOUNT");
+    setDiscountValue("0");
+    setDiscountNote("");
   }
 
   function handleSaleAdded() {
@@ -188,6 +215,17 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
                           </select>
                         </label>
                       </div>
+                      <DiscountFields
+                        applied={discountApplied}
+                        type={discountType}
+                        value={discountValue}
+                        note={discountNote}
+                        onAppliedChange={setDiscountApplied}
+                        onTypeChange={setDiscountType}
+                        onValueChange={setDiscountValue}
+                        onNoteChange={setDiscountNote}
+                        disabled={loading}
+                      />
                       <fieldset className="rounded-md border border-gray-200 p-4">
                         <legend className="px-2 text-sm font-medium text-gray-700">Payment Method</legend>
                         <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -221,6 +259,19 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
                           Paid
                         </label>
                       </fieldset>
+                      <div className="rounded-md bg-teal-50 p-4 text-right">
+                        <p className="text-sm text-gray-600">
+                          Subtotal: {subtotal === null ? "—" : `₱${subtotal.toFixed(2)}`}
+                        </p>
+                        {discountApplied && (
+                          <p className="text-sm text-gray-600">
+                            Discount: {discountAmount === null ? "—" : `₱${discountAmount.toFixed(2)}`}
+                          </p>
+                        )}
+                        <p className="mt-1 text-lg font-bold text-teal-800">
+                          Amount due: {total === null || discountAmount === null ? "—" : `₱${total.toFixed(2)}`}
+                        </p>
+                      </div>
                       <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
                         Notes (optional)
                         <textarea
@@ -231,12 +282,6 @@ export default function OtherServicesForm({ initialRange }: { initialRange: Date
                           className="rounded-md border border-gray-300 p-3 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                         />
                       </label>
-                      <div className="rounded-md bg-teal-50 p-4 text-right">
-                        <span className="text-sm font-medium text-teal-700">Total: </span>
-                        <span className="text-lg font-bold text-teal-800">
-                          {total === null ? "—" : `₱${total.toFixed(2)}`}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 )}

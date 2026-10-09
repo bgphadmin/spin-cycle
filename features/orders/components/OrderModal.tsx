@@ -10,6 +10,11 @@ import StandardHeader3Buttons from "@/components/utils/StandardHeader3";
 import StandardHeader2 from "@/components/utils/StandardHeader2";
 import CustomerInput from "@/components/utils/CustomerInput";
 import OrderModalSkeleton from "@/components/utils/OrderModalSkeleton";
+import DiscountFields from "./DiscountFields";
+import {
+  calculateDiscountAmount,
+  type DiscountType,
+} from "@/features/orders/utils/discount";
 
 type OrderModalProps = {
   name: string;
@@ -44,6 +49,11 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState("WALK_IN");
   const [isPaid, setIsPaid] = useState(false);
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountType, setDiscountType] = useState<DiscountType>("FIXED_AMOUNT");
+  const [discountValue, setDiscountValue] = useState("0");
+  const [discountNote, setDiscountNote] = useState("");
+  const [subtotalPreview, setSubtotalPreview] = useState<number | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
@@ -54,6 +64,11 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
     setSelectedPaymentMethod("");
     setSelectedOrderType("WALK_IN");
     setIsPaid(false);
+    setDiscountApplied(false);
+    setDiscountType("FIXED_AMOUNT");
+    setDiscountValue("0");
+    setDiscountNote("");
+    setSubtotalPreview(null);
     setDataError(null);
 
     async function fetchData() {
@@ -69,6 +84,22 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
         setInventoryItems(resInventory);
         setCustomers(resCustomers);
         setActiveOrder(resActiveOrder);
+        if (resActiveOrder) {
+          setSubtotalPreview(
+            resActiveOrder.items.reduce(
+              (subtotal: number, item: { price: number; quantity: number }) =>
+                subtotal + item.price * item.quantity,
+              0,
+            ),
+          );
+        } else {
+          const baseService = resServices.find(
+            (service) =>
+              service.type === (type === "washer" ? "WASH" : "DRY") &&
+              service.name.toLowerCase() === type,
+          );
+          setSubtotalPreview(baseService?.price ?? null);
+        }
       } catch (error) {
         console.error("Error loading order modal data:", error);
         if (!cancelled) {
@@ -114,6 +145,48 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
     setIsPaid(Boolean(activeOrder?.paid));
   }, [activeOrder]);
 
+  useEffect(() => {
+    setDiscountApplied(Boolean(activeOrder?.discountApplied));
+    setDiscountType(activeOrder?.discountType ?? "FIXED_AMOUNT");
+    setDiscountValue(String(activeOrder?.discountValue ?? 0));
+    setDiscountNote(activeOrder?.discountNote ?? "");
+  }, [activeOrder]);
+
+  const numericDiscount = Number(discountValue);
+  const isDiscountValid =
+    subtotalPreview !== null &&
+    Number.isFinite(numericDiscount) &&
+    numericDiscount >= 0 &&
+    (discountType === "FIXED_AMOUNT"
+      ? numericDiscount <= subtotalPreview
+      : numericDiscount <= 100);
+  const discountPreview = !discountApplied
+    ? 0
+    : isDiscountValid && subtotalPreview !== null
+    ? calculateDiscountAmount(subtotalPreview, discountType, numericDiscount)
+    : null;
+
+  function updateSubtotalPreview(form: HTMLFormElement) {
+    const formData = new FormData(form);
+    const selectedServiceIds = [
+      String(formData.get("baseServiceId") ?? ""),
+      ...formData.getAll("extraServices").map(String),
+    ].filter(Boolean);
+    let subtotal = services
+      .filter((service) => selectedServiceIds.includes(service.id))
+      .reduce((sum, service) => sum + service.price, 0);
+
+    for (const item of inventoryItems) {
+      const quantity = Number(formData.get(`inventory_${item.id}`) ?? 0);
+      if (!Number.isSafeInteger(quantity) || quantity < 0) {
+        setSubtotalPreview(null);
+        return;
+      }
+      subtotal += quantity * item.price;
+    }
+    setSubtotalPreview(subtotal);
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black bg-opacity-50 p-2 sm:items-center sm:p-4"
@@ -136,7 +209,14 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
         ) : (
           <FormContainer action={status === "IN_USE" ? updateOrderAction : createOrderAction} onSuccess={onClose}>
             {({ loading }) => (
-              <div key={activeOrder?.id ?? "new-order"} className="space-y-1">
+              <div
+                key={activeOrder?.id ?? "new-order"}
+                className="space-y-1"
+                onChange={(event) => {
+                  const form = event.currentTarget.closest("form");
+                  if (form) updateSubtotalPreview(form);
+                }}
+              >
                 <div className="min-w-0 flex-1 mb-4">
                   {status === "AVAILABLE" ?
                     <StandardHeader2
@@ -240,7 +320,6 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
                     ))}
                   </div>
                 </fieldset>
-
                 <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
                   <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
                     Inventory Items
@@ -272,6 +351,19 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
                   </div>
                 </fieldset>
 
+                <div className="mt-6">
+                  <DiscountFields
+                    applied={discountApplied}
+                    type={discountType}
+                    value={discountValue}
+                    note={discountNote}
+                    onAppliedChange={setDiscountApplied}
+                    onTypeChange={setDiscountType}
+                    onValueChange={setDiscountValue}
+                    onNoteChange={setDiscountNote}
+                    disabled={loading}
+                  />
+                </div>
                 <fieldset className="relative rounded-md border border-gray-200 p-2 mt-6">
                   <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
                     Payment Method
@@ -317,6 +409,21 @@ export default function OrderModal({ name, machineId, type, status, onClose }: O
                     </label>
                   </div>
                 </fieldset>
+                <div className="rounded-md bg-teal-50 p-3 text-right text-sm">
+                  <p className="text-gray-600">
+                    Subtotal: {subtotalPreview === null ? "—" : `₱${subtotalPreview.toFixed(2)}`}
+                  </p>
+                  {discountApplied && (
+                    <p className="text-gray-600">
+                      Discount: {discountPreview === null ? "—" : `₱${discountPreview.toFixed(2)}`}
+                    </p>
+                  )}
+                  <p className="font-bold text-teal-800">
+                    Amount due: {subtotalPreview === null || discountPreview === null
+                      ? "—"
+                      : `₱${(subtotalPreview - discountPreview).toFixed(2)}`}
+                  </p>
+                </div>
                 {/* Comment: Add comment section for the laundry order */}
                 <div className="mt-4">
                   <label>

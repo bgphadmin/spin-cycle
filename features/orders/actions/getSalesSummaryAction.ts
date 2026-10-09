@@ -84,16 +84,18 @@ function addLine(
     quantity: number;
     price: number;
   },
+  discountFactor = 1,
 ) {
   const name = item.service?.name ?? item.inventoryItem?.name ?? "Order item";
   const kind = item.service ? "Service" : "Item";
   const category = item.service?.type ?? item.inventoryItem?.type ?? "Other";
+  const lineTotal = item.price * item.quantity * discountFactor;
   const existing = lines.find((line) => line.name === name && line.kind === kind && line.category === category);
   if (existing) {
     existing.quantity += item.quantity;
-    existing.total += item.price * item.quantity;
+    existing.total += lineTotal;
   } else {
-    lines.push({ name, kind, category, quantity: item.quantity, total: item.price * item.quantity });
+    lines.push({ name, kind, category, quantity: item.quantity, total: lineTotal });
   }
 }
 
@@ -207,6 +209,8 @@ export async function getSalesSummaryAction(filters?: {
   const expensesTotal = expenses._sum.amount ?? 0;
 
   for (const order of orders) {
+    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const discountFactor = subtotal > 0 ? order.total / subtotal : 1;
     if (
       order.paid &&
       order.createdAt >= startOfDay &&
@@ -216,7 +220,7 @@ export async function getSalesSummaryAction(filters?: {
         : order.userId === tenant.userId)
     ) {
       total += order.total;
-      for (const item of order.items) addLine(lines, item);
+      for (const item of order.items) addLine(lines, item, discountFactor);
     }
 
     if (!order.paid) {
@@ -231,7 +235,7 @@ export async function getSalesSummaryAction(filters?: {
         lines: [],
       };
       row.total += order.total;
-      for (const item of order.items) addLine(row.lines, item);
+      for (const item of order.items) addLine(row.lines, item, discountFactor);
       unpaidGroups.set(id, row);
     }
   }

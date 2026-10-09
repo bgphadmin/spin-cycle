@@ -109,6 +109,11 @@ enum LaundryOrderType {
   DELIVERY
 }
 
+enum DiscountType {
+  FIXED_AMOUNT
+  PERCENTAGE
+}
+
 model LaundryOrder {
   id            String             @id @default(uuid())
   tenantId      String
@@ -116,6 +121,11 @@ model LaundryOrder {
   customerId    String?
   status        LaundryOrderStatus @default(PENDING) // pending, in_progress, completed, paid
   orderType     LaundryOrderType   @default(WALK_IN)
+  discountType   DiscountType      @default(FIXED_AMOUNT)
+  discountValue  Float              @default(0)
+  discountApplied Boolean           @default(false)
+  discountAmount Float             @default(0)
+  discountNote   String?
   total         Float
   paid          Boolean            @default(false)
   paidAt        DateTime?

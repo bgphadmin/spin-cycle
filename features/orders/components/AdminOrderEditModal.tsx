@@ -9,6 +9,8 @@ import {
   updateAdminOrderAction,
   type AdminOrderEditData,
 } from "@/features/orders/actions/adminOrderActions";
+import DiscountFields from "./DiscountFields";
+import type { DiscountType } from "@/features/orders/utils/discount";
 
 export default function AdminOrderEditModal({
   orderId,
@@ -26,6 +28,10 @@ export default function AdminOrderEditModal({
   const [paymentMethod, setPaymentMethod] = useState("");
   const [orderType, setOrderType] = useState("WALK_IN");
   const [paid, setPaid] = useState(false);
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountType, setDiscountType] = useState<DiscountType>("FIXED_AMOUNT");
+  const [discountValue, setDiscountValue] = useState("0");
+  const [discountNote, setDiscountNote] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +44,10 @@ export default function AdminOrderEditModal({
         setPaymentMethod(result.order.paymentMethod);
         setOrderType(result.order.orderType);
         setPaid(result.order.paid);
+        setDiscountApplied(result.order.discountApplied);
+        setDiscountType(result.order.discountType);
+        setDiscountValue(String(result.order.discountValue));
+        setDiscountNote(result.order.discountNote ?? "");
       }
       setLoadingData(false);
     });
@@ -116,6 +126,17 @@ export default function AdminOrderEditModal({
                     })}
                   </div>
                 </fieldset>
+                <DiscountFields
+                  applied={discountApplied}
+                  type={discountType}
+                  value={discountValue}
+                  note={discountNote}
+                  onAppliedChange={setDiscountApplied}
+                  onTypeChange={setDiscountType}
+                  onValueChange={setDiscountValue}
+                  onNoteChange={setDiscountNote}
+                  disabled={loading}
+                />
                 <fieldset className="relative mt-6 rounded-md border border-gray-200 p-2">
                   <legend className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">Payment Method</legend>
                   <div className="mt-2 flex flex-wrap gap-4">

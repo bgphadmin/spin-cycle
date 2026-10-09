@@ -28,6 +28,8 @@ export type CustomerSalesCard = {
   paymentMethods: string[];
   orderTypes: string[];
   handledByNames: string[];
+  discountAmount: number;
+  discountNote: string;
   total: number;
   machineGroups: SalesMachineGroup[];
 };
@@ -106,6 +108,8 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
       paymentMethods: [],
       orderTypes: [],
       handledByNames: [],
+      discountAmount: 0,
+      discountNote: "",
       total: 0,
       machineGroups: [],
     };
@@ -119,6 +123,12 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     if (!card.orderTypes.includes(orderType)) card.orderTypes.push(orderType);
     if (!card.handledByNames.includes(handledByName)) card.handledByNames.push(handledByName);
     card.total += order.total;
+    card.discountAmount += order.discountAmount;
+    if (order.discountNote && !card.discountNote.includes(order.discountNote)) {
+      card.discountNote = card.discountNote
+        ? `${card.discountNote}, ${order.discountNote}`
+        : order.discountNote;
+    }
 
     let machineGroup = card.machineGroups.find((group) => group.machineName === machineName);
     if (!machineGroup) {

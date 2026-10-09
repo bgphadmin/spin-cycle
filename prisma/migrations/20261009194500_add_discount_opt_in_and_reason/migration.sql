@@ -1,0 +1,3 @@
+ALTER TABLE "LaundryOrder"
+ADD COLUMN "discountApplied" BOOLEAN NOT NULL DEFAULT FALSE,
+ADD COLUMN "discountNote" TEXT;

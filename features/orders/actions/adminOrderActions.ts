@@ -7,6 +7,7 @@ import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 import { businessDateKey } from "@/utils/businessDate";
+import { getDiscountFromForm } from "@/features/orders/utils/discount";
 
 type AdminTenant = { id: string; orgSlug: string; timeZone: string };
 
@@ -39,6 +40,8 @@ export type AdminOrderRow = {
   status: string;
   orderType: string;
   total: number;
+  discountAmount: number;
+  discountNote: string | null;
   paid: boolean;
   paymentMethod: string;
   comment: string;
@@ -51,6 +54,11 @@ export type AdminOrderEditData = {
     orderType: string;
     paymentMethod: string;
     paid: boolean;
+    discountType: "FIXED_AMOUNT" | "PERCENTAGE";
+    discountValue: number;
+    discountApplied: boolean;
+    discountAmount: number;
+    discountNote: string | null;
     comment: string;
     status: string;
     machineId: string;
@@ -110,6 +118,11 @@ export async function getAdminOrderEditDataAction(orderId: string): Promise<Admi
         orderType: order.orderType,
         paymentMethod: order.paymentMethod ?? order.payments[0]?.method ?? "",
         paid: order.paid,
+        discountType: order.discountType,
+        discountValue: order.discountValue,
+        discountApplied: order.discountApplied,
+        discountAmount: order.discountAmount,
+        discountNote: order.discountNote,
         comment: order.comment ?? "",
         status: order.status,
         machineId: machineUsage?.machine.id ?? "",
@@ -167,6 +180,8 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
       status: order.status,
       orderType: order.orderType,
       total: order.total,
+      discountAmount: order.discountAmount,
+      discountNote: order.discountNote,
       paid: order.paid,
       paymentMethod: order.paymentMethod ?? order.payments[0]?.method ?? "",
       comment: order.comment ?? "",
@@ -289,7 +304,16 @@ export async function updateAdminOrderAction(
       const inventoryOrderItems = inventoryItems.filter((item) => (inventoryQuantities.get(item.id) ?? 0) > 0).map((item) => ({
         inventoryItemId: item.id, price: item.price, quantity: inventoryQuantities.get(item.id) as number,
       }));
-      const total = [...serviceItems, ...inventoryOrderItems].reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const subtotal = [...serviceItems, ...inventoryOrderItems].reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const {
+        discountApplied,
+        discountType,
+        discountValue,
+        discountAmount,
+        discountNote,
+        total,
+      } =
+        getDiscountFromForm(formData, subtotal);
 
       await tx.orderItem.deleteMany({ where: { orderId: order.id } });
       await tx.orderItem.createMany({ data: [
@@ -301,6 +325,11 @@ export async function updateAdminOrderAction(
         data: {
           customerId,
           total,
+          discountApplied,
+          discountType,
+          discountValue,
+          discountAmount,
+          discountNote,
           orderType: orderType as "WALK_IN" | "DELIVERY",
           paymentMethod: (paymentMethod || null) as PaymentMethod | null,
           paid,

@@ -19,6 +19,9 @@ import {
   updateOtherServiceSaleAction,
   type OtherServiceSaleRow,
 } from "../actions/createOtherServiceSaleAction";
+import DiscountFields from "@/features/orders/components/DiscountFields";
+import type { DiscountType } from "@/features/orders/utils/discount";
+import { calculateDiscountAmount } from "@/features/orders/utils/discount";
 
 type OtherService = {
   id: string;
@@ -53,12 +56,32 @@ function OtherServiceSaleEditor({
   const [serviceId, setServiceId] = useState(sale.serviceId);
   const [quantity, setQuantity] = useState(String(sale.quantity));
   const [paymentMethod, setPaymentMethod] = useState(sale.paymentMethod);
+  const [discountApplied, setDiscountApplied] = useState(sale.discountApplied);
+  const [discountType, setDiscountType] = useState<DiscountType>(sale.discountType);
+  const [discountValue, setDiscountValue] = useState(String(sale.discountValue));
+  const [discountNote, setDiscountNote] = useState(sale.discountNote ?? "");
   const selectedService = services.find((service) => service.id === serviceId);
   const unitPrice = serviceId === sale.serviceId ? sale.unitPrice : selectedService?.price ?? 0;
   const quantityValue = Number(quantity);
-  const total = Number.isSafeInteger(quantityValue) && quantityValue > 0
+  const subtotal = Number.isSafeInteger(quantityValue) && quantityValue > 0
     ? unitPrice * quantityValue
     : null;
+  const numericDiscount = Number(discountValue);
+  const isDiscountValid = !discountApplied ||
+    subtotal !== null &&
+    Number.isFinite(numericDiscount) &&
+    numericDiscount >= 0 &&
+    (discountType === "FIXED_AMOUNT"
+      ? numericDiscount <= subtotal
+      : numericDiscount <= 100);
+  const discountAmount = !discountApplied
+    ? 0
+    : isDiscountValid && subtotal !== null
+    ? calculateDiscountAmount(subtotal, discountType, numericDiscount)
+    : null;
+  const total = subtotal !== null && discountAmount !== null
+    ? subtotal - discountAmount
+    : subtotal;
 
   return (
     <div
@@ -152,6 +175,18 @@ function OtherServiceSaleEditor({
                   </label>
                 </div>
 
+                <DiscountFields
+                  applied={discountApplied}
+                  type={discountType}
+                  value={discountValue}
+                  note={discountNote}
+                  onAppliedChange={setDiscountApplied}
+                  onTypeChange={setDiscountType}
+                  onValueChange={setDiscountValue}
+                  onNoteChange={setDiscountNote}
+                  disabled={loading}
+                />
+
                 <fieldset className="rounded-md border border-gray-200 p-4">
                   <legend className="px-2 text-sm font-medium text-gray-700">Payment Method</legend>
                   <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -185,6 +220,18 @@ function OtherServiceSaleEditor({
                   </label>
                 </fieldset>
 
+                <div className="rounded-md bg-teal-50 p-4 text-right">
+                  <p className="text-sm text-gray-600">Subtotal: {subtotal === null ? "—" : money(subtotal)}</p>
+                  {discountApplied && (
+                    <p className="text-sm text-gray-600">
+                      Discount: {discountAmount === null ? "—" : money(discountAmount)}
+                    </p>
+                  )}
+                  <p className="mt-1 text-lg font-bold text-teal-800">
+                    Amount due: {total === null || discountAmount === null ? "—" : money(total)}
+                  </p>
+                </div>
+
                 <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
                   Notes (optional)
                   <textarea
@@ -196,9 +243,6 @@ function OtherServiceSaleEditor({
                     className="rounded-md border border-gray-300 p-3 text-sm"
                   />
                 </label>
-                <p className="rounded-md bg-teal-50 p-4 text-right text-lg font-bold text-teal-800">
-                  Total: {total === null ? "—" : money(total)}
-                </p>
               </div>
             </div>
           )}
@@ -375,6 +419,7 @@ export default function OtherServicesGrid({
                   <th className="px-3 py-3">Created By</th>
                   <th className="px-3 py-3">Other Service</th>
                   <th className="px-3 py-3 text-right">Quantity</th>
+                  <th className="px-3 py-3">Discount</th>
                   <th className="px-3 py-3 text-right">Total</th>
                   <th className="px-3 py-3">Payment</th>
                   <th className="px-3 py-3">Status</th>
@@ -404,6 +449,11 @@ export default function OtherServicesGrid({
                       {sale.pricingUnit ? <span className="ml-1 text-gray-500">({sale.pricingUnit})</span> : null}
                     </td>
                     <td className="px-3 py-3 text-right text-gray-600">{sale.quantity}</td>
+                    <td className="px-3 py-3 text-gray-600">
+                      {sale.discountAmount > 0
+                        ? <>{money(sale.discountAmount)}{sale.discountNote ? <span className="block text-xs">{sale.discountNote}</span> : null}</>
+                        : "—"}
+                    </td>
                     <td className="px-3 py-3 text-right font-medium text-teal-700">{money(sale.total)}</td>
                     <td className="px-3 py-3 text-gray-600">
                       {sale.paid ? `Paid (${sale.paymentMethod})` : `Unpaid (${sale.paymentMethod})`}

@@ -7,6 +7,7 @@ import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 import { createReceiptForOrder } from "@/features/orders/utils/createReceiptForOrder";
+import { getDiscountFromForm } from "@/features/orders/utils/discount";
 
 const paymentMethods = ["CASH", "CARD", "EWALLET"] as const;
 const orderTypes = ["WALK_IN", "DELIVERY"] as const;
@@ -130,9 +131,18 @@ export async function createOrderAction(
         price: item.price,
         quantity: inventoryQuantities.get(item.id) ?? 0,
       }));
-      const total =
+      const subtotal =
         serviceItems.reduce((sum, item) => sum + item.price * item.quantity, 0) +
         inventoryOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const {
+        discountApplied,
+        discountType,
+        discountValue,
+        discountAmount,
+        discountNote,
+        total,
+      } =
+        getDiscountFromForm(formData, subtotal);
 
       const createdOrder = await tx.laundryOrder.create({
         data: {
@@ -141,6 +151,11 @@ export async function createOrderAction(
           customerId: customer.id,
           status: "IN_PROGRESS",
           orderType,
+          discountApplied,
+          discountType,
+          discountValue,
+          discountAmount,
+          discountNote,
           paymentMethod,
           total,
           comment,

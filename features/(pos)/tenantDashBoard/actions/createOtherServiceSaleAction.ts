@@ -7,6 +7,7 @@ import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 import { businessDateKey, businessDayRangeFromKey } from "@/utils/businessDate";
 import { createReceiptForOrder } from "@/features/orders/utils/createReceiptForOrder";
+import { getDiscountFromForm } from "@/features/orders/utils/discount";
 
 const PAYMENT_METHODS = ["CASH", "CARD", "EWALLET"] as const;
 const ORDER_TYPES = ["WALK_IN", "DELIVERY"] as const;
@@ -23,6 +24,11 @@ export type OtherServiceSaleRow = {
   pricingUnit: string | null;
   quantity: number;
   unitPrice: number;
+  discountType: "FIXED_AMOUNT" | "PERCENTAGE";
+  discountValue: number;
+  discountApplied: boolean;
+  discountAmount: number;
+  discountNote: string | null;
   total: number;
   orderType: "WALK_IN" | "DELIVERY";
   paid: boolean;
@@ -83,6 +89,11 @@ export async function getOtherServiceSalesAction(startDate?: string, endDate?: s
       id: true,
       userId: true,
       createdAt: true,
+      discountType: true,
+      discountValue: true,
+      discountApplied: true,
+      discountAmount: true,
+      discountNote: true,
       total: true,
       orderType: true,
       paid: true,
@@ -133,6 +144,11 @@ export async function getOtherServiceSalesAction(startDate?: string, endDate?: s
       pricingUnit: service.pricingUnit,
       quantity: item.quantity,
       unitPrice: item.price,
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountApplied: order.discountApplied,
+      discountAmount: order.discountAmount,
+      discountNote: order.discountNote,
       total: order.total,
       orderType: order.orderType,
       paid: order.paid,
@@ -189,8 +205,17 @@ export async function createOtherServiceSaleAction(
         });
       }
 
-      const total = service.price * quantity;
-      if (!Number.isFinite(total)) throw new Error("The service total is invalid.");
+      const subtotal = service.price * quantity;
+      if (!Number.isFinite(subtotal)) throw new Error("The service subtotal is invalid.");
+      const {
+        discountApplied,
+        discountType,
+        discountValue,
+        discountAmount,
+        discountNote,
+        total,
+      } =
+        getDiscountFromForm(formData, subtotal);
 
       const createdOrder = await tx.laundryOrder.create({
         data: {
@@ -199,6 +224,11 @@ export async function createOtherServiceSaleAction(
           customerId: customer.id,
           status: "COMPLETED",
           orderType: orderType as (typeof ORDER_TYPES)[number],
+          discountApplied,
+          discountType,
+          discountValue,
+          discountAmount,
+          discountNote,
           paymentMethod: paymentMethod as (typeof PAYMENT_METHODS)[number],
           total,
           comment,
@@ -267,6 +297,7 @@ export async function updateOtherServiceSaleAction(
     const orderType = String(formData.get("orderType") ?? "");
     const paid = formData.get("paid") === "on";
     const comment = String(formData.get("comment") ?? "").trim();
+
     if (!orderId || !serviceId || !customerName) throw new Error("Order, service, and customer are required.");
     if (!Number.isSafeInteger(quantity) || quantity < 1) throw new Error("Quantity must be a whole number greater than zero.");
     if (!PAYMENT_METHODS.includes(paymentMethod as (typeof PAYMENT_METHODS)[number])) throw new Error("A valid payment method is required.");
@@ -303,8 +334,17 @@ export async function updateOtherServiceSaleAction(
       });
       const oldItem = order.items[0];
       const unitPrice = oldItem.serviceId === service.id ? oldItem.price : service.price;
-      const total = unitPrice * quantity;
-      if (!Number.isFinite(total)) throw new Error("The service total is invalid.");
+      const subtotal = unitPrice * quantity;
+      if (!Number.isFinite(subtotal)) throw new Error("The service subtotal is invalid.");
+      const {
+        discountApplied,
+        discountType,
+        discountValue,
+        discountAmount,
+        discountNote,
+        total,
+      } =
+        getDiscountFromForm(formData, subtotal);
 
       await tx.orderItem.update({
         where: { id: oldItem.id },
@@ -315,6 +355,11 @@ export async function updateOtherServiceSaleAction(
         data: {
           customerId: customer.id,
           total,
+          discountApplied,
+          discountType,
+          discountValue,
+          discountAmount,
+          discountNote,
           orderType: orderType as (typeof ORDER_TYPES)[number],
           paymentMethod: paymentMethod as (typeof PAYMENT_METHODS)[number],
           paid,

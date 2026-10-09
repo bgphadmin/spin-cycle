@@ -166,6 +166,7 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                   <th className="px-3 py-3">Customer</th>
                   <th className="px-3 py-3">Receipt</th>
                   <th className="px-3 py-3">Machine Name</th>
+                  <th className="px-3 py-3">Discount</th>
                   <th className="px-3 py-3">Total</th>
                   <th className="px-3 py-3">Payment</th>
                   <th className="px-3 py-3">
@@ -214,6 +215,11 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                     <td className="px-3 py-3 font-medium text-gray-800">{order.customerName}</td>
                     <td className="px-3 py-3 text-gray-600">{order.receiptNumber}</td>
                     <td className="px-3 py-3 text-gray-600">{order.machineName}</td>
+                    <td className="px-3 py-3 text-gray-600">
+                      {order.discountAmount > 0
+                        ? <>{money(order.discountAmount)}{order.discountNote ? <span className="block text-xs">{order.discountNote}</span> : null}</>
+                        : "—"}
+                    </td>
                     <td className="px-3 py-3 font-medium text-teal-700">{money(order.total)}</td>
                     <td className="px-3 py-3 text-gray-600">
                       {order.paid ? `Paid${order.paymentMethod ? ` (${order.paymentMethod})` : ""}` : "Unpaid"}
