@@ -25,7 +25,7 @@ export default function DiscountFields({
 }) {
   return (
     <fieldset className="rounded-md border border-gray-200 p-4">
-      <legend className="px-2 text-sm font-medium text-gray-700">Custom discount</legend>
+      <legend className="px-2 text-sm font-medium text-gray-700">Discounts</legend>
       <label className="flex items-center gap-2 text-sm text-gray-700">
         <input
           name="discountApplied"
