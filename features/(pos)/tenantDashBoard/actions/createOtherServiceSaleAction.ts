@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
-import type { Prisma } from "@prisma/client";
 import db from "@/utils/db";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { renderError } from "@/utils/error";
 import { businessDateKey, businessDayRangeFromKey } from "@/utils/businessDate";
+import { createReceiptForOrder } from "@/features/orders/utils/createReceiptForOrder";
 
 const PAYMENT_METHODS = ["CASH", "CARD", "EWALLET"] as const;
 const ORDER_TYPES = ["WALK_IN", "DELIVERY"] as const;
@@ -48,51 +48,6 @@ function validDateKey(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-}
-
-async function addOrderToCustomerReceipt(
-  tx: Prisma.TransactionClient,
-  tenantId: string,
-  customerId: string,
-  orderId: string,
-  total: number,
-  createdAt: Date,
-  timeZone: string,
-) {
-  const existingReceiptOrder = await tx.receiptOrder.findFirst({
-    where: {
-      order: {
-        tenantId,
-        customerId,
-        id: { not: orderId },
-      },
-    },
-    orderBy: { id: "asc" },
-    select: { receiptId: true },
-  });
-
-  let receiptId = existingReceiptOrder?.receiptId;
-  if (receiptId) {
-    await tx.receipt.update({
-      where: { id: receiptId },
-      data: { total: { increment: total } },
-    });
-  } else {
-    await tx.$executeRaw`CREATE SEQUENCE IF NOT EXISTS "Receipt_number_seq"`;
-    const [{ nextValue }] = await tx.$queryRaw<Array<{ nextValue: bigint }>>`
-      SELECT nextval('"Receipt_number_seq"') AS "nextValue"
-    `;
-    const receipt = await tx.receipt.create({
-      data: {
-        number: `${businessDateKey(createdAt, timeZone).slice(0, 4)}-${String(nextValue).padStart(12, "0")}`,
-        total,
-      },
-      select: { id: true },
-    });
-    receiptId = receipt.id;
-  }
-
-  await tx.receiptOrder.create({ data: { receiptId, orderId } });
 }
 
 export async function getOtherServiceSalesDefaultsAction() {
@@ -266,10 +221,8 @@ export async function createOtherServiceSaleAction(
         select: { id: true, createdAt: true },
       });
 
-      await addOrderToCustomerReceipt(
+      await createReceiptForOrder(
         tx,
-        tenantContext.id,
-        customer.id,
         createdOrder.id,
         total,
         createdOrder.createdAt,
@@ -398,10 +351,8 @@ export async function updateOtherServiceSaleAction(
             await tx.receipt.delete({ where: { id: receiptOrder.receiptId } });
           }
         }
-        await addOrderToCustomerReceipt(
+        await createReceiptForOrder(
           tx,
-          tenant.id,
-          customer.id,
           order.id,
           total,
           order.createdAt,
