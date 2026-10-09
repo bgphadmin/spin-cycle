@@ -1,0 +1,2 @@
+ALTER TABLE "Machine"
+ALTER COLUMN "maintenanceEnabled" SET DEFAULT FALSE;

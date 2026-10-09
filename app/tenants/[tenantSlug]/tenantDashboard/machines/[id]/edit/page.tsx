@@ -9,7 +9,7 @@ export default async function EditMachinePage({ params }: { params: { id: string
     const machineData = await getMachineByIdAction(params.id);
 
     return (
-        <main className="mx-auto w-full max-w-3xl px-6 mt-10 mb-25">
+        <main className="mx-auto w-full max-w-3xl min-w-0 px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-10">
             <EditMachineForm
                 key={
                     machineData && "id" in machineData

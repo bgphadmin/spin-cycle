@@ -28,7 +28,15 @@ export async function addMachineAction(
 
     // 2. Validate form fields with Zod schema
     const fields = addMachineSchema.parse(Object.fromEntries(formData));
-    const { name, type, usageCount, location, comment } = fields;
+    const {
+      name,
+      type,
+      usageCount,
+      maintenanceEnabled,
+      maintenanceIntervalCycles,
+      location,
+      comment,
+    } = fields;
 
     // 3. Transaction: insert machine record
     const machine = await db.$transaction(async (tx) => {
@@ -50,6 +58,9 @@ export async function addMachineAction(
           comment,
           status: "AVAILABLE",
           usageCount,
+          maintenanceEnabled,
+          maintenanceIntervalCycles,
+          cyclesSinceMaintenance: usageCount,
         },
       });
 

@@ -14,6 +14,7 @@ import { redirect, useRouter } from "next/navigation";
 export default function MachineSetupForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const router = useRouter();
 
   const handleSuccess = async () => {
@@ -21,6 +22,7 @@ export default function MachineSetupForm() {
     if (formRef.current) {
       formRef.current.reset();
     }
+    setMaintenanceEnabled(false);
   };
 
   const { orgRole } = useClientAuthClaims()
@@ -62,6 +64,34 @@ export default function MachineSetupForm() {
                 placeholder="Initial Usage Count"
                 required
               />
+              <div className="sm:col-span-2 space-y-3 rounded-md border border-gray-200 p-4">
+                <input type="hidden" name="maintenanceEnabled" value="false" />
+                <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    name="maintenanceEnabled"
+                    value="true"
+                    checked={maintenanceEnabled}
+                    onChange={(event) => setMaintenanceEnabled(event.target.checked)}
+                    className="h-4 w-4 accent-teal-600"
+                  />
+                  Enable cycle-based maintenance alerts
+                </label>
+                <p className="text-sm text-gray-500">
+                  When enabled, completed cycles count toward the maintenance interval. (Recommended: 3000 cycles)
+                </p>
+                {maintenanceEnabled && (
+                  <StandardInput
+                    name="maintenanceIntervalCycles"
+                    type="number"
+                    min={1}
+                    max={1000000}
+                    defaultValue={3000}
+                    placeholder="Maintenance interval (cycles)"
+                    required
+                  />
+                )}
+              </div>
               <StandardInput name="location" placeholder="Location (optional)" />
               <div className="sm:col-span-2">
                 <StandardInput name="comment" placeholder="Place your comment here" as="textarea" required />

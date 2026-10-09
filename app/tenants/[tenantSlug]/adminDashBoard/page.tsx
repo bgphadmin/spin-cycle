@@ -4,7 +4,11 @@ import AdminDashboardTabs from "@/features/orders/components/AdminDashboardTabs"
 import { getAuthContext } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-const OwnerDashBoardPage = async () => {
+const OwnerDashBoardPage = async ({
+  searchParams,
+}: {
+  searchParams?: { tab?: string };
+}) => {
   const { orgRole } = await getAuthContext();
   if (orgRole !== "org:admin") redirect("/not-allowed");
 
@@ -19,7 +23,11 @@ const OwnerDashBoardPage = async () => {
         <h1 className="text-3xl font-bold text-teal-800">Admin Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">Paid sales analytics for the last year and year to date.</p>
       </div>
-      <AdminDashboardTabs analytics={analytics} orders={orders} />
+      <AdminDashboardTabs
+        analytics={analytics}
+        orders={orders}
+        initialTab={searchParams?.tab === "orders" ? "orders" : "analytics"}
+      />
     </main>
   )
 }

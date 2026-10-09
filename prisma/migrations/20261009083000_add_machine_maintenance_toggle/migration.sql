@@ -1,0 +1,2 @@
+ALTER TABLE "Machine"
+ADD COLUMN "maintenanceEnabled" BOOLEAN NOT NULL DEFAULT TRUE;

@@ -10,11 +10,13 @@ import type { AdminOrderRow } from "@/features/orders/actions/adminOrderActions"
 export default function AdminDashboardTabs({
   analytics,
   orders,
+  initialTab = "analytics",
 }: {
   analytics: AdminSalesAnalyticsData;
   orders: AdminOrderRow[];
+  initialTab?: "analytics" | "orders";
 }) {
-  const [activeTab, setActiveTab] = useState<"analytics" | "orders">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "orders">(initialTab);
 
   return (
     <>

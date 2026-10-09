@@ -51,6 +51,7 @@ model Tenant {
 
   users            User[]
   machines         Machine[]
+  machineMaintenances MachineMaintenance[]
   inventoryItems   InventoryItem[]
   inventoryTxns    InventoryTransaction[]
   orders           LaundryOrder[]
@@ -235,19 +236,38 @@ enum MachineStatus {
 }
 
 model Machine {
-  id         String        @id @default(uuid())
-  tenantId   String
-  name       String // Washer 1, Dryer 2
-  type       MachineType // washer | dryer
-  status     MachineStatus @default(AVAILABLE) // available, in_use, maintenance
-  usageCount Int           @default(0)
-  location   String?
-  comment    String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id                       String        @id @default(uuid())
+  tenantId                 String
+  name                     String // Washer 1, Dryer 2
+  type                     MachineType // washer | dryer
+  status                   MachineStatus @default(AVAILABLE) // available, in_use, maintenance
+  usageCount               Int           @default(0)
+  maintenanceEnabled       Boolean       @default(false)
+  maintenanceIntervalCycles Int           @default(3000)
+  cyclesSinceMaintenance   Int           @default(0)
+  location                 String?
+  comment                  String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
 
-  usages MachineUsage[]
-  tenant Tenant         @relation(fields: [tenantId], references: [id])
+  usages              MachineUsage[]
+  maintenanceRecords  MachineMaintenance[]
+  tenant              Tenant              @relation(fields: [tenantId], references: [id])
+}
+
+model MachineMaintenance {
+  id                 String   @id @default(uuid())
+  machineId          String
+  tenantId           String
+  cyclesAtMaintenance Int
+  notes              String?
+  recordedAt         DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, recordedAt])
+  @@index([machineId, recordedAt])
 }
 
 model MachineUsage {

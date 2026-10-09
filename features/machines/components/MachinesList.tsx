@@ -10,8 +10,10 @@ import StatusBadge from "@/components/utils/StatusBadge";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
 import type { Machine } from "../types/machineTypes";
+import { getMaintenanceStatus } from "../types/maintenanceStatus";
+import RecordMaintenanceButton from "./RecordMaintenanceButton";
 
-type SortKey = "name" | "type" | "status" | "usageCount" | "location";
+type SortKey = "name" | "type" | "status" | "usageCount" | "cyclesSinceMaintenance" | "location";
 type SortDir = "asc" | "desc";
 
 const columns: Array<{ key: SortKey; label: string }> = [
@@ -19,6 +21,7 @@ const columns: Array<{ key: SortKey; label: string }> = [
   { key: "type", label: "Type" },
   { key: "status", label: "Status" },
   { key: "usageCount", label: "Usage Count" },
+  { key: "cyclesSinceMaintenance", label: "Maintenance" },
   { key: "location", label: "Location" },
 ];
 const ROWS_PER_PAGE = 10;
@@ -40,7 +43,7 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
     getMachinesAction(tenantSlug)
       .then((result) => {
         if (!cancelled) {
-          setMachines(result.machines as Machine[]);
+          setMachines(result.machines);
           setLoadError(result.error ?? "");
         }
       })
@@ -73,8 +76,8 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
 
     return [...filtered].sort((a, b) => {
       const result =
-        sortKey === "usageCount"
-          ? a.usageCount - b.usageCount
+        sortKey === "usageCount" || sortKey === "cyclesSinceMaintenance"
+          ? a[sortKey] - b[sortKey]
           : String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""));
       return sortDir === "asc" ? result : -result;
     });
@@ -101,7 +104,7 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
         buttonName="Add Machine"
         href="./machines/machineSetup"
         title="Machines"
-        description="View and manage all registered washers and dryers."
+        description="View machines and cycle-based maintenance alerts. Alerts begin at 90% of each machine's interval."
       />
       <div className="relative">
         <Input
@@ -128,7 +131,7 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
           <p className="mt-4 text-sm text-gray-500">No machines match &quot;{search}&quot;.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[42rem] text-left text-sm">
+            <table className="w-full min-w-[58rem] text-left text-sm">
               <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   {columns.map((column) => (
@@ -162,6 +165,52 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
                       <StatusBadge status={machine.status} />
                     </td>
                     <td className="px-3 py-3 text-gray-600">{machine.usageCount}</td>
+                    <td className="px-3 py-3">
+                      {!machine.maintenanceEnabled ? (
+                        <span className="text-xs text-gray-500">Tracking off</span>
+                      ) : (() => {
+                        const maintenance = getMaintenanceStatus(
+                          machine.cyclesSinceMaintenance,
+                          machine.maintenanceIntervalCycles,
+                        );
+                        return (
+                          <div className="space-y-1">
+                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                              maintenance.status === "due"
+                                ? "bg-red-100 text-red-800"
+                                : maintenance.status === "soon"
+                                  ? "bg-amber-100 text-amber-900"
+                                  : "bg-green-100 text-green-800"
+                            }`}>
+                              {maintenance.status === "due"
+                                ? "Maintenance due"
+                                : maintenance.status === "soon"
+                                  ? "Due soon"
+                                  : "OK"}
+                            </span>
+                            <p className="text-xs text-gray-500">
+                              {machine.cyclesSinceMaintenance} / {machine.maintenanceIntervalCycles} cycles
+                            </p>
+                            {machine.lastMaintenanceAt && (
+                              <p className="text-xs text-gray-500">
+                                Last serviced {new Intl.DateTimeFormat("en-PH", {
+                                  dateStyle: "medium",
+                                }).format(machine.lastMaintenanceAt)}
+                              </p>
+                            )}
+                            {isAdmin && (
+                              <RecordMaintenanceButton
+                                machineId={machine.id}
+                                machineName={machine.name}
+                                cyclesSinceMaintenance={machine.cyclesSinceMaintenance}
+                                disabled={machine.status === "IN_USE"}
+                                returnTo={`/tenants/${tenantSlug}/tenantDashboard/machines`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </td>
                     <td className="px-3 py-3 text-gray-600">{machine.location || "—"}</td>
                   </tr>
                 ))}

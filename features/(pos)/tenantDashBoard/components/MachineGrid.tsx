@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getMachinesAction } from "@/features/machines/actions/getMachinesAction";
 import MachineCard from "./MachineCard"; // your card component
-import { Machine } from "@prisma/client";
+import type { Machine } from "@/features/machines/types/machineTypes";
 import CardSkeleton from "@/components/utils/cardSkeleton";
 
 type MachineStatus = "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
@@ -15,7 +15,7 @@ export default function MachinesGrid({ tenantSlug }: { tenantSlug: string }) {
   const loadMachines = useCallback(async () => {
     const result = await getMachinesAction(tenantSlug);
     if ("machines" in result) {
-      setMachines(result.machines as Machine[]);
+      setMachines(result.machines);
     }
     setLoading(false);
   }, [tenantSlug]);
@@ -36,6 +36,9 @@ export default function MachinesGrid({ tenantSlug }: { tenantSlug: string }) {
           type={machine.type}
           status={machine.status as MachineStatus}
           usageCount={machine.usageCount}
+          maintenanceEnabled={machine.maintenanceEnabled}
+          cyclesSinceMaintenance={machine.cyclesSinceMaintenance}
+          maintenanceIntervalCycles={machine.maintenanceIntervalCycles}
           onOrderCreated={loadMachines}
         />
       ))}

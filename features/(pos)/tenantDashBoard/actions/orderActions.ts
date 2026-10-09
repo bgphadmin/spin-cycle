@@ -48,7 +48,17 @@ export async function completeOrderAction(orderId: string) {
       if (!order) throw new Error("Active order not found.");
       await tx.laundryOrder.update({ where: { id: order.id }, data: { status: "COMPLETED" } });
       for (const usage of order.machineUsages) {
-        await tx.machineUsage.update({ where: { id: usage.id }, data: { endedAt: new Date() } });
+        if (usage.endedAt) continue;
+        const completedUsage = await tx.machineUsage.updateMany({
+          where: { id: usage.id, endedAt: null },
+          data: { endedAt: new Date() },
+        });
+        if (completedUsage.count > 0) {
+          await tx.machine.updateMany({
+            where: { id: usage.machineId, maintenanceEnabled: true },
+            data: { cyclesSinceMaintenance: { increment: 1 } },
+          });
+        }
         await tx.machine.update({ where: { id: usage.machineId }, data: { status: MachineStatus.AVAILABLE } });
       }
 

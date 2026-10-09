@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import LoadingDeleteButton from "@/components/utils/LoadingDeleteButton";
 import { cancelOrderAction, completeOrderAction, getActiveOrderAction } from "../actions/orderActions";
+import { getMaintenanceStatus } from "@/features/machines/types/maintenanceStatus";
 type ActiveOrder = Awaited<ReturnType<typeof getActiveOrderAction>>;
 
 type MachineCardProps = {
@@ -23,10 +24,23 @@ type MachineCardProps = {
   type: "washer" | "dryer";
   status: "AVAILABLE" | "IN_USE" | "UNAVAILABLE";
   usageCount: number;
+  maintenanceEnabled: boolean;
+  cyclesSinceMaintenance: number;
+  maintenanceIntervalCycles: number;
   onOrderCreated: () => Promise<void>;
 };
 
-export default function MachineCard({ id, name, type, status, usageCount, onOrderCreated }: MachineCardProps) {
+export default function MachineCard({
+  id,
+  name,
+  type,
+  status,
+  usageCount,
+  maintenanceEnabled,
+  cyclesSinceMaintenance,
+  maintenanceIntervalCycles,
+  onOrderCreated,
+}: MachineCardProps) {
   const [open, setOpen] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [order, setOrder] = useState<ActiveOrder | null>(null);
@@ -44,6 +58,9 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
 
   const isInUse = status === "IN_USE";
   const isUnavailable = status === "UNAVAILABLE";
+  const maintenance = maintenanceEnabled
+    ? getMaintenanceStatus(cyclesSinceMaintenance, maintenanceIntervalCycles)
+    : null;
 
   useEffect(() => {
     if (!isInUse) {
@@ -114,6 +131,23 @@ export default function MachineCard({ id, name, type, status, usageCount, onOrde
       <p className="text-sm text-muted-foreground capitalize">{type}</p>
       <p className="text-sm">Status: {status === "AVAILABLE" ? "Available" : status === "IN_USE" ? "In Use" : "Unavailable"}</p>
       <p className="text-sm">Usage Count: {usageCount}</p>
+      {maintenance ? (
+        <p className={`text-sm font-medium ${
+          maintenance.status === "due"
+            ? "text-red-700"
+            : maintenance.status === "soon"
+              ? "text-amber-700"
+              : "text-green-700"
+        }`}>
+          {maintenance.status === "due"
+            ? "Maintenance due"
+            : maintenance.status === "soon"
+              ? "Maintenance due soon"
+              : "Maintenance OK"}: {cyclesSinceMaintenance}/{maintenanceIntervalCycles} cycles
+        </p>
+      ) : (
+        <p className="text-sm text-gray-500">Maintenance tracking off</p>
+      )}
 
       {isInUse && activeOrderId && (
         <div className="mt-2 flex w-full justify-center gap-3">

@@ -26,6 +26,9 @@ export default function EditMachineForm({ userRole, machine }: Props) {
   const normalizedStatus = machine?.status.toUpperCase();
   const isInUse = normalizedStatus === "IN_USE";
   const [isAvailable, setIsAvailable] = useState(normalizedStatus === "AVAILABLE");
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(
+    machine?.maintenanceEnabled ?? true,
+  );
 
   useEffect(() => {
     setIsAvailable(normalizedStatus === "AVAILABLE");
@@ -51,8 +54,7 @@ export default function EditMachineForm({ userRole, machine }: Props) {
     return <NotAllowed />;
   }
   return (
-    <div className="max-h-[94vh] flex items-start justify-center bg-white
-     px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg pt-12 mt-8 pb-34 mb-4">
+    <div className="box-border w-full min-w-0 rounded-lg bg-white p-4 shadow-2xl sm:p-6 lg:p-8">
       <FormContainer
         action={updateMachineAction}
         onSuccess={() => router.push("../")}
@@ -65,6 +67,14 @@ export default function EditMachineForm({ userRole, machine }: Props) {
                 description="Update or delete this machine record."
               />
               <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  variant="standard"
+                  className="bg-red-100 text-red-800 hover:bg-red-200"
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={loading} variant="standard">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Update"}
                 </Button>
@@ -114,6 +124,36 @@ export default function EditMachineForm({ userRole, machine }: Props) {
                 </label>
               </div>
               <StandardInput name="usageCount" type="number" placeholder="Usage Count" defaultValue={machine.usageCount} />
+              <div className="sm:col-span-2 space-y-3 rounded-md border border-gray-200 p-4">
+                <p className="text-sm text-gray-500">
+                  {maintenanceEnabled
+                    ? `Cycle tracking is on: ${machine.cyclesSinceMaintenance} cycles since last maintenance.`
+                    : "Cycle tracking and alerts are paused while this is off."}
+                </p>
+                <input type="hidden" name="maintenanceEnabled" value="false" />
+                <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    name="maintenanceEnabled"
+                    value="true"
+                    checked={maintenanceEnabled}
+                    onChange={(event) => setMaintenanceEnabled(event.target.checked)}
+                    className="h-4 w-4 accent-teal-600"
+                  />
+                  Use cycle-based maintenance alerts for this machine. (Recommended: 3000 cycles)
+                </label>
+                {maintenanceEnabled && (
+                  <StandardInput
+                    name="maintenanceIntervalCycles"
+                    type="number"
+                    min={1}
+                    max={1000000}
+                    placeholder="Maintenance interval (cycles)"
+                    defaultValue={machine.maintenanceIntervalCycles}
+                    required
+                  />
+                )}
+              </div>
               <div className="sm:col-span-2">
                 <StandardInput name="location" placeholder="Location" defaultValue={machine.location ?? ""} />
               </div>
