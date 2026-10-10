@@ -4,6 +4,7 @@ import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { businessDayRangeFromKey, getBusinessDayRange } from "@/utils/businessDate";
+import { getReceiptNumberBase } from "@/features/orders/utils/receiptNumber";
 
 export type SalesLine = {
   id: number;
@@ -93,6 +94,9 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     const customerId = order.customer?.id ?? `walk-in-${order.id}`;
     const customerName = order.customer?.name ?? "Walk-in";
     const linkedReceiptNumber = order.receiptOrders[0]?.receipt.number;
+    const displayReceiptNumber = linkedReceiptNumber
+      ? getReceiptNumberBase(linkedReceiptNumber)
+      : undefined;
     const receiptNumber = linkedReceiptNumber ?? `UNASSIGNED-${order.id.slice(0, 8)}`;
     const paymentMethod = order.paymentMethod ?? order.payments[0]?.method ?? "UNPAID";
     const orderType = order.orderType.replace("_", "-");
@@ -103,7 +107,7 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
       customerId,
       customerName,
       orderIds: [],
-      receiptNumber,
+      receiptNumber: displayReceiptNumber ?? receiptNumber,
       isPaid: true,
       paymentMethods: [],
       orderTypes: [],
@@ -115,8 +119,8 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     };
 
     card.orderIds.push(order.id);
-    if (linkedReceiptNumber && card.receiptNumber.startsWith("UNASSIGNED-")) {
-      card.receiptNumber = linkedReceiptNumber;
+    if (displayReceiptNumber && card.receiptNumber.startsWith("UNASSIGNED-")) {
+      card.receiptNumber = displayReceiptNumber;
     }
     card.isPaid = card.isPaid && order.paid;
     if (!card.paymentMethods.includes(paymentMethod)) card.paymentMethods.push(paymentMethod);
