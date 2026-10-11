@@ -1,0 +1,81 @@
+name: Daily database backup
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_DEFAULT_REGION: auto
+      AWS_EC2_METADATA_DISABLED: "true"
+
+    steps:
+      - name: Validate backup configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SUPABASE_DB_URL R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY BACKUP_AGE_RECIPIENT R2_ACCOUNT_ID R2_BUCKET; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Required GitHub secret or variable is missing: $name"
+              exit 1
+            fi
+          done
+
+      - name: Install backup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends age awscli postgresql-client
+
+      - name: Create encrypted database dump
+        id: dump
+        shell: bash
+        run: |
+          set -euo pipefail
+          server_version_num="$(psql "$SUPABASE_DB_URL" -XAtqc 'SHOW server_version_num')"
+          server_major="$((server_version_num / 10000))"
+          backup_name="spin-cycle-$(date -u +%Y%m%dT%H%M%SZ).dump"
+          dump_path="$RUNNER_TEMP/$backup_name"
+          encrypted_path="$dump_path.age"
+
+          docker run --rm \
+            --env SUPABASE_DB_URL \
+            --env BACKUP_NAME="$backup_name" \
+            --volume "$RUNNER_TEMP:/backup" \
+            "postgres:${server_major}-alpine" \
+            sh -c 'pg_dump --no-owner --no-acl --format=custom --file="/backup/$BACKUP_NAME" "$SUPABASE_DB_URL"'
+
+          age --recipient "$BACKUP_AGE_RECIPIENT" --output "$encrypted_path" "$dump_path"
+          rm "$dump_path"
+          echo "encrypted_path=$encrypted_path" >> "$GITHUB_OUTPUT"
+          echo "backup_name=$backup_name.age" >> "$GITHUB_OUTPUT"
+      - name: Upload encrypted dump to Cloudflare R2
+        shell: bash
+        env:
+          ENCRYPTED_PATH: ${{ steps.dump.outputs.encrypted_path }}
+          BACKUP_NAME: ${{ steps.dump.outputs.backup_name }}
+        run: |
+          set -euo pipefail
+          aws --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            s3 cp "$ENCRYPTED_PATH" \
+            "s3://${R2_BUCKET}/spin-cycle/$BACKUP_NAME" \
+            --only-show-errors \
+            --no-progress
