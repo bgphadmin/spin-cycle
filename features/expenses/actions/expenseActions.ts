@@ -120,6 +120,7 @@ export async function getExpenseByIdAction(id: string): Promise<ExpenseDetail | 
         category: true,
         amount: true,
         notes: true,
+        expenseDate: true,
         userId: true,
         pettyCashEntry: { select: { id: true } },
       },
@@ -132,6 +133,7 @@ export async function getExpenseByIdAction(id: string): Promise<ExpenseDetail | 
       category: expense.category,
       amount: expense.amount,
       notes: expense.notes,
+      expenseDate: expense.expenseDate.toISOString().slice(0, 10),
       deductFromPettyCash: expense.pettyCashEntry !== null,
     };
   } catch (error: unknown) {
@@ -235,6 +237,13 @@ export async function updateExpenseAction(
       throw new Error("You can only edit expenses you added yourself.");
     }
 
+    const submittedExpenseDate = String(formData.get("expenseDate") ?? "").trim();
+    let expenseDate = existing.expenseDate;
+    if (submittedExpenseDate) {
+      if (!currentUser.isAdmin) throw new Error("Only admins can set an expense date.");
+      expenseDate = businessDateKeyToUtcDate(submittedExpenseDate);
+    }
+
     const fields = addExpenseSchema.parse({
       category: resolveCategory(formData),
       amount: formData.get("amount"),
@@ -250,6 +259,7 @@ export async function updateExpenseAction(
           category: fields.category,
           amount: fields.amount,
           notes,
+          expenseDate,
         },
       });
       if (deductFromPettyCash) {
@@ -264,7 +274,7 @@ export async function updateExpenseAction(
               name: expenseCategoryLabel(fields.category),
               amount: -fields.amount,
               notes,
-              cashDate: existing.expenseDate,
+              cashDate: expenseDate,
             },
           });
         } else {
@@ -275,7 +285,7 @@ export async function updateExpenseAction(
               name: expenseCategoryLabel(fields.category),
               amount: -fields.amount,
               notes,
-              cashDate: existing.expenseDate,
+              cashDate: expenseDate,
               expenseId: id,
             },
           });

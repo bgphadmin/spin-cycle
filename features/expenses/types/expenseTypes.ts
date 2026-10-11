@@ -43,5 +43,6 @@ export type ExpenseDetail = {
   category: string;
   amount: number;
   notes: string | null;
+  expenseDate: string;
   deductFromPettyCash: boolean;
 };

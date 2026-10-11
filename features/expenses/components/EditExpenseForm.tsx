@@ -11,16 +11,20 @@ import { StandardInput } from "@/components/ui/custom/StandardInput";
 import { DeleteButton } from "@/components/ui/custom/DeleteButton";
 import { DeleteConfirmationDialog } from "@/components/ui/custom/DeleteConfirmationDialog";
 import { updateExpenseAction, deleteExpenseAction } from "../actions/expenseActions";
+import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import ExpenseCategoryField from "./ExpenseCategoryField";
 import PettyCashSwitch from "./PettyCashSwitch";
 import { expenseCategoryLabel, type ExpenseDetail } from "../types/expenseTypes";
 
 type Props = {
   expense: ExpenseDetail | null;
+  expenseListHref: string;
 };
 
-export default function EditExpenseForm({ expense }: Props) {
+export default function EditExpenseForm({ expense, expenseListHref }: Props) {
   const router = useRouter();
+  const { orgRole } = useClientAuthClaims();
+  const isAdmin = orgRole === "org:admin";
   const [deductFromPettyCash, setDeductFromPettyCash] = useState(
     expense?.deductFromPettyCash ?? false,
   );
@@ -45,9 +49,9 @@ export default function EditExpenseForm({ expense }: Props) {
   }
 
   return (
-    <div className="max-h-[94vh] flex items-start justify-center bg-white
-     px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg pt-12 mt-8 pb-34 mb-4">
-      <FormContainer action={updateExpenseAction} onSuccess={() => router.push("../")}>
+    <div className="min-h-[calc(100svh-8rem)] flex items-start justify-center bg-white
+     px-4 sm:px-6 lg:px-8 shadow-2xl rounded-lg pt-8 sm:pt-12 mt-4 sm:mt-8 pb-24 sm:pb-34 mb-4">
+      <FormContainer action={updateExpenseAction} onSuccess={() => router.push(expenseListHref)}>
         {({ loading }) => (
           <div className="space-y-6">
             <div className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -56,10 +60,23 @@ export default function EditExpenseForm({ expense }: Props) {
                 description="Update or delete this expense record."
               />
               <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  disabled={loading || deleteLoading}
+                  variant="standard"
+                  className="bg-orange-200 hover:bg-orange-300"
+                  onClick={() => router.push(expenseListHref)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={loading} variant="standard">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Update"}
                 </Button>
-                <DeleteButton loading={deleteLoading} onClick={onDelete} />
+                <DeleteButton
+                  loading={deleteLoading}
+                  onClick={onDelete}
+                  className="bg-red-200 hover:bg-red-300"
+                />
                 <DeleteConfirmationDialog
                   open={isConfirmationOpen}
                   loading={deleteLoading}
@@ -73,6 +90,15 @@ export default function EditExpenseForm({ expense }: Props) {
             <div className="grid gap-5 sm:grid-cols-2">
               <input type="hidden" name="id" value={expense.id} />
               <ExpenseCategoryField defaultCategory={expense.category} />
+              {isAdmin && (
+                <StandardInput
+                  name="expenseDate"
+                  type="date"
+                  label="Expense date"
+                  defaultValue={expense.expenseDate}
+                  required
+                />
+              )}
               <StandardInput
                 name="amount"
                 type="number"
