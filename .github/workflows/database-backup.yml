@@ -48,7 +48,7 @@ jobs:
             "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
             --output "$RUNNER_TEMP/awscliv2.zip"
           unzip -q "$RUNNER_TEMP/awscliv2.zip" -d "$RUNNER_TEMP"
-          sudo "$RUNNER_TEMP/aws/install"
+          sudo "$RUNNER_TEMP/aws/install" --update
 
       - name: Create encrypted database dump
         id: dump
