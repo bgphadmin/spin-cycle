@@ -29,6 +29,7 @@ export default async function LpgCylinderPage({
         cylinders={report.cylinders}
         timeZone={report.timeZone}
         tenantSlug={params.tenantSlug}
+        isAdmin={report.isAdmin}
       />
     </main>
   );

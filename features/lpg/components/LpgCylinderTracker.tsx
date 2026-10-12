@@ -31,10 +31,12 @@ export default function LpgCylinderTracker({
   cylinders,
   timeZone,
   tenantSlug,
+  isAdmin,
 }: {
   cylinders: CylinderReport[];
   timeZone: string;
   tenantSlug: string;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const activeCylinder = cylinders.find((cylinder) => cylinder.emptiedAt === null);
@@ -51,14 +53,14 @@ export default function LpgCylinderTracker({
                 Full cylinder recorded {formatDate(activeCylinder.filledAt, timeZone)}.
               </p>
             ) : (
-              <div>
-                <p className="mt-1 text-sm text-gray-600">
-                  No active cylinder. Record one when a full 50 kg cylinder is installed.
-                </p>
-              </div>
+              <p className="mt-1 text-sm text-gray-600">
+                {isAdmin
+                  ? "No active cylinder. Record one when a full 50 kg cylinder is installed."
+                  : "No active cylinder has been recorded."}
+              </p>
             )}
           </div>
-          {activeCylinder ? (
+          {isAdmin && activeCylinder ? (
             <FormContainer action={markLpgCylinderEmptyAction} onSuccess={() => router.refresh()}>
               {({ loading }) => (
                 <>
@@ -70,7 +72,7 @@ export default function LpgCylinderTracker({
                 </>
               )}
             </FormContainer>
-          ) : (
+          ) : isAdmin ? (
             <FormContainer action={startLpgCylinderAction} onSuccess={() => router.refresh()}>
               {({ loading }) => (
                 <>
@@ -90,7 +92,7 @@ export default function LpgCylinderTracker({
                 </>
               )}
             </FormContainer>
-          )}
+          ) : null}
         </div>
         {activeCylinder && (
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -136,9 +138,10 @@ export default function LpgCylinderTracker({
       </section>
 
       <p className="text-xs text-gray-500">
-        Counts include completed orders in each cylinder period. Each service named “Extra Dry”
-        counts as 0.25 Normal Dry equivalent; other DRY services count as 1. Customer totals use
-        the app’s customer records. This is a usage estimate, not a direct LPG weight measurement.
+        Counts include completed orders in each cylinder period. Extra Dry counts as 0.25,
+        Comforter counts as 0.5, and other DRY services count as 1 Normal Dry equivalent.
+        Customer totals use the app’s customer records. This is a usage estimate, not a direct
+        LPG weight measurement.
       </p>
     </div>
   );

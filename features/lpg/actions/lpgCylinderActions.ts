@@ -6,9 +6,9 @@ import db from "@/utils/db";
 import { getAuthContext } from "@/lib/auth";
 import { renderError } from "@/utils/error";
 
-async function getAdminTenantContext(tenantSlug: string) {
+async function getTenantContext(tenantSlug: string) {
   const { userId } = await getAuthContext();
-  if (!userId) throw new Error("Sign in to manage LPG cylinders.");
+  if (!userId) throw new Error("Sign in to access LPG cylinder tracking.");
 
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgSlug: tenantSlug },
@@ -16,17 +16,32 @@ async function getAdminTenantContext(tenantSlug: string) {
   });
   if (!tenant) throw new Error("Tenant not found.");
 
-  const admin = await db.user.findFirst({
-    where: { clerkId: userId, tenantId: tenant.id, role: "ADMIN" },
-    select: { id: true },
+  const user = await db.user.findFirst({
+    where: { clerkId: userId, tenantId: tenant.id, role: { in: ["ADMIN", "STAFF"] } },
+    select: { role: true },
   });
-  if (!admin) throw new Error("Only tenant admins can manage LPG cylinders.");
+  if (!user) throw new Error("You are not a member of this tenant.");
 
-  return tenant;
+  return { ...tenant, isAdmin: user.role === "ADMIN" };
 }
 
+async function getAdminTenantContext(tenantSlug: string) {
+  const context = await getTenantContext(tenantSlug);
+  if (!context.isAdmin) throw new Error("Only tenant admins can manage LPG cylinders.");
+  return context;
+}
+
+const dryOrComforterServiceItemFilter: Prisma.OrderItemWhereInput = {
+  service: {
+    OR: [
+      { type: "DRY" },
+      { name: { contains: "comforter", mode: "insensitive" } },
+    ],
+  },
+};
+
 export async function getLpgCylinderReportAction(tenantSlug: string) {
-  const tenant = await getAdminTenantContext(tenantSlug);
+  const tenant = await getTenantContext(tenantSlug);
   const cylinders = await db.lpgCylinder.findMany({
     where: { tenantId: tenant.id },
     orderBy: { filledAt: "desc" },
@@ -35,7 +50,7 @@ export async function getLpgCylinderReportAction(tenantSlug: string) {
   });
 
   if (cylinders.length === 0) {
-    return { cylinders: [], timeZone: tenant.timeZone };
+    return { cylinders: [], timeZone: tenant.timeZone, isAdmin: tenant.isAdmin };
   }
 
   const dryOrders = await db.laundryOrder.findMany({
@@ -48,7 +63,7 @@ export async function getLpgCylinderReportAction(tenantSlug: string) {
           startedAt: { gte: cylinders[cylinders.length - 1].filledAt },
         },
       },
-      items: { some: { service: { type: "DRY" } } },
+      items: { some: dryOrComforterServiceItemFilter },
     },
     select: {
       id: true,
@@ -58,7 +73,7 @@ export async function getLpgCylinderReportAction(tenantSlug: string) {
         select: { startedAt: true },
       },
       items: {
-        where: { service: { type: "DRY" } },
+        where: dryOrComforterServiceItemFilter,
         select: {
           quantity: true,
           service: { select: { name: true } },
@@ -84,7 +99,12 @@ export async function getLpgCylinderReportAction(tenantSlug: string) {
       dryOrdersCount += 1;
       customerIds.add(order.customerId ?? order.id);
       for (const item of order.items) {
-        const weight = item.service?.name.toLowerCase().includes("extra dry") ? 0.25 : 1;
+        const serviceName = item.service?.name.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+        const weight = serviceName.includes("extra dry")
+          ? 0.25
+          : serviceName.includes("comforter")
+            ? 0.5
+            : 1;
         normalDryEquivalents += item.quantity * weight;
       }
     }
@@ -100,7 +120,7 @@ export async function getLpgCylinderReportAction(tenantSlug: string) {
     };
   });
 
-  return { cylinders: report, timeZone: tenant.timeZone };
+  return { cylinders: report, timeZone: tenant.timeZone, isAdmin: tenant.isAdmin };
 }
 
 export async function startLpgCylinderAction(

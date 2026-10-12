@@ -101,14 +101,12 @@ export default function BottomNav({ isSuperuser = false }: { isSuperuser?: boole
                       onSelect={() => setOpen(false)}
                     />
                   )}
-                  {orgRole === "org:admin" && (
-                    <DropdownNavItem
-                      href={`/tenants/${orgSlug}/tenantDashboard/lpg/`}
-                      label="LPG Tracking"
-                      onSelect={() => setOpen(false)}
-                      icon={FireIcon}
-                    />
-                  )}
+                  <DropdownNavItem
+                    href={`/tenants/${orgSlug}/tenantDashboard/lpg/`}
+                    label="LPG Tracking"
+                    onSelect={() => setOpen(false)}
+                    icon={FireIcon}
+                  />
                   {orgRole === "org:admin" && (
                     <DropdownNavItem
                       href={`/tenants/${orgSlug}/adminDashboard/users`}
