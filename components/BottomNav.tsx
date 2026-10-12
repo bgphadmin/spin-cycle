@@ -12,6 +12,7 @@ import {
   UserIcon,
   BuildingOfficeIcon,
   CalculatorIcon,
+  FireIcon,
 } from "@heroicons/react/24/solid"; // filled style
 import {
   DropdownMenu,
@@ -98,6 +99,14 @@ export default function BottomNav({ isSuperuser = false }: { isSuperuser?: boole
                       label="Services"
                       icon={UserIcon}
                       onSelect={() => setOpen(false)}
+                    />
+                  )}
+                  {orgRole === "org:admin" && (
+                    <DropdownNavItem
+                      href={`/tenants/${orgSlug}/tenantDashboard/lpg/`}
+                      label="LPG Tracking"
+                      onSelect={() => setOpen(false)}
+                      icon={FireIcon}
                     />
                   )}
                   {orgRole === "org:admin" && (

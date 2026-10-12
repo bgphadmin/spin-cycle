@@ -60,6 +60,7 @@ model Tenant {
   MachineUsage     MachineUsage[]
   services         Service[]
   pettyCashEntries PettyCash[]
+  lpgCylinders      LpgCylinder[]
 }
 
 model SystemSetting {
@@ -328,4 +329,17 @@ model PettyCash {
 
   @@index([tenantId, cashDate])
   @@index([userId])
+}
+
+model LpgCylinder {
+  id        String    @id @default(uuid())
+  tenantId  String
+  note      String?
+  filledAt  DateTime  @default(now())
+  emptiedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, filledAt])
 }
