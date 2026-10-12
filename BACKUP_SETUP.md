@@ -1,6 +1,6 @@
 # Off-site database backups
 
-The `Daily database backup` GitHub Actions workflow creates a PostgreSQL custom-format dump every day at 18:00 UTC (02:00 in the Philippines), encrypts it with `age` before upload, and stores it in Cloudflare R2. It can also be run manually from the repository's **Actions** tab. Configure the items below before enabling it.
+The `Daily database backup` GitHub Actions workflow creates a PostgreSQL custom-format dump every day at 18:17 UTC (02:17 in the Philippines), encrypts it with `age` before upload, and stores it in Cloudflare R2. The schedule runs away from the top of the hour to help reduce GitHub Actions scheduling delays. It can also be run manually from the repository's **Actions** tab. Configure the items below before enabling it.
 
 The dump contains PostgreSQL data and schema, not the actual files in Supabase Storage. Back up Storage objects separately if the project uses them.
 
