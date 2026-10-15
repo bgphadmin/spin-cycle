@@ -23,6 +23,7 @@ type DailyPoint = {
 export type WeekdayAverageSalesPoint = {
   day: string;
   average: number;
+  averageCustomers: number;
 };
 
 export type DailyFinancialPoint = {
@@ -98,26 +99,33 @@ function createDateRange(start: Date, end: Date, timeZone: string) {
   return dates;
 }
 
-function calculateWeekdayAverageSales(dailyPoints: DailyPoint[]): WeekdayAverageSalesPoint[] {
+type WeekdayDailyPoint = DailyPoint & { customers: number };
+
+function calculateWeekdayAverageSales(dailyPoints: WeekdayDailyPoint[]): WeekdayAverageSalesPoint[] {
   const weekdays = [
-    { day: "Monday", weekday: 1, total: 0, days: 0 },
-    { day: "Tuesday", weekday: 2, total: 0, days: 0 },
-    { day: "Wednesday", weekday: 3, total: 0, days: 0 },
-    { day: "Thursday", weekday: 4, total: 0, days: 0 },
-    { day: "Friday", weekday: 5, total: 0, days: 0 },
-    { day: "Saturday", weekday: 6, total: 0, days: 0 },
-    { day: "Sunday", weekday: 0, total: 0, days: 0 },
+    { day: "Monday", weekday: 1, total: 0, customers: 0, days: 0 },
+    { day: "Tuesday", weekday: 2, total: 0, customers: 0, days: 0 },
+    { day: "Wednesday", weekday: 3, total: 0, customers: 0, days: 0 },
+    { day: "Thursday", weekday: 4, total: 0, customers: 0, days: 0 },
+    { day: "Friday", weekday: 5, total: 0, customers: 0, days: 0 },
+    { day: "Saturday", weekday: 6, total: 0, customers: 0, days: 0 },
+    { day: "Sunday", weekday: 0, total: 0, customers: 0, days: 0 },
   ];
   for (const point of dailyPoints) {
     const weekday = new Date(`${point.date}T00:00:00.000Z`).getUTCDay();
     const aggregate = weekdays.find((item) => item.weekday === weekday);
     if (aggregate) {
       aggregate.total += point.total;
+      aggregate.customers += point.customers;
       aggregate.days += 1;
     }
   }
   return weekdays
-    .map(({ day, total, days }) => ({ day, average: days === 0 ? 0 : total / days }))
+    .map(({ day, total, customers, days }) => ({
+      day,
+      average: days === 0 ? 0 : total / days,
+      averageCustomers: days === 0 ? 0 : customers / days,
+    }))
     .sort((a, b) => b.average - a.average);
 }
 
@@ -136,6 +144,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     select: {
       total: true,
       createdAt: true,
+      customerId: true,
       customer: { select: { name: true } },
       items: {
         select: {
@@ -164,6 +173,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
 
   const dailySales = createDateRange(startOfYear, today, tenant.timeZone);
   const dailySalesByDate = new Map(dailySales.map((point) => [point.date, point]));
+  const dailyCustomersByDate = new Map<string, { customerIds: Set<string>; walkIns: number }>();
   const dailyExpensesByDate = new Map<string, number>();
   const serviceByName = new Map<string, Map<string, number>>();
   const inventoryByName = new Map<string, Map<string, number>>();
@@ -179,6 +189,10 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     const orderDate = dateKey(order.createdAt, tenant.timeZone);
     const dailyPoint = dailySalesByDate.get(orderDate);
     if (dailyPoint) dailyPoint.total += order.total;
+    const dailyCustomers = dailyCustomersByDate.get(orderDate) ?? { customerIds: new Set<string>(), walkIns: 0 };
+    if (order.customerId) dailyCustomers.customerIds.add(order.customerId);
+    else dailyCustomers.walkIns += 1;
+    dailyCustomersByDate.set(orderDate, dailyCustomers);
 
     const customerName = order.customer?.name ?? "Walk-in";
     customerTotals.set(customerName, (customerTotals.get(customerName) ?? 0) + order.total);
@@ -228,7 +242,15 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
       profit: point.total + expense,
     };
   });
-  const weekdayAverageSales = calculateWeekdayAverageSales(dailySales);
+  const weekdayAverageSales = calculateWeekdayAverageSales(
+    dailySales.map((point) => {
+      const customers = dailyCustomersByDate.get(point.date);
+      return {
+        ...point,
+        customers: (customers?.customerIds.size ?? 0) + (customers?.walkIns ?? 0),
+      };
+    }),
+  );
 
   const monthStartKey = businessDateKey(getBusinessMonthStart(new Date(), tenant.timeZone), tenant.timeZone);
   const monthToDate = dailyFinancials
@@ -304,21 +326,32 @@ export async function getAdminWeekdayAverageSalesAction(
       status: { in: ["COMPLETED", "IN_PROGRESS"] },
       createdAt: { gte: start, lt: end },
     },
-    select: { total: true, createdAt: true },
+    select: { total: true, createdAt: true, customerId: true },
   });
 
   const dailySalesByDate = new Map<string, number>();
+  const dailyCustomersByDate = new Map<string, { customerIds: Set<string>; walkIns: number }>();
   for (const order of orders) {
     const orderDate = businessDateKey(order.createdAt, tenant.timeZone);
     dailySalesByDate.set(orderDate, (dailySalesByDate.get(orderDate) ?? 0) + order.total);
+    const dailyCustomers = dailyCustomersByDate.get(orderDate) ?? { customerIds: new Set<string>(), walkIns: 0 };
+    if (order.customerId) dailyCustomers.customerIds.add(order.customerId);
+    else dailyCustomers.walkIns += 1;
+    dailyCustomersByDate.set(orderDate, dailyCustomers);
   }
 
-  const dailyPoints: DailyPoint[] = [];
+  const dailyPoints: WeekdayDailyPoint[] = [];
   const cursor = new Date(`${startDate}T00:00:00.000Z`);
   const lastDay = new Date(`${endDate}T00:00:00.000Z`);
   while (cursor <= lastDay) {
     const date = cursor.toISOString().slice(0, 10);
-    dailyPoints.push({ date, label: date, total: dailySalesByDate.get(date) ?? 0 });
+    const customers = dailyCustomersByDate.get(date);
+    dailyPoints.push({
+      date,
+      label: date,
+      total: dailySalesByDate.get(date) ?? 0,
+      customers: (customers?.customerIds.size ?? 0) + (customers?.walkIns ?? 0),
+    });
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 

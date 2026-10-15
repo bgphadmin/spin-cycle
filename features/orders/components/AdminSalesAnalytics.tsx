@@ -322,7 +322,7 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold text-teal-800">Average Daily Sales by Weekday</h2>
+        <h2 className="mb-1 text-lg font-semibold text-teal-800">Average Daily Sales and Customers by Weekday</h2>
         <p className="mb-4 text-sm text-gray-500">{weekdayStartDate} – {weekdayEndDate}</p>
         <form
           className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end"
@@ -376,22 +376,52 @@ export default function AdminSalesAnalytics({ analytics }: { analytics: AdminSal
         )}
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
+            <ComposedChart
               data={weekdayAverageSales}
-              layout="vertical"
-              barCategoryGap="18%"
               margin={{ top: 5, right: 24, left: 12, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
-                type="number"
+                dataKey="day"
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis
+                yAxisId="sales"
                 tickFormatter={(value) => `₱${Number(value).toLocaleString()}`}
                 tick={{ fontSize: 11 }}
               />
-              <YAxis type="category" dataKey="day" width={100} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value) => money(Number(value ?? 0))} />
-              <Bar dataKey="average" name="Average daily sales" fill="#5eead4" barSize={26} />
-            </BarChart>
+              <YAxis
+                yAxisId="customers"
+                orientation="right"
+                allowDecimals
+                tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip
+                formatter={(value, name) =>
+                  name === "Average daily customers"
+                    ? [Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 1 }), name]
+                    : [money(Number(value ?? 0)), name]
+                }
+              />
+              <Legend />
+              <Bar
+                yAxisId="sales"
+                dataKey="average"
+                name="Average daily sales"
+                fill="#5eead4"
+                barSize={34}
+              />
+              <Line
+                yAxisId="customers"
+                dataKey="averageCustomers"
+                name="Average daily customers"
+                type="monotone"
+                stroke="#f97316"
+                strokeWidth={2}
+                dot={{ r: 4 }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
