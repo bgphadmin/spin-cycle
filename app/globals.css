@@ -163,7 +163,7 @@ body {
     margin: 0;
     background: #fff !important;
     color: #000 !important;
-    font: 10pt/1.35 Arial, Helvetica, sans-serif;
+    font: 9pt/1.2 Arial, Helvetica, sans-serif;
   }
 
   .thermal-receipt[data-printing="true"] * {
@@ -171,7 +171,7 @@ body {
   }
 
   .thermal-receipt p {
-    margin: 2px 0;
+    margin: 1px 0;
   }
 
   .thermal-receipt-center {
@@ -180,24 +180,24 @@ body {
 
   .thermal-receipt-shop-name {
     display: block;
-    font-size: 14pt;
+    font-size: 12pt;
     overflow-wrap: anywhere;
   }
 
   .thermal-receipt-rule {
-    margin: 8px 0;
+    margin: 4px 0;
     border-top: 1px dashed #000;
   }
 
   .thermal-receipt-group {
-    margin: 6px 0;
+    margin: 3px 0;
   }
 
   .thermal-receipt-line {
     display: flex;
     justify-content: space-between;
-    gap: 4px;
-    margin: 4px 0;
+    gap: 3px;
+    margin: 2px 0;
   }
 
   .thermal-receipt-line > div {
@@ -213,8 +213,12 @@ body {
     overflow-wrap: anywhere;
   }
 
+  .thermal-receipt-line .thermal-receipt-line-detail {
+    font-size: 8pt;
+  }
+
   .thermal-receipt-total {
-    margin-top: 8px;
-    font-size: 12pt;
+    margin-top: 4px;
+    font-size: 10pt;
   }
 }

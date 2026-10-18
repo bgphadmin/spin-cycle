@@ -88,10 +88,6 @@ export default function SalesCard({
     window.print();
   }
 
-  const subtotal = sale.machineGroups.reduce(
-    (sum, group) => sum + group.lines.reduce((groupSum, line) => groupSum + line.total, 0),
-    0,
-  );
   const receiptPaymentMethod =
     paymentMethod === ""
       ? "Multiple methods"
@@ -100,6 +96,21 @@ export default function SalesCard({
         : paymentMethod === "EWALLET"
           ? "E-Wallet"
           : paymentMethod.charAt(0) + paymentMethod.slice(1).toLowerCase();
+  const receiptLinesByNameAndKind = new Map<
+    string,
+    (typeof sale.machineGroups)[number]["lines"][number]
+  >();
+  for (const line of sale.machineGroups.flatMap((group) => group.lines)) {
+    const key = JSON.stringify([line.name, line.kind]);
+    const existing = receiptLinesByNameAndKind.get(key);
+    if (existing) {
+      existing.quantity += line.quantity;
+      existing.total += line.total;
+    } else {
+      receiptLinesByNameAndKind.set(key, { ...line });
+    }
+  }
+  const receiptLines = [...receiptLinesByNameAndKind.values()];
 
   return (
     <>
@@ -197,26 +208,20 @@ export default function SalesCard({
         <p>Receipt: {sale.receiptNumber}</p>
         <p>Customer: {sale.customerName}</p>
         <p>Order: {sale.orderTypes.join(", ")}</p>
+        <p>Handled by: {sale.handledByNames.join(", ")}</p>
         <div className="thermal-receipt-rule" />
-        {sale.machineGroups.map((group) => (
-          <section key={group.machineName} className="thermal-receipt-group">
-            <strong>{group.machineName}</strong>
-            {group.lines.map((line) => (
-              <div key={line.id} className="thermal-receipt-line">
-                <div>
-                  <p>{line.name}</p>
-                  <p>{line.quantity} × ₱{line.price.toFixed(2)}</p>
-                </div>
-                <span>₱{line.total.toFixed(2)}</span>
-              </div>
-            ))}
-          </section>
+        {receiptLines.map((line) => (
+          <div key={line.id} className="thermal-receipt-line">
+            <div>
+              <p>{line.name}</p>
+              <p className="thermal-receipt-line-detail">
+                {line.kind} · {line.quantity} × ₱{(line.total / line.quantity).toFixed(2)}
+              </p>
+            </div>
+            <span>₱{line.total.toFixed(2)}</span>
+          </div>
         ))}
         <div className="thermal-receipt-rule" />
-        <div className="thermal-receipt-line">
-          <span>Subtotal</span>
-          <span>₱{subtotal.toFixed(2)}</span>
-        </div>
         {sale.discountAmount > 0 && (
           <div className="thermal-receipt-line">
             <span>Discount{sale.discountNote ? ` (${sale.discountNote})` : ""}</span>
