@@ -22,6 +22,8 @@ export type SalesMachineGroup = {
 
 export type CustomerSalesCard = {
   shopName: string;
+  shopAddress: string;
+  shopPhone: string;
   timeZone: string;
   customerId: string;
   customerName: string;
@@ -44,7 +46,7 @@ async function getTenantId() {
 
   const tenant = await db.tenant.findUnique({
     where: { clerkOrgId: orgId },
-    select: { id: true, timeZone: true, shopName: true },
+    select: { id: true, timeZone: true, shopName: true, address: true, phone: true },
   });
   if (!tenant) throw new Error("Tenant not found for this organization.");
   return tenant;
@@ -107,6 +109,8 @@ export async function getTodaySalesAction(dateKey?: string): Promise<CustomerSal
     const handledByName = staffNameByClerkId.get(order.userId) ?? "Unknown";
     const card = grouped.get(customerId) ?? {
       shopName: tenant.shopName,
+      shopAddress: tenant.address,
+      shopPhone: tenant.phone,
       timeZone: tenant.timeZone,
       customerId,
       customerName,

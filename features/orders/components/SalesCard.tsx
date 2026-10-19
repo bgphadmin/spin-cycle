@@ -201,6 +201,8 @@ export default function SalesCard({
       <div ref={receiptRef} className="thermal-receipt" aria-hidden="true">
         <header className="thermal-receipt-center">
           <strong className="thermal-receipt-shop-name">{sale.shopName}</strong>
+          <p>{sale.shopAddress}</p>
+          <p>{sale.shopPhone}</p>
           <p>RECEIPT</p>
         </header>
         <div className="thermal-receipt-rule" />
