@@ -29,6 +29,10 @@ export default function EditMachineForm({ userRole, machine }: Props) {
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(
     machine?.maintenanceEnabled ?? true,
   );
+  const [tubCleaningEnabled, setTubCleaningEnabled] = useState(
+    machine?.tubCleaningEnabled ?? false,
+  );
+  const [machineType, setMachineType] = useState<string>(machine?.type ?? "washer");
 
   useEffect(() => {
     setIsAvailable(normalizedStatus === "AVAILABLE");
@@ -104,6 +108,10 @@ export default function EditMachineForm({ userRole, machine }: Props) {
                   { value: "dryer", label: "Dryer" },
                 ]}
                 defaultValue={machine.type}
+                onChange={(type) => {
+                  setMachineType(type);
+                  if (type === "dryer") setTubCleaningEnabled(false);
+                }}
               />
               <div className="flex items-center gap-3 rounded-md border border-gray-300 px-3 h-12 shadow-sm">
                 <input
@@ -123,6 +131,33 @@ export default function EditMachineForm({ userRole, machine }: Props) {
                   Available
                 </label>
               </div>
+              {machineType === "washer" && (
+                <div className="sm:col-span-2 space-y-3 rounded-md border border-gray-200 p-4">
+                  <input type="hidden" name="tubCleaningEnabled" value="false" />
+                  <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      name="tubCleaningEnabled"
+                      value="true"
+                      checked={tubCleaningEnabled}
+                      onChange={(event) => setTubCleaningEnabled(event.target.checked)}
+                      className="h-4 w-4 accent-teal-600"
+                    />
+                    Enable cycle-based tub cleaning alerts
+                  </label>
+                  {tubCleaningEnabled && (
+                    <StandardInput
+                      name="tubCleaningIntervalCycles"
+                      type="number"
+                      min={1}
+                      max={1000000}
+                      defaultValue={machine.tubCleaningIntervalCycles}
+                      placeholder="Tub cleaning interval (cycles)"
+                      required
+                    />
+                  )}
+                </div>
+              )}
               <StandardInput name="usageCount" type="number" placeholder="Usage Count" defaultValue={machine.usageCount} />
               <div className="sm:col-span-2 space-y-3 rounded-md border border-gray-200 p-4">
                 <p className="text-sm text-gray-500">

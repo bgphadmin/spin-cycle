@@ -8,9 +8,10 @@ interface StandardRadioGroupProps {
     options: { value: string; label: string }[];
     required?: boolean;
     defaultValue?: string;
+    onChange?: (value: string) => void;
 }
 
-export function StandardRadioGroup({ name, label, options, required, defaultValue, }: StandardRadioGroupProps) {
+export function StandardRadioGroup({ name, label, options, required, defaultValue, onChange }: StandardRadioGroupProps) {
     return (
         <div className="relative w-full">
             {/* Floating label */}
@@ -37,6 +38,7 @@ export function StandardRadioGroup({ name, label, options, required, defaultValu
                             value={opt.value}
                             required={required}
                             defaultChecked={defaultValue === opt.value}
+                            onChange={(event) => onChange?.(event.currentTarget.value)}
                             className="h-4 w-4 accent-teal-300 text-teal-600 border-gray-300 focus:ring-teal-500"
                         />
                         <span>{opt.label}</span>

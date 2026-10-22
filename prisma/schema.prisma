@@ -256,6 +256,9 @@ model Machine {
   maintenanceEnabled       Boolean       @default(false)
   maintenanceIntervalCycles Int           @default(3000)
   cyclesSinceMaintenance   Int           @default(0)
+  tubCleaningEnabled       Boolean       @default(false)
+  tubCleaningIntervalCycles Int          @default(30)
+  cyclesSinceTubCleaning   Int           @default(0)
   location                 String?
   comment                  String?
   createdAt                DateTime      @default(now())

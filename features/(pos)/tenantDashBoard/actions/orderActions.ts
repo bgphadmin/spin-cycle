@@ -59,6 +59,10 @@ export async function completeOrderAction(orderId: string) {
             where: { id: usage.machineId, maintenanceEnabled: true },
             data: { cyclesSinceMaintenance: { increment: 1 } },
           });
+          await tx.machine.updateMany({
+            where: { id: usage.machineId, type: MachineType.washer, tubCleaningEnabled: true },
+            data: { cyclesSinceTubCleaning: { increment: 1 } },
+          });
         }
         await tx.machine.update({ where: { id: usage.machineId }, data: { status: MachineStatus.AVAILABLE } });
       }

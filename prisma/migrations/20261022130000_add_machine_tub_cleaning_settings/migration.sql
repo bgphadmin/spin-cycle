@@ -1,0 +1,3 @@
+ALTER TABLE "Machine"
+ADD COLUMN "tubCleaningEnabled" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "tubCleaningIntervalCycles" INTEGER NOT NULL DEFAULT 30;

@@ -53,6 +53,9 @@ export async function updateMachineAction(
             maintenanceEnabled: formData.getAll("maintenanceEnabled").includes("true"),
             maintenanceIntervalCycles:
                 formData.get("maintenanceIntervalCycles") ?? existingMachine.maintenanceIntervalCycles,
+            tubCleaningEnabled: formData.getAll("tubCleaningEnabled").includes("true"),
+            tubCleaningIntervalCycles:
+                formData.get("tubCleaningIntervalCycles") ?? existingMachine.tubCleaningIntervalCycles,
             location: formData.get("location"),
             comment: formData.get("comment"),
         });
@@ -65,6 +68,8 @@ export async function updateMachineAction(
                 usageCount: fields.usageCount,
                 maintenanceEnabled: fields.maintenanceEnabled,
                 maintenanceIntervalCycles: fields.maintenanceIntervalCycles,
+                tubCleaningEnabled: fields.tubCleaningEnabled,
+                tubCleaningIntervalCycles: fields.tubCleaningIntervalCycles,
                 location: fields.location || null,
                 comment: fields.comment || null,
             },
@@ -152,6 +157,63 @@ export async function recordMachineMaintenanceAction(machineId: string, notes: s
         };
     } catch (error) {
         console.error("Failed to record machine maintenance:", error);
+        return renderError(error);
+    }
+}
+
+export async function recordTubCleaningAction(machineId: string) {
+    try {
+        const tenantId = await getAdminTenantId();
+        if (typeof machineId !== "string" || !machineId.trim()) {
+            throw new Error("Machine id is required.");
+        }
+
+        const normalizedMachineId = machineId.trim();
+        const machine = await db.$transaction(async (tx) => {
+            const currentMachine = await tx.machine.findFirst({
+                where: { id: normalizedMachineId, tenantId },
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    status: true,
+                    tubCleaningEnabled: true,
+                    cyclesSinceTubCleaning: true,
+                },
+            });
+            if (!currentMachine) throw new Error("Machine not found.");
+            if (currentMachine.type !== MachineType.washer || !currentMachine.tubCleaningEnabled) {
+                throw new Error("Tub cleaning alerts are not enabled for this washer.");
+            }
+            if (currentMachine.status === MachineStatus.IN_USE) {
+                throw new Error("Complete or cancel the active cycle before recording tub cleaning.");
+            }
+
+            const reset = await tx.machine.updateMany({
+                where: {
+                    id: currentMachine.id,
+                    tenantId,
+                    type: MachineType.washer,
+                    tubCleaningEnabled: true,
+                    status: { not: MachineStatus.IN_USE },
+                },
+                data: { cyclesSinceTubCleaning: 0 },
+            });
+            if (reset.count !== 1) {
+                throw new Error("The washer started a cycle. Complete it before recording tub cleaning.");
+            }
+            return currentMachine;
+        });
+
+        revalidatePath("/tenants/[tenantSlug]/tenantDashboard/machines", "page");
+        return {
+            message: JSON.stringify([
+                { message: `Tub cleaning recorded for ${machine.name}.`, result: "success" },
+                { cyclesBeforeCleaning: machine.cyclesSinceTubCleaning },
+            ]),
+        };
+    } catch (error) {
+        console.error("Failed to record tub cleaning:", error);
         return renderError(error);
     }
 }

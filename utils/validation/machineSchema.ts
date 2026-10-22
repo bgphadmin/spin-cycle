@@ -28,6 +28,18 @@ export const addMachineSchema = z.object({
     .max(1000000, { message: "Maintenance interval cannot exceed 1,000,000 cycles" })
     .default(3000),
 
+  tubCleaningEnabled: z.preprocess(
+    (value) => value === true || value === "on" || value === "true",
+    z.boolean(),
+  ).default(false),
+
+  tubCleaningIntervalCycles: z.coerce
+    .number()
+    .int({ message: "Tub cleaning interval must be a whole number" })
+    .min(1, { message: "Tub cleaning interval must be at least one cycle" })
+    .max(1000000, { message: "Tub cleaning interval cannot exceed 1,000,000 cycles" })
+    .default(30),
+
   location: z
     .string()
     .max(100, { message: "Location must not exceed 100 characters" })
@@ -37,4 +49,6 @@ export const addMachineSchema = z.object({
     .string()
     .max(255, { message: "Comment must not exceed 255 characters" })
     .optional(),
-});
+}).transform((fields) => (
+  fields.type === "washer" ? fields : { ...fields, tubCleaningEnabled: false }
+));

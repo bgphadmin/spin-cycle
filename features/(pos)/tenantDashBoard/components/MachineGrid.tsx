@@ -39,6 +39,9 @@ export default function MachinesGrid({ tenantSlug }: { tenantSlug: string }) {
           maintenanceEnabled={machine.maintenanceEnabled}
           cyclesSinceMaintenance={machine.cyclesSinceMaintenance}
           maintenanceIntervalCycles={machine.maintenanceIntervalCycles}
+          tubCleaningEnabled={machine.tubCleaningEnabled}
+          cyclesSinceTubCleaning={machine.cyclesSinceTubCleaning}
+          tubCleaningIntervalCycles={machine.tubCleaningIntervalCycles}
           onOrderCreated={loadMachines}
         />
       ))}

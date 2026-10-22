@@ -1,0 +1,2 @@
+ALTER TABLE "Machine"
+ADD COLUMN "cyclesSinceTubCleaning" INTEGER NOT NULL DEFAULT 0;

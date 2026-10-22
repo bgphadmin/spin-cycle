@@ -8,13 +8,14 @@ import { addMachineAction } from "../actions/addMachineAction";
 import StandardHeader from "@/components/utils/StandardHeader";
 import { useClientAuthClaims } from "@/utils/hooks/useAuthClaimsClient";
 import StandardHeader2 from "@/components/utils/StandardHeader2";
-import { redirect, useRouter } from "next/navigation";
-// import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export default function MachineSetupForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [tubCleaningEnabled, setTubCleaningEnabled] = useState(false);
+  const [machineType, setMachineType] = useState("");
   const router = useRouter();
 
   const handleSuccess = async () => {
@@ -23,6 +24,8 @@ export default function MachineSetupForm() {
       formRef.current.reset();
     }
     setMaintenanceEnabled(false);
+    setTubCleaningEnabled(false);
+    setMachineType("");
   };
 
   const { orgRole } = useClientAuthClaims()
@@ -56,6 +59,10 @@ export default function MachineSetupForm() {
                   { value: "washer", label: "Washer" },
                   { value: "dryer", label: "Dryer" },
                 ]}
+                onChange={(type) => {
+                  setMachineType(type);
+                  if (type === "dryer") setTubCleaningEnabled(false);
+                }}
               />
               <StandardInput
                 name="usageCount"
@@ -92,6 +99,36 @@ export default function MachineSetupForm() {
                   />
                 )}
               </div>
+              {machineType === "washer" && (
+                <div className="sm:col-span-2 space-y-3 rounded-md border border-gray-200 p-4">
+                  <input type="hidden" name="tubCleaningEnabled" value="false" />
+                  <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      name="tubCleaningEnabled"
+                      value="true"
+                      checked={tubCleaningEnabled}
+                      onChange={(event) => setTubCleaningEnabled(event.target.checked)}
+                      className="h-4 w-4 accent-teal-600"
+                    />
+                    Enable cycle-based tub cleaning alerts
+                  </label>
+                  <p className="text-sm text-gray-500">
+                    When enabled, completed washer cycles count toward the tub cleaning interval.
+                  </p>
+                  {tubCleaningEnabled && (
+                    <StandardInput
+                      name="tubCleaningIntervalCycles"
+                      type="number"
+                      min={1}
+                      max={1000000}
+                      defaultValue={30}
+                      placeholder="Tub cleaning interval (cycles)"
+                      required
+                    />
+                  )}
+                </div>
+              )}
               <StandardInput name="location" placeholder="Location (optional)" />
               <div className="sm:col-span-2">
                 <StandardInput name="comment" placeholder="Place your comment here" as="textarea" required />

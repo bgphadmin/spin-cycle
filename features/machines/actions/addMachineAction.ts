@@ -34,6 +34,8 @@ export async function addMachineAction(
       usageCount,
       maintenanceEnabled,
       maintenanceIntervalCycles,
+      tubCleaningEnabled,
+      tubCleaningIntervalCycles,
       location,
       comment,
     } = fields;
@@ -61,6 +63,8 @@ export async function addMachineAction(
           maintenanceEnabled,
           maintenanceIntervalCycles,
           cyclesSinceMaintenance: usageCount,
+          tubCleaningEnabled,
+          tubCleaningIntervalCycles,
         },
       });
 

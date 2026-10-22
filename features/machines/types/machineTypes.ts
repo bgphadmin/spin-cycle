@@ -7,6 +7,9 @@ export type Machine = {
     maintenanceEnabled: boolean;
     maintenanceIntervalCycles: number;
     cyclesSinceMaintenance: number;
+    tubCleaningEnabled: boolean;
+    tubCleaningIntervalCycles: number;
+    cyclesSinceTubCleaning: number;
     lastMaintenanceAt?: Date | null;
     location?: string | null;
     comment?: string | null;

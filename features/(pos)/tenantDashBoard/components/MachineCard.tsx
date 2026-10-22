@@ -27,6 +27,9 @@ type MachineCardProps = {
   maintenanceEnabled: boolean;
   cyclesSinceMaintenance: number;
   maintenanceIntervalCycles: number;
+  tubCleaningEnabled: boolean;
+  cyclesSinceTubCleaning: number;
+  tubCleaningIntervalCycles: number;
   onOrderCreated: () => Promise<void>;
 };
 
@@ -39,6 +42,9 @@ export default function MachineCard({
   maintenanceEnabled,
   cyclesSinceMaintenance,
   maintenanceIntervalCycles,
+  tubCleaningEnabled,
+  cyclesSinceTubCleaning,
+  tubCleaningIntervalCycles,
   onOrderCreated,
 }: MachineCardProps) {
   const [open, setOpen] = useState(false);
@@ -60,6 +66,9 @@ export default function MachineCard({
   const isUnavailable = status === "UNAVAILABLE";
   const maintenance = maintenanceEnabled
     ? getMaintenanceStatus(cyclesSinceMaintenance, maintenanceIntervalCycles)
+    : null;
+  const tubCleaning = type === "washer" && tubCleaningEnabled
+    ? getMaintenanceStatus(cyclesSinceTubCleaning, tubCleaningIntervalCycles)
     : null;
 
   useEffect(() => {
@@ -147,6 +156,21 @@ export default function MachineCard({
         </p>
       ) : (
         <p className="text-sm text-gray-500">Maintenance tracking off</p>
+      )}
+      {tubCleaning && (
+        <p className={`text-sm font-medium ${
+          tubCleaning.status === "due"
+            ? "text-red-700"
+            : tubCleaning.status === "soon"
+              ? "text-amber-700"
+              : "text-green-700"
+        }`}>
+          {tubCleaning.status === "due"
+            ? "Tub cleaning due"
+            : tubCleaning.status === "soon"
+              ? "Tub cleaning due soon"
+              : "Tub cleaning OK"}: {cyclesSinceTubCleaning}/{tubCleaningIntervalCycles} cycles
+        </p>
       )}
 
       {isInUse && activeOrderId && (

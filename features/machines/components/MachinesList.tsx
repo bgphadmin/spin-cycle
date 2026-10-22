@@ -12,6 +12,7 @@ import { getMachinesAction } from "@/features/machines/actions/getMachinesAction
 import type { Machine } from "../types/machineTypes";
 import { getMaintenanceStatus } from "../types/maintenanceStatus";
 import RecordMaintenanceButton from "./RecordMaintenanceButton";
+import RecordTubCleaningButton from "./RecordTubCleaningButton";
 
 type SortKey = "name" | "type" | "status" | "usageCount" | "cyclesSinceMaintenance" | "location";
 type SortDir = "asc" | "desc";
@@ -104,7 +105,7 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
         buttonName="Add Machine"
         href="./machines/machineSetup"
         title="Machines"
-        description="View machines and cycle-based maintenance alerts. Alerts begin at 90% of each machine's interval."
+        description="View machine maintenance and washer tub-cleaning alerts. Alerts begin at 90% of the configured cycle interval."
       />
       <div className="relative">
         <Input
@@ -151,69 +152,110 @@ export default function MachinesList({ tenantSlug }: { tenantSlug: string }) {
                 </tr>
               </thead>
               <tbody>
-                {visibleMachines.map((machine) => (
-                  <tr
-                    key={machine.id}
-                    onClick={() => isAdmin && router.push(`./machines/${machine.id}/edit`)}
-                    className={`border-b border-gray-100 last:border-0 ${
-                      isAdmin ? "cursor-pointer hover:bg-teal-50" : "cursor-not-allowed"
-                    }`}
-                  >
-                    <td className="px-3 py-3 font-medium text-gray-800">{machine.name}</td>
-                    <td className="px-3 py-3 capitalize text-gray-600">{machine.type}</td>
-                    <td className="px-3 py-3 text-gray-600">
-                      <StatusBadge status={machine.status} />
-                    </td>
-                    <td className="px-3 py-3 text-gray-600">{machine.usageCount}</td>
-                    <td className="px-3 py-3">
-                      {!machine.maintenanceEnabled ? (
-                        <span className="text-xs text-gray-500">Tracking off</span>
-                      ) : (() => {
-                        const maintenance = getMaintenanceStatus(
-                          machine.cyclesSinceMaintenance,
-                          machine.maintenanceIntervalCycles,
-                        );
-                        return (
-                          <div className="space-y-1">
-                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              maintenance.status === "due"
-                                ? "bg-red-100 text-red-800"
-                                : maintenance.status === "soon"
-                                  ? "bg-amber-100 text-amber-900"
-                                  : "bg-green-100 text-green-800"
-                            }`}>
-                              {maintenance.status === "due"
-                                ? "Maintenance due"
-                                : maintenance.status === "soon"
-                                  ? "Due soon"
-                                  : "OK"}
-                            </span>
-                            <p className="text-xs text-gray-500">
-                              {machine.cyclesSinceMaintenance} / {machine.maintenanceIntervalCycles} cycles
-                            </p>
-                            {machine.lastMaintenanceAt && (
+                {visibleMachines.map((machine) => {
+                  const maintenance = machine.maintenanceEnabled
+                    ? getMaintenanceStatus(
+                        machine.cyclesSinceMaintenance,
+                        machine.maintenanceIntervalCycles,
+                      )
+                    : null;
+                  const tubCleaning = machine.type === "washer" && machine.tubCleaningEnabled
+                    ? getMaintenanceStatus(
+                        machine.cyclesSinceTubCleaning,
+                        machine.tubCleaningIntervalCycles,
+                      )
+                    : null;
+
+                  return (
+                    <tr
+                      key={machine.id}
+                      onClick={() => isAdmin && router.push(`./machines/${machine.id}/edit`)}
+                      className={`border-b border-gray-100 last:border-0 ${
+                        isAdmin ? "cursor-pointer hover:bg-teal-50" : "cursor-not-allowed"
+                      }`}
+                    >
+                      <td className="px-3 py-3 font-medium text-gray-800">{machine.name}</td>
+                      <td className="px-3 py-3 capitalize text-gray-600">{machine.type}</td>
+                      <td className="px-3 py-3 text-gray-600">
+                        <StatusBadge status={machine.status} />
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{machine.usageCount}</td>
+                      <td className="px-3 py-3">
+                        <div className="space-y-2">
+                          {maintenance ? (
+                            <div className="space-y-1">
+                              <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                maintenance.status === "due"
+                                  ? "bg-red-100 text-red-800"
+                                  : maintenance.status === "soon"
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-green-100 text-green-800"
+                              }`}>
+                                {maintenance.status === "due"
+                                  ? "Maintenance due"
+                                  : maintenance.status === "soon"
+                                    ? "Due soon"
+                                    : "OK"}
+                              </span>
                               <p className="text-xs text-gray-500">
-                                Last serviced {new Intl.DateTimeFormat("en-PH", {
-                                  dateStyle: "medium",
-                                }).format(machine.lastMaintenanceAt)}
+                                {machine.cyclesSinceMaintenance} / {machine.maintenanceIntervalCycles} cycles
                               </p>
+                              {machine.lastMaintenanceAt && (
+                                <p className="text-xs text-gray-500">
+                                  Last serviced {new Intl.DateTimeFormat("en-PH", {
+                                    dateStyle: "medium",
+                                  }).format(machine.lastMaintenanceAt)}
+                                </p>
+                              )}
+                              {isAdmin && (
+                                <RecordMaintenanceButton
+                                  machineId={machine.id}
+                                  machineName={machine.name}
+                                  cyclesSinceMaintenance={machine.cyclesSinceMaintenance}
+                                  disabled={machine.status === "IN_USE"}
+                                  returnTo={`/tenants/${tenantSlug}/tenantDashboard/machines`}
+                                />
+                              )}
+                            </div>
+                          ) : null}
+                          {tubCleaning ? (
+                            <div className="space-y-1 border-t border-gray-100 pt-2">
+                              <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                tubCleaning.status === "due"
+                                  ? "bg-red-100 text-red-800"
+                                  : tubCleaning.status === "soon"
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-green-100 text-green-800"
+                              }`}>
+                                {tubCleaning.status === "due"
+                                  ? "Tub cleaning due"
+                                  : tubCleaning.status === "soon"
+                                    ? "Tub cleaning due soon"
+                                    : "Tub cleaning OK"}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {machine.cyclesSinceTubCleaning} / {machine.tubCleaningIntervalCycles} cycles
+                              </p>
+                              {isAdmin && (
+                                <RecordTubCleaningButton
+                                  machineId={machine.id}
+                                  machineName={machine.name}
+                                  cyclesSinceTubCleaning={machine.cyclesSinceTubCleaning}
+                                  disabled={machine.status === "IN_USE"}
+                                />
+                              )}
+                            </div>
+                          ) : null}
+                          {!machine.maintenanceEnabled &&
+                            !(machine.type === "washer" && machine.tubCleaningEnabled) && (
+                              <span className="text-xs text-gray-500">Tracking off</span>
                             )}
-                            {isAdmin && (
-                              <RecordMaintenanceButton
-                                machineId={machine.id}
-                                machineName={machine.name}
-                                cyclesSinceMaintenance={machine.cyclesSinceMaintenance}
-                                disabled={machine.status === "IN_USE"}
-                                returnTo={`/tenants/${tenantSlug}/tenantDashboard/machines`}
-                              />
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-3 py-3 text-gray-600">{machine.location || "—"}</td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{machine.location || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {totalPages > 1 && (
