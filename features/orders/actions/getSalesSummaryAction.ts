@@ -42,6 +42,13 @@ export type SalesSummaryUser = {
   name: string;
 };
 
+type SalesSummaryOrderItem = {
+  quantity: number;
+  price: number;
+  service: { name: string; type: string } | null;
+  inventoryItem: { name: string; type: string } | null;
+};
+
 async function getSalesContext() {
   const { userId } = await auth();
   const { orgId, orgRole } = await getServerAuthClaims();
@@ -78,12 +85,7 @@ export async function getSalesSummaryUsersAction(): Promise<SalesSummaryUser[]> 
 
 function addLine(
   lines: SalesSummaryLine[],
-  item: {
-    service: { name: string; type: string } | null;
-    inventoryItem: { name: string; type: string } | null;
-    quantity: number;
-    price: number;
-  },
+  item: SalesSummaryOrderItem,
   discountFactor = 1,
 ) {
   const name = item.service?.name ?? item.inventoryItem?.name ?? "Order item";
@@ -97,6 +99,45 @@ function addLine(
   } else {
     lines.push({ name, kind, category, quantity: item.quantity, total: lineTotal });
   }
+}
+
+function getOrderItemDiscountFactors(
+  items: SalesSummaryOrderItem[],
+  orderTotal: number,
+  discountAmount: number,
+) {
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const fallbackFactor = subtotal > 0 ? orderTotal / subtotal : 1;
+  const washIndexes = items.flatMap((item, index) =>
+    item.service?.type === "WASH" ||
+    item.service?.name.trim().toLocaleLowerCase() === "wash"
+      ? [index]
+      : [],
+  );
+  const washSubtotal = washIndexes.reduce(
+    (sum, index) => sum + items[index].price * items[index].quantity,
+    0,
+  );
+  const orderDiscount = Math.max(
+    0,
+    Math.min(subtotal, Math.max(discountAmount, subtotal - orderTotal)),
+  );
+
+  if (washSubtotal <= 0 || orderDiscount <= 0) {
+    return items.map(() => fallbackFactor);
+  }
+
+  const washDiscount = Math.min(orderDiscount, washSubtotal);
+  const otherSubtotal = subtotal - washSubtotal;
+  const remainingDiscount = orderDiscount - washDiscount;
+  const otherFactor = otherSubtotal > 0
+    ? Math.max(0, (otherSubtotal - remainingDiscount) / otherSubtotal)
+    : 1;
+  const washFactor = (washSubtotal - washDiscount) / washSubtotal;
+
+  return items.map((_, index) =>
+    washIndexes.includes(index) ? washFactor : otherFactor,
+  );
 }
 
 export async function getSalesSummaryAction(filters?: {
@@ -164,6 +205,7 @@ export async function getSalesSummaryAction(filters?: {
       id: true,
       userId: true,
       total: true,
+      discountAmount: true,
       paid: true,
       createdAt: true,
       customer: { select: { name: true } },
@@ -209,8 +251,11 @@ export async function getSalesSummaryAction(filters?: {
   const expensesTotal = expenses._sum.amount ?? 0;
 
   for (const order of orders) {
-    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discountFactor = subtotal > 0 ? order.total / subtotal : 1;
+    const discountFactors = getOrderItemDiscountFactors(
+      order.items,
+      order.total,
+      order.discountAmount,
+    );
     if (
       order.paid &&
       order.createdAt >= startOfDay &&
@@ -220,7 +265,9 @@ export async function getSalesSummaryAction(filters?: {
         : order.userId === tenant.userId)
     ) {
       total += order.total;
-      for (const item of order.items) addLine(lines, item, discountFactor);
+      order.items.forEach((item, index) =>
+        addLine(lines, item, discountFactors[index]),
+      );
     }
 
     if (!order.paid) {
@@ -235,7 +282,9 @@ export async function getSalesSummaryAction(filters?: {
         lines: [],
       };
       row.total += order.total;
-      for (const item of order.items) addLine(row.lines, item, discountFactor);
+      order.items.forEach((item, index) =>
+        addLine(row.lines, item, discountFactors[index]),
+      );
       unpaidGroups.set(id, row);
     }
   }
