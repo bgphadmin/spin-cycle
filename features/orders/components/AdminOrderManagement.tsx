@@ -243,6 +243,12 @@ export default function AdminOrderManagement({ orders }: { orders: AdminOrderRow
                         loading={isDeleting && deleteTarget?.id === order.id}
                         onClick={(event) => {
                           event.stopPropagation();
+                          if (order.machinesInUse.length > 0) {
+                            toast.error(
+                              `Cannot delete this order because ${order.machinesInUse.join(", ")} ${order.machinesInUse.length === 1 ? "is" : "are"} currently in use.`,
+                            );
+                            return;
+                          }
                           setDeleteTarget(order);
                         }}
                         className="px-3 py-1.5 text-xs"

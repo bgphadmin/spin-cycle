@@ -34,6 +34,7 @@ export type AdminOrderRow = {
   customerName: string;
   receiptNumber: string;
   machineName: string;
+  machinesInUse: string[];
   createdAt: string;
   createdAtLabel: string;
   businessDate: string;
@@ -160,7 +161,10 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
         receiptOrders: { select: { receipt: { select: { number: true } } } },
         payments: { select: { method: true }, take: 1 },
         machineUsages: {
-          select: { machine: { select: { name: true } } },
+          select: {
+            endedAt: true,
+            machine: { select: { name: true, status: true } },
+          },
         },
       },
     });
@@ -170,6 +174,11 @@ export async function getAdminOrdersAction(): Promise<AdminOrderRow[]> {
       customerName: order.customer?.name ?? "Walk-in",
       receiptNumber: order.receiptOrders[0]?.receipt.number ?? `UNASSIGNED-${order.id.slice(0, 8)}`,
       machineName: order.machineUsages.map((usage) => usage.machine.name).join(", ") || "Unassigned",
+      machinesInUse: [...new Set(order.machineUsages
+        .filter((usage) =>
+          usage.machine.status === MachineStatus.IN_USE || usage.endedAt === null,
+        )
+        .map((usage) => usage.machine.name))],
       createdAt: order.createdAt.toISOString(),
       createdAtLabel: new Intl.DateTimeFormat("en-US", {
         dateStyle: "medium",
@@ -392,9 +401,26 @@ export async function deleteAdminOrderAction(
     await db.$transaction(async (tx) => {
       const order = await tx.laundryOrder.findFirst({
         where: { id: orderId, tenantId: tenant.id },
-        include: { items: true, machineUsages: true, receiptOrders: true },
+        include: {
+          items: true,
+          machineUsages: {
+            include: { machine: { select: { name: true, status: true } } },
+          },
+          receiptOrders: true,
+        },
       });
       if (!order) throw new Error("Order not found.");
+
+      const machinesInUse = [...new Set(order.machineUsages
+        .filter((usage) =>
+          usage.machine.status === MachineStatus.IN_USE || usage.endedAt === null,
+        )
+        .map((usage) => usage.machine.name))];
+      if (machinesInUse.length > 0) {
+        throw new Error(
+          `Cannot delete this order because ${machinesInUse.join(", ")} ${machinesInUse.length === 1 ? "is" : "are"} currently in use.`,
+        );
+      }
 
       if (order.status !== "CANCELLED") {
         for (const item of order.items) {
