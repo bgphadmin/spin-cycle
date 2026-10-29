@@ -3,6 +3,7 @@
 import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
+import { getOrderItemDiscountFactors } from "@/features/orders/utils/discount";
 import {
   businessDateKey,
   businessDateKeyToUtcDate,
@@ -99,45 +100,6 @@ function addLine(
   } else {
     lines.push({ name, kind, category, quantity: item.quantity, total: lineTotal });
   }
-}
-
-function getOrderItemDiscountFactors(
-  items: SalesSummaryOrderItem[],
-  orderTotal: number,
-  discountAmount: number,
-) {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const fallbackFactor = subtotal > 0 ? orderTotal / subtotal : 1;
-  const washIndexes = items.flatMap((item, index) =>
-    item.service?.type === "WASH" ||
-    item.service?.name.trim().toLocaleLowerCase() === "wash"
-      ? [index]
-      : [],
-  );
-  const washSubtotal = washIndexes.reduce(
-    (sum, index) => sum + items[index].price * items[index].quantity,
-    0,
-  );
-  const orderDiscount = Math.max(
-    0,
-    Math.min(subtotal, Math.max(discountAmount, subtotal - orderTotal)),
-  );
-
-  if (washSubtotal <= 0 || orderDiscount <= 0) {
-    return items.map(() => fallbackFactor);
-  }
-
-  const washDiscount = Math.min(orderDiscount, washSubtotal);
-  const otherSubtotal = subtotal - washSubtotal;
-  const remainingDiscount = orderDiscount - washDiscount;
-  const otherFactor = otherSubtotal > 0
-    ? Math.max(0, (otherSubtotal - remainingDiscount) / otherSubtotal)
-    : 1;
-  const washFactor = (washSubtotal - washDiscount) / washSubtotal;
-
-  return items.map((_, index) =>
-    washIndexes.includes(index) ? washFactor : otherFactor,
-  );
 }
 
 export async function getSalesSummaryAction(filters?: {

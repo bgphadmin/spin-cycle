@@ -4,6 +4,7 @@ import db from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { getServerAuthClaims } from "@/utils/hooks/useAuthClaims";
 import { expenseCategoryLabel } from "@/features/expenses/types/expenseTypes";
+import { getOrderItemDiscountFactors } from "@/features/orders/utils/discount";
 import {
   businessDateKey,
   businessDateKeyToUtcDate,
@@ -143,6 +144,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
     },
     select: {
       total: true,
+      discountAmount: true,
       createdAt: true,
       customerId: true,
       customer: { select: { name: true } },
@@ -196,11 +198,14 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
 
     const customerName = order.customer?.name ?? "Walk-in";
     customerTotals.set(customerName, (customerTotals.get(customerName) ?? 0) + order.total);
-    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discountFactor = subtotal > 0 ? order.total / subtotal : 1;
+    const discountFactors = getOrderItemDiscountFactors(
+      order.items,
+      order.total,
+      order.discountAmount,
+    );
 
-    for (const item of order.items) {
-      const itemTotal = item.price * item.quantity * discountFactor;
+    order.items.forEach((item, index) => {
+      const itemTotal = item.price * item.quantity * discountFactors[index];
       if (item.service) {
         const serviceDates = serviceByName.get(item.service.name) ?? new Map<string, number>();
         serviceDates.set(orderDate, (serviceDates.get(orderDate) ?? 0) + itemTotal);
@@ -216,7 +221,7 @@ export async function getAdminSalesAnalyticsAction(): Promise<AdminSalesAnalytic
         inventoryByName.set(item.inventoryItem.name, inventoryDates);
         categoryTotals.set("Inventory Items", (categoryTotals.get("Inventory Items") ?? 0) + itemTotal);
       }
-    }
+    });
   }
 
   for (const expense of expenses) {
@@ -394,11 +399,12 @@ export async function getAdminCategoryAnalyticsAction(
       },
       select: {
         total: true,
+        discountAmount: true,
         items: {
           select: {
             quantity: true,
             price: true,
-            service: { select: { type: true } },
+            service: { select: { name: true, type: true } },
             inventoryItem: { select: { name: true } },
           },
         },
@@ -422,9 +428,12 @@ export async function getAdminCategoryAnalyticsAction(
     ["Inventory Items", 0],
   ]);
   for (const order of orders) {
-    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discountFactor = subtotal > 0 ? order.total / subtotal : 1;
-    for (const item of order.items) {
+    const discountFactors = getOrderItemDiscountFactors(
+      order.items,
+      order.total,
+      order.discountAmount,
+    );
+    order.items.forEach((item, index) => {
       const category = item.service
         ? item.service.type === "OTHERS" || item.service.type === "FOLDS"
           ? "Additional Services"
@@ -435,10 +444,11 @@ export async function getAdminCategoryAnalyticsAction(
       if (category) {
         categoryTotals.set(
           category,
-          (categoryTotals.get(category) ?? 0) + item.price * item.quantity * discountFactor,
+          (categoryTotals.get(category) ?? 0) +
+            item.price * item.quantity * discountFactors[index],
         );
       }
-    }
+    });
   }
 
   const expenseCategoryTotals = new Map<string, number>();

@@ -1,5 +1,44 @@
 export type DiscountType = "FIXED_AMOUNT" | "PERCENTAGE";
 
+type DiscountableOrderItem = {
+  price: number;
+  quantity: number;
+  service: { name: string; type?: string } | null;
+};
+
+export function getOrderItemDiscountFactors(
+  items: readonly DiscountableOrderItem[],
+  orderTotal: number,
+  discountAmount: number,
+) {
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const washIndexes = items.flatMap((item, index) =>
+    item.service?.type === "WASH" ||
+    item.service?.name.trim().toLocaleLowerCase() === "wash"
+      ? [index]
+      : [],
+  );
+  const washSubtotal = washIndexes.reduce(
+    (sum, index) => sum + items[index].price * items[index].quantity,
+    0,
+  );
+  const orderDiscount = Math.max(
+    0,
+    Math.min(subtotal, Math.max(discountAmount, subtotal - orderTotal)),
+  );
+
+  if (washSubtotal <= 0 || orderDiscount <= 0) {
+    return items.map(() => 1);
+  }
+
+  const washDiscount = Math.min(orderDiscount, washSubtotal);
+  const washFactor = (washSubtotal - washDiscount) / washSubtotal;
+
+  return items.map((_, index) =>
+    washIndexes.includes(index) ? washFactor : 1,
+  );
+}
+
 function roundMoney(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
