@@ -249,8 +249,20 @@ export async function cancelOrderAction(orderId: string) {
       }
       await tx.laundryOrder.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
       for (const usage of order.machineUsages) {
-        await tx.machineUsage.update({ where: { id: usage.id }, data: { endedAt: new Date() } });
-        await tx.machine.update({ where: { id: usage.machineId }, data: { status: MachineStatus.AVAILABLE } });
+        const endedUsage = await tx.machineUsage.updateMany({
+          where: { id: usage.id, endedAt: null },
+          data: { endedAt: new Date() },
+        });
+        if (endedUsage.count > 0) {
+          await tx.machine.update({
+            where: { id: usage.machineId },
+            data: { status: MachineStatus.AVAILABLE },
+          });
+          await tx.machine.updateMany({
+            where: { id: usage.machineId, usageCount: { gt: 0 } },
+            data: { usageCount: { decrement: 1 } },
+          });
+        }
       }
     });
     return { message: "Order cancelled successfully." };
