@@ -12,13 +12,15 @@ export function getOrderItemDiscountFactors(
   discountAmount: number,
 ) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const washIndexes = items.flatMap((item, index) =>
+  const baseServiceIndexes = items.flatMap((item, index) =>
     item.service?.type === "WASH" ||
-    item.service?.name.trim().toLocaleLowerCase() === "wash"
+    item.service?.type === "DRY" ||
+    item.service?.name.trim().toLocaleLowerCase() === "wash" ||
+    item.service?.name.trim().toLocaleLowerCase() === "dry"
       ? [index]
       : [],
   );
-  const washSubtotal = washIndexes.reduce(
+  const baseServiceSubtotal = baseServiceIndexes.reduce(
     (sum, index) => sum + items[index].price * items[index].quantity,
     0,
   );
@@ -27,15 +29,16 @@ export function getOrderItemDiscountFactors(
     Math.min(subtotal, Math.max(discountAmount, subtotal - orderTotal)),
   );
 
-  if (washSubtotal <= 0 || orderDiscount <= 0) {
+  if (baseServiceSubtotal <= 0 || orderDiscount <= 0) {
     return items.map(() => 1);
   }
 
-  const washDiscount = Math.min(orderDiscount, washSubtotal);
-  const washFactor = (washSubtotal - washDiscount) / washSubtotal;
+  const baseServiceDiscount = Math.min(orderDiscount, baseServiceSubtotal);
+  const baseServiceFactor =
+    (baseServiceSubtotal - baseServiceDiscount) / baseServiceSubtotal;
 
   return items.map((_, index) =>
-    washIndexes.includes(index) ? washFactor : 1,
+    baseServiceIndexes.includes(index) ? baseServiceFactor : 1,
   );
 }
 
