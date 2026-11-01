@@ -284,6 +284,7 @@ export async function updateAdminOrderAction(
       const inventoryIds = [...new Set([...previousInventory.keys(), ...inventoryQuantities.keys()])];
       const inventoryItems = await tx.inventoryItem.findMany({ where: { id: { in: inventoryIds }, tenantId: tenant.id } });
       if (inventoryItems.length !== inventoryIds.length) throw new Error("One or more selected inventory items are invalid.");
+      const inventoryTransactions = [];
       for (const item of inventoryItems) {
         const next = inventoryQuantities.get(item.id) ?? 0;
         const previous = previousInventory.get(item.id) ?? 0;
@@ -291,8 +292,17 @@ export async function updateAdminOrderAction(
         const difference = next - previous;
         if (difference) {
           await tx.inventoryItem.update({ where: { id: item.id }, data: { stock: { decrement: difference } } });
-          await tx.inventoryTransaction.create({ data: { inventoryItemId: item.id, tenantId: tenant.id, type: difference > 0 ? "sale" : "return", quantity: Math.abs(difference), unitPrice: item.price } });
+          inventoryTransactions.push({
+            inventoryItemId: item.id,
+            tenantId: tenant.id,
+            type: difference > 0 ? "sale" : "return",
+            quantity: Math.abs(difference),
+            unitPrice: item.price,
+          });
         }
+      }
+      if (inventoryTransactions.length > 0) {
+        await tx.inventoryTransaction.createMany({ data: inventoryTransactions });
       }
 
       let customerId: string | null = null;
@@ -379,7 +389,8 @@ export async function updateAdminOrderAction(
         await tx.receipt.update({ where: { id: receiptOrder.receiptId }, data: { total: { increment: total - order.total } } });
       }
     }, {
-      timeout: 15000,
+      maxWait: 10000,
+      timeout: 30000,
     });
 
     revalidatePath(`/tenants/${tenant.orgSlug}/adminDashboard`);

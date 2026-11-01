@@ -134,6 +134,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
       });
       if (inventoryItems.length !== inventoryIds.length) throw new Error("One or more selected inventory items are invalid.");
 
+      const inventoryTransactions = [];
       for (const item of inventoryItems) {
         const previousQuantity = previousInventoryQuantities.get(item.id) ?? 0;
         const nextQuantity = inventoryQuantities.get(item.id) ?? 0;
@@ -146,16 +147,17 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
             where: { id: item.id },
             data: { stock: { decrement: difference } },
           });
-          await tx.inventoryTransaction.create({
-            data: {
-              inventoryItemId: item.id,
-              tenantId: id,
-              type: difference > 0 ? "sale" : "return",
-              quantity: Math.abs(difference),
-              unitPrice: item.price,
-            },
+          inventoryTransactions.push({
+            inventoryItemId: item.id,
+            tenantId: id,
+            type: difference > 0 ? "sale" : "return",
+            quantity: Math.abs(difference),
+            unitPrice: item.price,
           });
         }
+      }
+      if (inventoryTransactions.length > 0) {
+        await tx.inventoryTransaction.createMany({ data: inventoryTransactions });
       }
 
       const serviceItems = [
@@ -232,7 +234,7 @@ export async function updateOrderAction(_prevState: unknown, formData: FormData)
           data: { total: { increment: total - order.total } },
         });
       }
-    }, { maxWait: 10000, timeout: 15000 });
+    }, { maxWait: 10000, timeout: 30000 });
     revalidatePath(`/tenants/orgSlug/tenantDashboard/sales`);
     return { message: JSON.stringify([{ message: "Order updated successfully.", result: "success" }]) };
   } catch (error) { return renderError(error); }

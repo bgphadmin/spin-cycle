@@ -190,29 +190,29 @@ export async function createOrderAction(
         data: { status: MachineStatus.IN_USE, usageCount: { increment: 1 } },
       });
 
+      const inventoryTransactions = [];
       for (const item of inventoryItems) {
         const quantity = inventoryQuantities.get(item.id) ?? 0;
         await tx.inventoryItem.update({
           where: { id: item.id },
           data: { stock: { decrement: quantity } },
         });
-        await tx.inventoryTransaction.create({
-          data: {
-            inventoryItemId: item.id,
-            tenantId: tenant.id,
-            type: "sale",
-            quantity,
-            unitPrice: item.price,
-          },
+        inventoryTransactions.push({
+          inventoryItemId: item.id,
+          tenantId: tenant.id,
+          type: "sale",
+          quantity,
+          unitPrice: item.price,
         });
+      }
+      if (inventoryTransactions.length > 0) {
+        await tx.inventoryTransaction.createMany({ data: inventoryTransactions });
       }
 
       return createdOrder;
     }, {
-      // Production databases can take longer than Prisma's 5-second default
-      // during cold starts or when creating all order-related records.
       maxWait: 10000,
-      timeout: 15000,
+      timeout: 30000,
     });
 
     revalidatePath(`/tenants/${orgSlug}/tenantDashboard`);
