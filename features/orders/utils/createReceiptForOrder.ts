@@ -43,15 +43,6 @@ export async function createReceiptForOrder(
   let base: string;
   if (existingReceipts.length > 0) {
     base = getReceiptNumberBase(existingReceipts[0].receipt.number);
-    for (const [index, existingReceipt] of existingReceipts.entries()) {
-      const number = formatReceiptNumber(base, index);
-      if (existingReceipt.receipt.number !== number) {
-        await tx.receipt.update({
-          where: { id: existingReceipt.receipt.id },
-          data: { number },
-        });
-      }
-    }
   } else {
     await tx.$executeRaw`CREATE SEQUENCE IF NOT EXISTS "Receipt_number_seq"`;
     const [{ nextValue }] = await tx.$queryRaw<Array<{ nextValue: bigint }>>`
@@ -60,9 +51,16 @@ export async function createReceiptForOrder(
     base = `${dateKey.slice(0, 4)}-${String(nextValue).padStart(12, "0")}`;
   }
 
+  let suffixIndex = 0;
+  let number = formatReceiptNumber(base, suffixIndex);
+  while (await tx.receipt.findUnique({ where: { number }, select: { id: true } })) {
+    suffixIndex += 1;
+    number = formatReceiptNumber(base, suffixIndex);
+  }
+
   const receipt = await tx.receipt.create({
     data: {
-      number: formatReceiptNumber(base, existingReceipts.length),
+      number,
       total,
     },
     select: { id: true },
